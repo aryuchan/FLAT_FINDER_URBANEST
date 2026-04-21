@@ -3,111 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlatFinder | Premium Urban Living</title>
+    <title>FlatFinder | Ultimate Premium</title>
     <style>
-        /* ── VIBRANT PREMIUM CSS ── */
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
+        /* ── UNBREAKABLE PREMIUM CSS ── */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap');
 
         :root {
-            --primary: #2563eb;
-            --bg: #f1f5f9;
-            --surface: rgba(255, 255, 255, 0.9);
+            --primary: #1d4ed8;
+            --bg: #f8fafc;
+            --card: #ffffff;
             --text: #0f172a;
-            --text-muted: #475569;
-            --border: #e2e8f0;
-            --accent: #3b82f6;
-            --radius: 24px;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
         }
 
         [data-theme="dark"] {
-            --bg: #0f172a;
-            --surface: rgba(30, 41, 59, 0.9);
+            --bg: #020617;
+            --card: #1e293b;
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --border: #334155;
-            --accent: #60a5fa;
+            --primary: #3b82f6;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Outfit', sans-serif;
-            background: var(--bg);
+            background-color: var(--bg);
             color: var(--text);
-            transition: 0.3s;
             min-height: 100vh;
-        }
-
-        /* VIBRANT GRADIENT BACKGROUND */
-        body::before {
-            content: ""; position: fixed; inset: 0; z-index: -1;
-            background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 50%, #ec4899 100%);
-            opacity: 0.15;
+            transition: 0.2s;
         }
 
         .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
         
         nav {
-            height: 70px; background: var(--surface); backdrop-filter: blur(10px);
-            border-bottom: 2px solid var(--border); display: flex; align-items: center;
-            position: sticky; top: 0; z-index: 1000;
+            height: 70px; background: var(--card); border-bottom: 3px solid var(--primary);
+            display: flex; align-items: center; position: sticky; top: 0; z-index: 1000;
         }
         .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-        .nav-brand { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; }
-        .nav-right { display: flex; align-items: center; gap: 1rem; }
-
+        .nav-brand { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+        
         .theme-toggle {
-            padding: 8px 12px; border-radius: 12px; border: 2px solid var(--border);
-            background: var(--surface); cursor: pointer; font-size: 1.2rem;
+            padding: 10px 15px; border-radius: 12px; border: 2px solid var(--border);
+            background: var(--card); color: var(--text); cursor: pointer; font-size: 1.2rem; font-weight: 800;
         }
 
         .auth-wrapper { display: flex; align-items: center; justify-content: center; padding: 4rem 1rem; }
         .auth-card {
-            width: 100%; max-width: 420px; padding: 3rem; background: var(--surface);
-            border-radius: var(--radius); border: 2px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%; max-width: 440px; padding: 3.5rem; background: var(--card);
+            border-radius: 30px; border: 3px solid var(--primary); box-shadow: 0 30px 60px rgba(0,0,0,0.12);
             text-align: center;
         }
 
-        .form-group { text-align: left; margin-bottom: 1.25rem; }
-        .form-label { display: block; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .form-group { text-align: left; margin-bottom: 1.5rem; }
+        .form-label { display: block; font-weight: 800; margin-bottom: 0.5rem; font-size: 0.95rem; }
         .form-input {
-            width: 100%; padding: 0.9rem 1.2rem; border-radius: 14px;
+            width: 100%; padding: 1rem 1.2rem; border-radius: 16px;
             border: 2px solid var(--border); background: var(--bg); color: var(--text);
-            font-family: inherit; font-size: 1rem;
+            font-family: inherit; font-size: 1.1rem;
         }
         .form-input:focus { outline: none; border-color: var(--primary); }
 
         .btn {
-            padding: 0.8rem 1.5rem; border-radius: 14px; font-weight: 700; cursor: pointer;
-            border: none; font-size: 1rem; transition: 0.2s;
+            padding: 1rem 2rem; border-radius: 16px; font-weight: 800; cursor: pointer;
+            border: none; font-size: 1.1rem; width: 100%; transition: 0.2s;
         }
-        .btn-primary { background: var(--primary); color: white; width: 100%; }
-        .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
-        .btn-secondary { background: var(--border); color: var(--text); }
-
-        .auth-switch { margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem; }
-        .auth-switch a { color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: underline; }
+        .btn-primary { background: var(--primary); color: white; margin-top: 1rem; }
+        .btn-primary:hover { transform: scale(1.02); filter: brightness(1.2); }
+        
+        .auth-switch { margin-top: 2rem; color: var(--text-muted); font-size: 1rem; }
+        .auth-switch a { color: var(--primary); font-weight: 800; cursor: pointer; text-decoration: underline; }
 
         .hidden { display: none !important; }
-        .form-error { background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 700; }
+        .form-error { background: #fee2e2; color: #991b1b; padding: 1.2rem; border-radius: 16px; margin-bottom: 2rem; font-weight: 800; border: 2px solid #ef4444; }
 
-        .role-pills { display: flex; gap: 0.5rem; }
+        .role-pills { display: flex; gap: 0.8rem; }
         .role-pill { flex: 1; cursor: pointer; }
         .role-pill input { display: none; }
-        .role-pill-inner { padding: 0.6rem; border: 2px solid var(--border); border-radius: 12px; font-weight: 700; text-align: center; }
+        .role-pill-inner { padding: 0.8rem; border: 2px solid var(--border); border-radius: 16px; font-weight: 800; text-align: center; }
         .role-pill input:checked + .role-pill-inner { border-color: var(--primary); background: var(--primary); color: white; }
 
-        #app-toast { position: fixed; bottom: 2rem; right: 2rem; z-index: 2000; }
-        .toast { padding: 1rem 1.5rem; border-radius: 12px; background: var(--text); color: var(--bg); font-weight: 700; }
+        #app-toast { position: fixed; top: 1rem; right: 1rem; z-index: 2000; }
+        .toast { padding: 1.2rem 2rem; border-radius: 16px; background: var(--primary); color: white; font-weight: 800; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
     <nav>
         <div class="container nav-inner">
-            <a class="nav-brand" href="#/">🏠 Urbanest</a>
-            <div class="nav-right">
+            <a class="nav-brand" href="#/">🏠 URBANEST</a>
+            <div style="display:flex;gap:1rem;align-items:center">
                 <button class="theme-toggle" id="theme-btn">🌙</button>
-                <div id="nav-user-area"></div>
+                <div id="nav-user"></div>
             </div>
         </div>
     </nav>
@@ -116,143 +104,115 @@
     <div id="app-toast"></div>
 
     <script>
-        // ── CORE ENGINE ──
+        // ── UNBREAKABLE CORE ──
         const state = { user: null };
-        const Token = {
-            get: () => localStorage.getItem('ff_jwt'),
-            save: (t) => localStorage.setItem('ff_jwt', t),
-            clear: () => localStorage.removeItem('ff_jwt')
+        const LS = {
+            get: (k) => localStorage.getItem(k),
+            set: (k, v) => localStorage.setItem(k, v),
+            clear: (k) => localStorage.removeItem(k)
         };
 
         const Theme = {
+            init() { this.set(LS.get('ff_theme') || 'light'); },
             set(t) {
                 document.documentElement.setAttribute('data-theme', t);
-                localStorage.setItem('ff_theme', t);
-                document.getElementById('theme-btn').innerHTML = t === 'dark' ? '☀️' : '🌙';
+                LS.set('ff_theme', t);
+                document.getElementById('theme-btn').innerHTML = t === 'dark' ? '☀️ LIGHT' : '🌙 DARK';
             },
-            toggle() {
-                this.set(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-            }
+            toggle() { this.set(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
         };
 
-        async function api(path, options = {}) {
-            const t = Token.get();
-            const init = {
-                method: options.method || 'GET',
-                headers: { ...(t ? { Authorization: `Bearer ${t}` } : {}), 'Content-Type': 'application/json' },
-                ...options
-            };
-            if (options.body) init.body = JSON.stringify(options.body);
+        async function callApi(path, body = null) {
             try {
-                const res = await fetch(path, init);
-                return await res.json();
-            } catch (e) { return { success: false, message: 'Server down' }; }
+                const res = await fetch(path, {
+                    method: body ? 'POST' : 'GET',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${LS.get('ff_jwt')}` },
+                    body: body ? JSON.stringify(body) : null
+                });
+                const data = await res.json();
+                if (data?.data?.token) LS.set('ff_jwt', data.data.token);
+                return data;
+            } catch (e) { return { success: false, message: 'Connection Error' }; }
         }
 
-        function render() {
-            const h = window.location.hash || '#/login';
+        function showPage() {
+            const hash = window.location.hash || '#/login';
             const root = document.getElementById('app-root');
             
-            if (h === '#/signup') {
+            if (hash === '#/signup') {
                 root.innerHTML = `
                     <div class="auth-wrapper">
                         <div class="auth-card">
-                            <h2 style="font-size:2rem;margin-bottom:0.5rem">Join Us</h2>
-                            <p style="color:var(--text-muted);margin-bottom:2rem">Create your account</p>
+                            <h1 style="font-size:2.5rem;margin-bottom:1rem">Welcome</h1>
+                            <p style="color:var(--text-muted);margin-bottom:2rem">Create your premium account</p>
                             <form id="auth-form">
                                 <div id="err" class="form-error hidden"></div>
+                                <div class="form-group"><label class="form-label">Name</label><input class="form-input" name="name" required></div>
                                 <div class="form-group">
-                                    <label class="form-label">Full Name</label>
-                                    <input class="form-input" name="name" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">I am a...</label>
+                                    <label class="form-label">Role</label>
                                     <div class="role-pills">
                                         <label class="role-pill"><input type="radio" name="role" value="tenant" checked><div class="role-pill-inner">Tenant</div></label>
-                                        <label class="role-pill"><input type="radio" name="role" value="owner"><div class="role-pill-inner">Owner</div></label>
+                                        <label class="role-pill"><input type="radio" name="role" value="owner"><div class="role-pill-inner">Landlord</div></label>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Email</label>
-                                    <input class="form-input" type="email" name="email" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Password</label>
-                                    <input class="form-input" type="password" name="password" required>
-                                </div>
-                                <button class="btn btn-primary" type="submit">Create Account</button>
+                                <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" name="email" required></div>
+                                <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" name="password" required></div>
+                                <button class="btn btn-primary" type="submit">JOIN NOW</button>
                             </form>
-                            <p class="auth-switch">Already a member? <a href="#/login">Sign In</a></p>
+                            <p class="auth-switch">Already a member? <a href="#/login">Login here</a></p>
                         </div>
                     </div>`;
-            } else if (h === '#/login') {
+            } else if (hash === '#/login') {
                 root.innerHTML = `
                     <div class="auth-wrapper">
                         <div class="auth-card">
-                            <h2 style="font-size:2rem;margin-bottom:0.5rem">Welcome Back</h2>
-                            <p style="color:var(--text-muted);margin-bottom:2rem">Sign in to your account</p>
+                            <h1 style="font-size:2.5rem;margin-bottom:1rem">Hello</h1>
+                            <p style="color:var(--text-muted);margin-bottom:2rem">Sign in to continue</p>
                             <form id="auth-form">
                                 <div id="err" class="form-error hidden"></div>
-                                <div class="form-group">
-                                    <label class="form-label">Email</label>
-                                    <input class="form-input" type="email" name="email" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Password</label>
-                                    <input class="form-input" type="password" name="password" required>
-                                </div>
-                                <button class="btn btn-primary" type="submit">Sign In</button>
+                                <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" name="email" required></div>
+                                <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" name="password" required></div>
+                                <button class="btn btn-primary" type="submit">LOGIN</button>
                             </form>
-                            <p class="auth-switch">New here? <a href="#/signup">Sign up free</a></p>
+                            <p class="auth-switch">Don't have an account? <a href="#/signup">Sign up free</a></p>
                         </div>
                     </div>`;
             } else {
-                root.innerHTML = `<div class="container" style="padding:4rem"><h1>Dashboard Coming Soon...</h1><p>You are logged in as ${state.user?.name}</p></div>`;
+                root.innerHTML = `<div class="container" style="padding:5rem"><h1>Welcome, ${state.user?.name || 'User'}!</h1><button class="btn btn-primary" style="width:auto" onclick="location.hash='#/login'">Back to Login</button></div>`;
             }
 
             const f = document.getElementById('auth-form');
             if (f) f.onsubmit = async (e) => {
                 e.preventDefault();
-                const btn = f.querySelector('button');
-                btn.disabled = true; btn.innerHTML = 'Wait...';
-                const res = await api(h === '#/signup' ? '/api/signup' : '/api/login', {
-                    method: 'POST',
-                    body: Object.fromEntries(new FormData(f))
-                });
-                if (res.success) {
-                    state.user = res.data.user;
-                    Token.save(res.data.token);
+                const b = f.querySelector('button'); b.disabled = true; b.innerHTML = 'PROCESSING...';
+                const r = await callApi(hash === '#/signup' ? '/api/signup' : '/api/login', Object.fromEntries(new FormData(f)));
+                if (r.success) {
+                    state.user = r.data.user;
                     window.location.hash = '#/dashboard';
                     updateNav();
                 } else {
-                    const eDiv = document.getElementById('err');
-                    eDiv.innerHTML = res.message; eDiv.classList.remove('hidden');
-                    btn.disabled = false; btn.innerHTML = 'Try Again';
+                    const ed = document.getElementById('err'); ed.innerHTML = r.message; ed.classList.remove('hidden');
+                    b.disabled = false; b.innerHTML = 'TRY AGAIN';
                 }
             };
         }
 
         function updateNav() {
-            const area = document.getElementById('nav-user-area');
+            const area = document.getElementById('nav-user');
             if (state.user) {
-                area.innerHTML = `<span>${state.user.name}</span> <button class="btn btn-secondary" onclick="logout()">Logout</button>`;
-            } else {
-                area.innerHTML = '';
-            }
+                area.innerHTML = `<b>${state.user.name}</b> <button onclick="logout()" style="margin-left:1rem;cursor:pointer">Logout</button>`;
+            } else { area.innerHTML = ''; }
         }
 
-        function logout() {
-            Token.clear(); state.user = null; updateNav(); window.location.hash = '#/login';
-        }
+        function logout() { LS.clear('ff_jwt'); state.user = null; updateNav(); window.location.hash = '#/login'; }
 
-        window.onhashchange = render;
+        window.onhashchange = showPage;
         window.onload = async () => {
-            Theme.set(localStorage.getItem('ff_theme') || 'light');
+            Theme.init();
             document.getElementById('theme-btn').onclick = () => Theme.toggle();
-            const res = await api('/api/me');
-            if (res.success) state.user = res.data;
-            updateNav();
-            render();
+            showPage(); // Show page IMMEDIATELY
+            const r = await callApi('/api/me');
+            if (r.success) { state.user = r.data; updateNav(); }
         };
     </script>
 </body>
