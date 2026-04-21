@@ -1,107 +1,131 @@
-<!doctype html>
-<html lang="en" dir="ltr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="FlatFinder — Find and manage rental flats with ease." />
-    <meta name="robots" content="index, follow" />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#1d4ed8" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="FlatFinder" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="FlatFinder" />
-    <meta property="og:description" content="Find and manage rental flats with ease." />
-    <meta property="og:site_name" content="FlatFinder" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlatFinder | Premium Urban Living</title>
+    
+    <!-- ── CACHE KILLER & THEME INITIALIZER ── -->
+    <script>
+        // 1. Kill all old Service Workers immediately
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                for(let reg of regs) reg.unregister();
+            });
+        }
+        // 2. Initialize Theme before CSS to prevent flicker
+        const savedTheme = localStorage.getItem('ff_theme') || 
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
 
-    <!--
-      ── Cloudinary public config ──────────────────────────────────────────────
-      These two <meta> tags are replaced at request time by server.js using
-      process.env values. API_KEY and API_SECRET are NEVER injected here.
-      The upload preset must be set to "Unsigned" in your Cloudinary dashboard.
-      (11a fix) This approach allows the static HTML to pick up runtime environment variables from Railway without needing a bundler.
-    -->
-    <meta name="cloudinary-cloud-name"    content="{{CLOUDINARY_CLOUD_NAME}}">
-    <meta name="cloudinary-upload-preset" content="{{CLOUDINARY_UPLOAD_PRESET}}">
+    <meta name="api-base" content="{{API_BASE}}">
+    
+    <!-- Added ?v=4.0 to force browser to load fresh CSS -->
+    <link rel="stylesheet" href="style.css?v=4.0">
+</head>
+<body>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <title>FlatFinder</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <nav id="app-nav" role="navigation" aria-label="Main navigation"></nav>
-    <main id="app-root" role="main" aria-live="polite" aria-atomic="false"></main>
-    <div id="app-toast" role="status" aria-live="assertive" aria-atomic="true" aria-relevant="additions text"></div>
-    <div id="app-modal" role="dialog" aria-modal="true" aria-label="Dialog" aria-hidden="true"></div>
+    <!-- ── NAVIGATION ── -->
+    <nav id="app-nav"></nav>
 
-    <!-- ── TEMPLATES ────────────────────────────────────────────── -->
+    <!-- ── MAIN CONTENT ── -->
+    <main id="app-root" role="main" aria-live="polite"></main>
+
+    <!-- ── TOAST NOTIFICATIONS ── -->
+    <div id="app-toast"></div>
+
+    <!-- ── AUTH TEMPLATE (Login & Signup) ── -->
     <template id="tmpl-auth">
-      <div class="auth-wrapper">
-        <div class="auth-card">
-          <div class="auth-logo">🏠</div>
-          <h1 class="auth-title">FlatFinder</h1>
-          <p class="auth-sub">{{SUBTEXT}}</p>
-
-          <form id="auth-form" class="auth-form"
-                autocomplete="on"
-                data-mode="{{MODE}}">
-            {{SIGNUP_FIELDS}}
-
-            <div class="form-group">
-              <label class="form-label" for="auth-email">Email</label>
-              <input class="form-input" id="auth-email" name="email" type="email"
-                placeholder="you@example.com"
-                autocomplete="email"
-                spellcheck="false"
-                required />
+        <div class="auth-wrapper">
+            <div class="auth-card glass">
+                <div class="auth-logo">🏠</div>
+                <h1 class="auth-title">FlatFinder</h1>
+                <p class="auth-sub">{{SUBTITLE}}</p>
+                
+                <form id="auth-form" class="auth-form" data-mode="{{MODE}}">
+                    <div id="auth-error" class="form-error hidden"></div>
+                    
+                    {{SIGNUP_FIELDS}}
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="auth-email">Email Address</label>
+                        <input class="form-input" type="email" id="auth-email" name="email" 
+                               placeholder="name@example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="auth-password">Password</label>
+                        <div class="input-wrap">
+                            <input class="form-input" type="password" id="auth-password" name="password" 
+                                   placeholder="Your password" required>
+                            <button type="button" class="input-eye" id="toggle-password" tabindex="-1">👁</button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary btn--full" type="submit" id="auth-submit">
+                        {{SUBMIT_LABEL}}
+                    </button>
+                </form>
+                
+                <p class="auth-switch">
+                    {{SWITCH_TEXT}} <a data-route="{{SWITCH_LINK}}" style="cursor:pointer; font-weight:700;">{{SWITCH_ACTION}}</a>
+                </p>
             </div>
-
-            <div class="form-group">
-              <label class="form-label" for="auth-password">Password</label>
-              <div class="input-wrap">
-                <input class="form-input" id="auth-password" name="password" type="password"
-                  placeholder="{{PASSWORD_PLACEHOLDER}}"
-                  autocomplete="{{PASSWORD_AUTOCOMPLETE}}"
-                  required minlength="6" maxlength="128" />
-                <button type="button" class="input-eye" id="toggle-password"
-                        aria-label="Toggle password visibility">👁</button>
-              </div>
-            </div>
-
-            {{ROLE_FIELDS}}
-
-            <div id="auth-error" class="form-error hidden" role="alert" aria-live="polite"></div>
-
-            <button class="btn btn--primary btn--full" type="submit" id="auth-submit"
-                    data-label="{{SUBMIT_LABEL}}">
-              {{SUBMIT_LABEL}}
-            </button>
-          </form>
-
-          <p class="auth-switch">
-            {{SWITCH_TEXT}} <a href="{{SWITCH_LINK}}" data-route="{{SWITCH_LINK}}">{{SWITCH_ACTION}}</a>
-          </p>
         </div>
-      </div>
     </template>
 
-    <noscript>
-      <p style="text-align:center;padding:2rem;font-family:sans-serif;">
-        FlatFinder requires JavaScript to run. Please enable it in your browser settings.
-      </p>
-    </noscript>
+    <!-- ── SIGNUP EXTRA FIELDS SNIPPET ── -->
+    <template id="tmpl-signup-fields">
+        <div class="form-group">
+            <label class="form-label" for="auth-name">Full Name</label>
+            <input class="form-input" type="text" id="auth-name" name="name" placeholder="John Doe" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label">I am a...</label>
+            <div class="role-pills">
+                <label class="role-pill">
+                    <input type="radio" name="role" value="tenant" checked> 🔑 Tenant
+                </label>
+                <label class="role-pill">
+                    <input type="radio" name="role" value="owner"> 🏘 Landlord
+                </label>
+            </div>
+        </div>
+    </template>
 
-    <!-- Load order is critical — each file depends on the previous -->
-    <!-- (11a fix) ff-core MUST load first to establish globals. app.js MUST load last to boot the router. -->
-    <script src="ff-core.js"></script>
-    <script src="ff-auth.js"></script>
-    <script src="ff-tenant.js"></script>
-    <script src="ff-owner.js"></script>
-    <script src="ff-admin.js"></script>
-    <script src="app.js"></script>
-  </body>
+    <!-- ── DASHBOARD TEMPLATES ── -->
+    <template id="tmpl-tenant-dash">
+        <div class="container page-content">
+            <div class="page-header">
+                <h1>Welcome Home, {{NAME}}</h1>
+                <button class="btn btn-primary" data-route="/tenant/search">🔍 Find a Flat</button>
+            </div>
+            <div id="booking-stats" class="stat-grid mt-lg"></div>
+            <h2 class="mt-xl">My Recent Bookings</h2>
+            <div id="booking-list" class="dashboard-grid"></div>
+        </div>
+    </template>
+
+    <template id="tmpl-owner-dash">
+        <div class="container page-content">
+            <div class="page-header">
+                <h1>Property Manager</h1>
+                <button class="btn btn-primary" data-route="/owner/add-flat">➕ List New Property</button>
+            </div>
+            <div id="owner-stats" class="stat-grid mt-lg"></div>
+            <h2 class="mt-xl">My Properties</h2>
+            <div id="property-list" class="dashboard-grid"></div>
+        </div>
+    </template>
+
+    <!-- Added ?v=4.0 to force browser to load fresh JS -->
+    <script src="ff-core.js?v=4.0"></script>
+    <script src="ff-auth.js?v=4.0"></script>
+    <script src="ff-tenant.js?v=4.0"></script>
+    <script src="ff-owner.js?v=4.0"></script>
+    <script src="ff-admin.js?v=4.0"></script>
+    <script src="app.js?v=4.0"></script>
+
+</body>
 </html>
