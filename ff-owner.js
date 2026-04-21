@@ -50,6 +50,15 @@ const Owner = {
           <form id="add-flat-form">
             <div class="field"><label class="label">TITLE</label><input class="input" name="title" required minlength="5"></div>
             <div class="field mt-sm"><label class="label">CITY</label><input class="input" name="city" required></div>
+            <div class="field mt-sm">
+              <label class="label">TYPE</label>
+              <!-- FIX [13]: Added missing type field -->
+              <select class="input" name="type" required>
+                <option value="Premium Residence">Premium Residence</option>
+                <option value="Studio">Studio</option>
+                <option value="Penthouse">Penthouse</option>
+              </select>
+            </div>
             <div class="field mt-sm"><label class="label">RENT (₹)</label><input class="input" type="number" name="rent" required></div>
             <button type="submit" class="btn btn--primary btn--full mt-lg">Publish Listing</button>
           </form>
@@ -65,7 +74,7 @@ const Owner = {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(e.target));
       data.rent = parseFloat(data.rent);
-      data.type = "Premium Residence";
+      // FIX [13]: Removed hardcoded data.type = "Premium Residence";
       const res = await apiFetch('/api/flats', { method: 'POST', body: data });
       if (res.success) { showToast('Listed!', 'success'); window.location.hash = '#/dashboard'; }
       else showToast(res.message, 'danger');

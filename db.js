@@ -20,13 +20,7 @@ const dbConfig = {
 // RISK: Using a singleton pool is standard, but check env vars if connection fails.
 export const pool = mysql.createPool(dbConfig);
 
-// Fixes: Architectural flaw — Unhandled pool errors can crash the process
-pool.on('error', (err) => {
-  console.error('❌ [db.js] UNEXPECTED POOL ERROR:', err.message);
-  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-    console.log('🔄 [db.js] Attempting to re-initialize pool...');
-  }
-});
+// FIX [6]: Removed invalid pool.on('error') event handler which is unsupported in mysql2
 
 /**
  * Execute a parameterized SQL query.

@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><title>Urbanest | Owner Suite</title><link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urbanest | Owner Suite</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <nav id="app-nav"></nav><main id="app-root"></main><div id="app-toast"></div>
     <template id="tmpl-auth">
         <div class="card auth-card" style="max-width: 440px; margin: 80px auto; text-align: center">
-            <h1>Owner Login</h1><p class="text-muted">Manage your premium listings</p>
+            <h1>{{title}}</h1><p class="text-muted">{{sub}}</p>
             <form id="auth-form" class="mt-lg">
                 <input class="input mt-sm" type="email" name="email" placeholder="Email" required style="width:100%">
                 <input class="input mt-sm" type="password" name="password" placeholder="Password" required style="width:100%">

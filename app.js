@@ -50,7 +50,8 @@ const App = {
         if (!path.includes(routes[role])) window.location.href = routes[role];
       }
     } catch (err) {
-      logger.error('Routing failed', err.message);
+      // FIX [3]: Replace backend logger with console.error
+      console.error('Routing failed:', err.message);
     }
   }
 };

@@ -1,20 +1,18 @@
 // sw.js — Final Production Service Worker (v17)
 // Fixes: Bug #8 — Network-first for API routes
 
-const CACHE_NAME = 'urbanest-v17';
+const CACHE_NAME = 'urbanest-v17.1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/tenant',
-  '/owner',
-  '/admin',
   '/style.css',
   '/ff-core.js',
   '/ff-auth.js',
   '/ff-tenant.js',
   '/ff-owner.js',
   '/ff-admin.js',
-  '/app.js'
+  '/app.js',
+  '/landing.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -36,15 +34,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Fixes: Bug #8 — Never cache mutations
   if (event.request.method !== 'GET') return;
 
-  // Fixes: Bug #8 — Network-first for API (always fresh)
-  if (url.pathname.startsWith('/api/')) {
+  // FIX [8]: Network-only or Network-first for portal routes to prevent stale auth state
+  const isPortalRoute = ['/tenant', '/owner', '/admin'].includes(url.pathname);
+
+  if (url.pathname.startsWith('/api/') || isPortalRoute) {
     event.respondWith(
       fetch(event.request)
         .then((r) => {
-          if (r.ok) {
+          if (r.ok && !isPortalRoute) { // don't cache portal html
             const clone = r.clone();
             caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
           }

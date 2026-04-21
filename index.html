@@ -18,21 +18,7 @@
             <a href="/tenant#/login" class="btn btn--primary btn--sm">Join Now</a>
         </div>
     </nav>
-    <script>
-        const savedTheme = localStorage.getItem('ff_theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        const themeBtn = document.getElementById('btn-theme-landing');
-        if (themeBtn) {
-            themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-            themeBtn.addEventListener('click', () => {
-                const current = document.documentElement.getAttribute('data-theme');
-                const next = current === 'dark' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', next);
-                localStorage.setItem('ff_theme', next);
-                themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
-            });
-        }
-    </script>
+    <script src="landing.js"></script>
 
     <main class="container mt-lg" style="text-align: center; max-width: 850px; margin: 6rem auto">
         <h1 style="font-size: 4rem; font-weight: 900; margin-bottom: 1.5rem; letter-spacing: -2px">Luxury Living, Simplified.</h1>
