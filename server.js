@@ -885,80 +885,35 @@ app.use((err, req, res, _next) => {
   return fail(res, IS_PROD ? 'Internal server error.' : err.message, 500);
 });
 
-// ── START (CLUSTERED) ─────────────────────────────────────────────
-if (cluster.isPrimary && IS_PROD) {
-  const numCPUs = os.cpus().length;
-  console.log('');
-  console.log('╔══════════════════════════════════════════════╗');
-  console.log(`║  🏠  FlatFinder API  —  port ${PORT}              ║`);
-  console.log(`║  ENV: ${IS_PROD ? 'production ' : 'development'}                        ║`);
-  console.log(`║  CLUSTERING: Active (${numCPUs} Workers)                ║`);
-  console.log('╚══════════════════════════════════════════════╝');
-  console.log(`[server.js] Cloudinary cloud : ${CLOUD_NAME || "❌ NOT SET"}`);
-  console.log(`[server.js] Cloudinary preset: ${UPLOAD_PRESET || "❌ NOT SET"}`);
-  console.log('');
-  console.log(`[Master] Primary ${process.pid} is running`);
+// ── START (SINGLE PROCESS) ──────────────────────────────────────────
+// Note: Disabling clustering for better stability in cloud environments
+console.log('');
+console.log('╔══════════════════════════════════════════════╗');
+console.log(`║  🏠  FlatFinder API  —  port ${PORT}              ║`);
+console.log(`║  ENV: ${IS_PROD ? 'production ' : 'development'}                        ║`);
+console.log('╚══════════════════════════════════════════════╝');
+console.log(`[server.js] Cloudinary cloud : ${CLOUD_NAME || "❌ NOT SET"}`);
+console.log(`[server.js] Cloudinary preset: ${UPLOAD_PRESET || "❌ NOT SET"}`);
+console.log('');
 
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
+const server = app.listen(PORT, '0.0.0.0', async () => {
+  await validateConnection();
+  console.log(`[server.js] ✅ Server ready on port ${PORT}`);
+});
 
-  cluster.on('exit', (worker, code, signal) => {
-    console.warn(`[Master] Worker ${worker.process.pid} died. Restarting...`);
-    cluster.fork();
-  });
-
-  const shutdown = () => {
-    console.log('[Master] Shutting down workers gracefully...');
-    for (const id in cluster.workers) {
-      cluster.workers[id].process.kill('SIGTERM');
-    }
+const gracefulExit = () => {
+  console.log('[server.js] Shutting down gracefully...');
+  server.close(async () => {
+    try {
+      await pool.end();
+      console.log('[server.js] Closed MySQL pool.');
+    } catch (err) {}
     process.exit(0);
-  };
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  });
+  setTimeout(() => process.exit(1), 5000);
+};
 
-} else {
-  const server = app.listen(PORT, '0.0.0.0', async () => {
-    // Only log and validate DB on first worker (or in single-process dev mode)
-    const isFirstWorker = !cluster.isWorker || cluster.worker?.id === 1;
-    if (isFirstWorker) {
-      if (!IS_PROD) {
-        console.log('');
-        console.log('╭────────────────────────────────────────────╮');
-        console.log(`│  🏠  FlatFinder API  —  http://localhost:${PORT}  │`);
-        console.log('╰────────────────────────────────────────────╯');
-        logger.info(`Cloudinary cloud : ${CLOUD_NAME || '❌ NOT SET'}`);
-        logger.info(`Cloudinary preset: ${UPLOAD_PRESET || '❌ NOT SET'}`);
-      }
-      await validateConnection();
-      if (IS_PROD) {
-        logger.info(`Worker ${process.pid} ready on port ${PORT}`);
-      }
-    }
-  }); // end app.listen callback
-
-  const gracefulExit = () => {
-    logger.info(`[Worker ${process.pid}] Shutting down gracefully...`);
-    server.close(async () => {
-      logger.info(`[Worker ${process.pid}] Closed HTTP connections.`);
-      try {
-        await pool.end();
-        logger.info(`[Worker ${process.pid}] Closed MySQL pool.`);
-      } catch (err) {
-        logger.error(`[Worker ${process.pid}] Error closing MySQL pool: ${err.message}`);
-      }
-      process.exit(0);
-    });
-
-    // Force exit if graceful close takes too long (Railway SIGTERM timeout is 10s)
-    setTimeout(() => {
-      logger.warn(`[Worker ${process.pid}] Forced shutdown after timeout.`);
-      process.exit(1);
-    }, 8000);
-  };
-  process.on('SIGINT',  gracefulExit);
-  process.on('SIGTERM', gracefulExit);
-}
+process.on('SIGINT',  gracefulExit);
+process.on('SIGTERM', gracefulExit);
 
 export default app;
