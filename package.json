@@ -28,7 +28,8 @@
     "morgan": "^1.10.1",
     "mysql2": "^3.9.7",
     "winston": "^3.19.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "cloudinary": "^2.5.0"
   },
   "keywords": ["flatfinder", "rental", "real-estate", "express", "mysql"],
   "author": "FlatFinder Team",
