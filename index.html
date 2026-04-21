@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlatFinder | System Unlocked v9.0</title>
+    <title>FlatFinder | Premium Urbanest</title>
     <style>
-        /* ── SYSTEM UNLOCKED V9.0 CSS ── */
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&display=swap');
+        /* ── GRAND FINALE CSS ── */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap');
 
         :root {
             --primary: #2563eb;
-            --emergency: #dc2626;
             --bg: #f8fafc;
             --card: #ffffff;
             --text: #0f172a;
+            --text-muted: #64748b;
             --border: #e2e8f0;
+            --radius: 24px;
         }
 
         [data-theme="dark"] {
             --bg: #020617;
             --card: #1e293b;
             --text: #f8fafc;
+            --text-muted: #94a3b8;
             --border: #334155;
             --primary: #3b82f6;
         }
@@ -31,26 +33,14 @@
             background-color: var(--bg);
             color: var(--text);
             min-height: 100vh;
-        }
-
-        /* EMERGENCY STATUS BANNER */
-        .status-banner {
-            background: var(--emergency);
-            color: white;
-            text-align: center;
-            padding: 10px;
-            font-weight: 900;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+            transition: 0.3s;
         }
 
         nav {
             height: 80px; background: var(--card); border-bottom: 3px solid var(--primary);
-            display: flex; align-items: center; justify-content: center;
-            position: sticky; top: 0; z-index: 1000;
+            display: flex; align-items: center; position: sticky; top: 0; z-index: 1000;
         }
-        .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 1100px; padding: 0 1.5rem; }
+        .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 1200px; padding: 0 1.5rem; margin: 0 auto; }
         .logo { font-size: 1.8rem; font-weight: 900; color: var(--primary); text-decoration: none; }
         
         .theme-btn {
@@ -58,96 +48,74 @@
             background: var(--card); color: var(--text); cursor: pointer; font-weight: 800;
         }
 
-        .main { display: flex; align-items: center; justify-content: center; padding: 4rem 1rem; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
         
+        /* CARDS & GRID */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; margin-top: 2rem; }
         .card {
-            width: 100%; max-width: 440px; padding: 3.5rem; background: var(--card);
-            border-radius: 35px; border: 2px solid var(--border); box-shadow: 0 30px 60px rgba(0,0,0,0.1);
-            text-align: center;
+            background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+            padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: 0.3s;
         }
+        .flat-card { overflow: hidden; padding: 0; cursor: pointer; }
+        .flat-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .flat-img { width: 100%; height: 200px; background: #cbd5e1; object-fit: cover; }
+        .flat-body { padding: 1.5rem; }
 
-        .h1 { font-size: 2.4rem; font-weight: 900; margin-bottom: 1rem; }
-        
-        .field { text-align: left; margin-bottom: 1.5rem; }
-        .label { display: block; font-weight: 800; margin-bottom: 0.5rem; color: var(--text); }
-        .input {
-            width: 100%; padding: 1.1rem; border-radius: 18px;
-            border: 2px solid var(--border); background: var(--bg); color: var(--text);
-            font-family: inherit; font-size: 1.1rem;
-        }
-        .input:focus { outline: none; border-color: var(--primary); }
-
+        /* BUTTONS */
         .btn {
-            width: 100%; padding: 1.1rem; border-radius: 18px; font-weight: 900;
-            cursor: pointer; border: none; font-size: 1.2rem; background: var(--primary); color: white;
-            transition: 0.2s;
+            padding: 1rem 2rem; border-radius: 16px; font-weight: 800; cursor: pointer;
+            border: none; font-size: 1.1rem; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center;
         }
-        .btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--border); color: var(--text); }
 
-        .switch { margin-top: 2rem; font-weight: 700; color: #64748b; }
-        .switch span { color: var(--primary); cursor: pointer; text-decoration: underline; }
+        /* AUTH */
+        .auth-card { max-width: 440px; margin: 5rem auto; text-align: center; }
+        .field { text-align: left; margin-bottom: 1.5rem; }
+        .label { display: block; font-weight: 800; margin-bottom: 0.5rem; }
+        .input { width: 100%; padding: 1.1rem; border-radius: 16px; border: 2px solid var(--border); background: var(--bg); color: var(--text); font-family: inherit; }
 
-        .error { background: #fee2e2; color: #991b1b; padding: 1.2rem; border-radius: 18px; margin-bottom: 2rem; font-weight: 800; border: 2px solid #ef4444; }
         .hidden { display: none !important; }
+        .error { background: #fee2e2; color: #991b1b; padding: 1.2rem; border-radius: 16px; margin-bottom: 2rem; font-weight: 800; border: 2px solid #ef4444; }
+
+        /* BADGES */
+        .badge { padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 800; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
     </style>
 </head>
 <body>
 
-    <div class="status-banner">SYSTEM UPDATED - V9.0 (UNLOCKED)</div>
-
     <nav>
         <div class="nav-inner">
-            <a class="logo" href="/">🏠 URBANEST</a>
+            <a class="logo" href="#/">🏠 URBANEST</a>
             <div style="display:flex; gap:1rem; align-items:center;">
+                <div id="nav-links" style="display:flex; gap:1rem;"></div>
                 <button class="theme-btn" onclick="toggleTheme()" id="t-btn">🌙 DARK</button>
-                <div id="u-nav"></div>
+                <div id="u-area"></div>
             </div>
         </div>
     </nav>
 
-    <div class="main" id="m">
-        <div class="card">
-            <h1 class="h1" id="title">WELCOME</h1>
-            <p style="margin-bottom:2.5rem;color:#64748b;font-weight:700">Premium Housing Solution</p>
-            
-            <form id="auth-f">
-                <div id="err" class="error hidden"></div>
-                
-                <div id="s-fields" class="hidden">
-                    <div class="field">
-                        <label class="label">NAME</label>
-                        <input class="input" name="name" id="n-field">
-                    </div>
-                    <div class="field">
-                        <label class="label">ROLE</label>
-                        <select class="input" name="role">
-                            <option value="tenant">TENANT</option>
-                            <option value="owner">LANDLORD</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="label">EMAIL</label>
-                    <input class="input" type="email" name="email" required>
-                </div>
-                
-                <div class="field">
-                    <label class="label">PASSWORD</label>
-                    <input class="input" type="password" name="password" required>
-                </div>
-                
-                <button class="btn" type="submit" id="submit-b">SIGN IN</button>
-            </form>
-            
-            <p class="switch" id="sw-p">
-                New here? <span onclick="go('signup')">Create account</span>
-            </p>
-        </div>
-    </div>
+    <main id="app"></main>
 
     <script>
-        let mode = 'login';
+        // ── CORE STATE & ENGINE ──
+        let state = { user: null, flats: [], bookings: [] };
+        
+        const API = {
+            get: async (p) => {
+                const r = await fetch(p, { headers: { 'Authorization': `Bearer ${localStorage.getItem('ff_j')}` } });
+                return r.json();
+            },
+            post: async (p, b) => {
+                const r = await fetch(p, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('ff_j')}` },
+                    body: JSON.stringify(b)
+                });
+                return r.json();
+            }
+        };
 
         function toggleTheme() {
             const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
@@ -156,52 +124,159 @@
             document.getElementById('t-btn').innerHTML = t === 'dark' ? '☀️ LIGHT' : '🌙 DARK';
         }
 
-        if (localStorage.getItem('ff_t') === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            document.getElementById('t-btn').innerHTML = '☀️ LIGHT';
+        // ── VIEWS ──
+        function viewLogin() {
+            return `
+            <div class="container">
+                <div class="card auth-card">
+                    <h1 style="font-size:2.5rem;margin-bottom:1rem">Welcome</h1>
+                    <p style="color:var(--text-muted);margin-bottom:3rem">Sign in to your premium account</p>
+                    <form onsubmit="handleAuth(event, 'login')">
+                        <div id="err" class="error hidden"></div>
+                        <div class="field"><label class="label">Email</label><input class="input" type="email" name="email" required></div>
+                        <div class="field"><label class="label">Password</label><input class="input" type="password" name="password" required></div>
+                        <button class="btn btn-primary" style="width:100%" type="submit">SIGN IN</button>
+                    </form>
+                    <p style="margin-top:2rem">New here? <a href="#/signup" style="color:var(--primary);font-weight:800">Create account</a></p>
+                </div>
+            </div>`;
         }
 
-        function go(m) {
-            mode = m;
-            document.getElementById('title').innerHTML = m === 'signup' ? 'JOIN US' : 'WELCOME';
-            document.getElementById('s-fields').className = m === 'signup' ? '' : 'hidden';
-            document.getElementById('submit-b').innerHTML = m === 'signup' ? 'CREATE ACCOUNT' : 'SIGN IN';
-            document.getElementById('sw-p').innerHTML = m === 'signup' ? 
-                'Already a member? <span onclick="go(\'login\')">Sign in</span>' : 
-                'New here? <span onclick="go(\'signup\')">Create account</span>';
-            document.getElementById('n-field').required = (m === 'signup');
+        function viewSignup() {
+            return `
+            <div class="container">
+                <div class="card auth-card">
+                    <h1 style="font-size:2.5rem;margin-bottom:1rem">Join Us</h1>
+                    <p style="color:var(--text-muted);margin-bottom:3rem">Create your property profile</p>
+                    <form onsubmit="handleAuth(event, 'signup')">
+                        <div id="err" class="error hidden"></div>
+                        <div class="field"><label class="label">Full Name</label><input class="input" name="name" required></div>
+                        <div class="field">
+                            <label class="label">Role</label>
+                            <select class="input" name="role"><option value="tenant">Tenant</option><option value="owner">Owner</option></select>
+                        </div>
+                        <div class="field"><label class="label">Email</label><input class="input" type="email" name="email" required></div>
+                        <div class="field"><label class="label">Password</label><input class="input" type="password" name="password" required></div>
+                        <button class="btn btn-primary" style="width:100%" type="submit">CREATE ACCOUNT</button>
+                    </form>
+                    <p style="margin-top:2rem">Already a member? <a href="#/login" style="color:var(--primary);font-weight:800">Sign in</a></p>
+                </div>
+            </div>`;
         }
 
-        document.getElementById('auth-f').onsubmit = async (e) => {
+        async function viewDashboard() {
+            if (!state.user) return viewLogin();
+            const res = await API.get('/api/bookings');
+            const bookings = res.success ? res.data : [];
+            
+            return `
+            <div class="container">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3rem">
+                    <h1 style="font-size:2.5rem;font-weight:900">Hello, ${state.user.name}</h1>
+                    ${state.user.role === 'tenant' ? `<button class="btn btn-primary" onclick="location.hash='#/search'">🔍 Search Flats</button>` : ''}
+                </div>
+                
+                <h2 style="font-size:1.8rem;margin-bottom:1.5rem">My Recent Bookings</h2>
+                <div class="grid">
+                    ${bookings.length ? bookings.map(b => `
+                        <div class="card">
+                            <h3 style="margin-bottom:0.5rem">${b.flat_title}</h3>
+                            <p style="color:var(--text-muted);margin-bottom:1rem">${b.city} — ${b.type}</p>
+                            <span class="badge badge-blue">${b.status.toUpperCase()}</span>
+                        </div>
+                    `).join('') : '<p>No bookings found yet.</p>'}
+                </div>
+            </div>`;
+        }
+
+        async function viewSearch() {
+            const res = await API.get('/api/flats');
+            const flats = res.success ? res.data : [];
+            return `
+            <div class="container">
+                <h1 style="font-size:2.5rem;font-weight:900;margin-bottom:2rem">Available Properties</h1>
+                <div class="grid">
+                    ${flats.map(f => `
+                        <div class="card flat-card">
+                            <img src="${f.images?.[0] || 'https://via.placeholder.com/400x250'}" class="flat-img">
+                            <div class="flat-body">
+                                <h3 style="margin-bottom:0.5rem">${f.title}</h3>
+                                <p style="color:var(--text-muted);margin-bottom:1rem">${f.city} — ${f.type}</p>
+                                <div style="display:flex;justify-content:space-between;align-items:center">
+                                    <span style="font-size:1.3rem;font-weight:900;color:var(--primary)">₹${f.rent}</span>
+                                    <button class="btn btn-secondary" style="padding:0.5rem 1rem;font-size:0.9rem" onclick="bookFlat('${f.id}')">Book Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
+        // ── HANDLERS ──
+        async function handleAuth(e, mode) {
             e.preventDefault();
-            const btn = document.getElementById('submit-b');
+            const btn = e.target.querySelector('button');
             const err = document.getElementById('err');
             const data = Object.fromEntries(new FormData(e.target));
+            
+            btn.disabled = true; btn.innerHTML = "Working...";
+            err.classList.add('hidden');
 
-            btn.disabled = true; btn.innerHTML = "PROCESSING...";
-            err.className = 'error hidden';
-
-            try {
-                const r = await fetch('/api/' + mode, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const res = await r.json();
-                
-                if (res.success) {
-                    localStorage.setItem('ff_j', res.data.token);
-                    document.getElementById('m').innerHTML = `<div style="text-align:center"><h1>WELCOME, ${res.data.user.name}!</h1><p>Logging you in...</p><button class="btn" onclick="location.reload()" style="width:auto;margin-top:2rem">Refresh Dashboard</button></div>`;
-                } else {
-                    err.innerHTML = res.message;
-                    err.className = 'error';
-                    btn.disabled = false; btn.innerHTML = mode === 'signup' ? "CREATE ACCOUNT" : "SIGN IN";
-                }
-            } catch (e) {
-                err.innerHTML = "Connection failed.";
-                err.className = 'error';
-                btn.disabled = false; btn.innerHTML = "TRY AGAIN";
+            const res = await API.post('/api/' + mode, data);
+            if (res.success) {
+                localStorage.setItem('ff_j', res.data.token);
+                state.user = res.data.user;
+                location.hash = '#/dashboard';
+                updateNav();
+            } else {
+                err.innerHTML = res.message; err.classList.remove('hidden');
+                btn.disabled = false; btn.innerHTML = mode === 'login' ? "SIGN IN" : "CREATE ACCOUNT";
             }
+        }
+
+        async function bookFlat(id) {
+            const checkIn = new Date().toISOString().split('T')[0];
+            const checkOut = new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0];
+            const res = await API.post('/api/bookings', { flat_id: id, check_in: checkIn, check_out: checkOut });
+            alert(res.message);
+            if (res.success) location.hash = '#/dashboard';
+        }
+
+        function updateNav() {
+            const area = document.getElementById('u-area');
+            const links = document.getElementById('nav-links');
+            if (state.user) {
+                links.innerHTML = `<a href="#/dashboard" style="color:var(--text);text-decoration:none;font-weight:700">Dashboard</a>
+                                  ${state.user.role === 'tenant' ? `<a href="#/search" style="color:var(--text);text-decoration:none;font-weight:700">Search</a>` : ''}`;
+                area.innerHTML = `<b>${state.user.name}</b> <a onclick="logout()" style="margin-left:1rem;cursor:pointer;color:var(--primary)">Logout</a>`;
+            } else {
+                links.innerHTML = ''; area.innerHTML = '';
+            }
+        }
+
+        function logout() { localStorage.removeItem('ff_j'); state.user = null; updateNav(); location.hash = '#/login'; }
+
+        // ── ROUTER ──
+        async function navigate() {
+            const h = window.location.hash || '#/login';
+            const app = document.getElementById('app');
+            
+            if (h === '#/signup') app.innerHTML = viewSignup();
+            else if (h === '#/login') app.innerHTML = viewLogin();
+            else if (h === '#/search') app.innerHTML = await viewSearch();
+            else if (h === '#/dashboard') app.innerHTML = await viewDashboard();
+            else app.innerHTML = await viewDashboard();
+            
+            updateNav();
+        }
+
+        window.onhashchange = navigate;
+        window.onload = async () => {
+            if (localStorage.getItem('ff_t') === 'dark') toggleTheme();
+            const res = await API.get('/api/me');
+            if (res.success) state.user = res.data;
+            navigate();
         };
     </script>
 </body>
