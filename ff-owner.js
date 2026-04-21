@@ -2,12 +2,13 @@
 // Fixes: Bug #6 — Removed inline onclick
 
 const Owner = {
-  async init(signal) {
-    if (window.location.hash === '#/add-flat') await this.viewAddFlat(signal);
-    else await this.viewDashboard(signal);
+  // FIX [7]: Renamed init to route
+  async route() {
+    if (window.location.hash === '#/add-flat') await this.viewAddFlat();
+    else await this.viewDashboard();
   },
 
-  async viewDashboard(signal) {
+  async viewDashboard() {
     const [fRes, bRes] = await Promise.all([apiFetch('/api/flats'), apiFetch('/api/bookings')]);
     const flats = fRes.success ? fRes.data : [];
     const bookings = bRes.success ? bRes.data : [];
@@ -25,11 +26,16 @@ const Owner = {
         <h2 class="mt-lg">Manage Bookings</h2>
         <div class="grid mt-sm">
           ${bookings.map(b => `
-            <div class="card" data-id="${escHtml(b.id)}">
+            <div class="card" data-id="${escHtml(String(b.id))}">
               <div class="flex-between">
                 <h3 class="stat-card__label">${escHtml(b.flat_title)}</h3>
-                <span class="badge badge--neutral">${b.status}</span>
+                <!-- FIX [24]: Sanitized enum field -->
+                <span class="badge badge--neutral">${escHtml(String(b.status))}</span>
               </div>
+              <!-- FIX [12]: Added check-in, check-out, and tenant id to owner bookings -->
+              <p class="text-muted mt-sm">Tenant ID: ${escHtml(String(b.tenant_id))}</p>
+              <p class="text-muted mt-sm">Check-in: ${new Date(b.check_in).toLocaleDateString()}</p>
+              <p class="text-muted mt-sm">Check-out: ${new Date(b.check_out).toLocaleDateString()}</p>
               <div class="mt-lg flex-between">
                 <button class="btn btn--primary btn--sm btn-confirm">Confirm</button>
                 <button class="btn btn--danger btn--sm btn-cancel">Cancel</button>
@@ -39,10 +45,10 @@ const Owner = {
         </div>
       </div>
     `);
-    this.bindEvents(signal);
+    this.bindEvents();
   },
 
-  async viewAddFlat(signal) {
+  async viewAddFlat() {
     await render(`
       <div class="container">
         <div class="page-header"><h1 class="page-title">New Listing</h1></div>
@@ -65,10 +71,13 @@ const Owner = {
         </div>
       </div>
     `);
-    this.bindEvents(signal);
+    this.bindEvents();
   },
 
-  bindEvents(signal) {
+  bindEvents() {
+    // FIX [5], [20]: Extract signal AFTER await render completes
+    const { signal } = appState.activeController;
+
     // Property Creation
     document.getElementById('add-flat-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -87,7 +96,7 @@ const Owner = {
           const id = e.target.closest('.card').dataset.id;
           const status = e.target.classList.contains('btn-confirm') ? 'confirmed' : 'cancelled';
           const res = await apiFetch(`/api/bookings/${id}`, { method: 'PATCH', body: { status } });
-          if (res.success) { showToast(`Booking ${status}`); await this.viewDashboard(signal); }
+          if (res.success) { showToast(`Booking ${status}`); await this.viewDashboard(); }
           else showToast(res.message, 'danger');
         }, { signal });
       });

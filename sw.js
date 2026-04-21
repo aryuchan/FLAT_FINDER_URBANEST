@@ -1,10 +1,13 @@
 // sw.js — Final Production Service Worker (v17)
 // Fixes: Bug #8 — Network-first for API routes
 
-const CACHE_NAME = 'urbanest-v17.1';
+const CACHE_NAME = 'urbanest-v17.2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/tenant_index.html',
+  '/owner_index.html',
+  '/admin_index.html',
   '/style.css',
   '/ff-core.js',
   '/ff-auth.js',

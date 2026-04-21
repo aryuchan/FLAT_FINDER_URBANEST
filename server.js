@@ -27,6 +27,12 @@ const PORT    = process.env.PORT || 3000;
 const SECRET  = process.env.JWT_SECRET;
 const IS_PROD = process.env.NODE_ENV === 'production';
 
+// FIX [4]: Add startup guard for JWT_SECRET
+if (!SECRET) {
+  logger.error('JWT_SECRET missing');
+  process.exit(1);
+}
+
 // FIX [10]: Removed flatCache to fix multi-instance deploy issues. Will use Cache-Control.
 
 // ── SECURITY MIDDLEWARE ──
@@ -151,9 +157,9 @@ app.patch('/api/users/:id', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Forbidden' });
     const { status } = req.body;
-    // FIX [12]: Persist status to database (assuming a 'status' column exists, or simulate for now)
-    // await query('UPDATE users SET status = ? WHERE id = ?', [status, req.params.id]);
-    res.status(501).json({ success: false, message: 'Not Implemented' });
+    // FIX [11]: Fully implement user suspension (updating status column)
+    await query('UPDATE users SET status = ? WHERE id = ?', [status, req.params.id]);
+    res.json({ success: true, message: `User status updated to ${status}` });
   } catch (err) {
     logger.error('Update user error', err.message);
     res.status(500).json({ success: false, message: 'Update failed' });
@@ -172,6 +178,11 @@ app.post('/api/flats', authenticate, async (req, res) => {
 
 app.get('/api/flats', authenticate, async (req, res) => {
   try {
+    // FIX [8]: Admin gets all flats
+    if (req.user.role === 'admin') {
+      const data = await query('SELECT id, title, city, rent, type, available FROM flats');
+      return res.json({ success: true, data });
+    }
     if (req.user.role === 'owner') {
       const data = await query('SELECT id, title, city, rent, type, available FROM flats WHERE owner_id = ?', [req.user.id]);
       return res.json({ success: true, data });
@@ -255,6 +266,13 @@ app.use(express.static(__dirname, { maxAge: '1h' }));
 app.use('/tenant', (req, res) => res.sendFile(path.join(__dirname, 'tenant_index.html')));
 app.use('/owner',  (req, res) => res.sendFile(path.join(__dirname, 'owner_index.html')));
 app.use('/admin',  (req, res) => res.sendFile(path.join(__dirname, 'admin_index.html')));
+
+// FIX [23]: Ensure SPA fallback only catches non-asset routes (404 for missing files)
+app.use((req, res, next) => {
+  if (req.path.includes('.')) return res.status(404).send('Not found');
+  next();
+});
+
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.listen(PORT, async () => {

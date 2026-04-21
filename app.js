@@ -41,9 +41,9 @@ const App = {
 
     // Route Execution
     try {
-      if (role === 'tenant' && isTenant) await Tenant.init(appState.activeController.signal);
-      else if (role === 'owner' && isOwner) await Owner.init(appState.activeController.signal);
-      else if (role === 'admin' && isAdmin) await Admin.init(appState.activeController.signal);
+      if (role === 'tenant' && isTenant) await Tenant.route();
+      else if (role === 'owner' && isOwner) await Owner.route();
+      else if (role === 'admin' && isAdmin) await Admin.route();
       else {
         // Fallback to role-specific dashboard
         const routes = { tenant: '/tenant', owner: '/owner', admin: '/admin' };

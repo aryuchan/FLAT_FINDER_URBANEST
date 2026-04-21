@@ -2,12 +2,13 @@
 // Fixes: Bug #6 — Removed inline onclick and hardcoded dates
 
 const Tenant = {
-  async init(signal) {
-    if (window.location.hash === '#/search') await this.viewSearch(signal);
-    else await this.viewDashboard(signal);
+  // FIX [7]: Renamed init to route
+  async route() {
+    if (window.location.hash === '#/search') await this.viewSearch();
+    else await this.viewDashboard();
   },
 
-  async viewDashboard(signal) {
+  async viewDashboard() {
     const res = await apiFetch('/api/bookings');
     appState.bookings = res.success ? res.data : [];
 
@@ -21,17 +22,20 @@ const Tenant = {
           ${appState.bookings.map(b => `
             <div class="card">
               <h3 class="stat-card__label">${escHtml(b.flat_title || 'Flat')}</h3>
+              <!-- FIX [13]: Added check-out date display -->
               <p class="text-muted mt-sm">Check-in: ${new Date(b.check_in).toLocaleDateString()}</p>
-              <span class="badge badge--success mt-sm">${b.status}</span>
+              <p class="text-muted mt-sm">Check-out: ${new Date(b.check_out).toLocaleDateString()}</p>
+              <!-- FIX [24]: Sanitized enum field -->
+              <span class="badge badge--success mt-sm">${escHtml(String(b.status))}</span>
             </div>
           `).join('')}
         </div>
       </div>
     `);
-    this.bindEvents(signal);
+    this.bindEvents();
   },
 
-  async viewSearch(signal) {
+  async viewSearch() {
     const res = await apiFetch('/api/flats');
     appState.flats = res.success ? res.data : [];
 
@@ -40,10 +44,11 @@ const Tenant = {
         <div class="page-header"><h1 class="page-title">Available Inventory</h1></div>
         <div class="flat-grid mt-lg">
           ${appState.flats.map(f => `
-            <div class="card flat-card" data-id="${escHtml(f.id)}">
+            <div class="card flat-card" data-id="${escHtml(String(f.id))}">
               <div class="flat-body">
                 <h3 class="mt-sm">${escHtml(f.title)}</h3>
-                <p class="text-muted">${escHtml(f.city)} — ₹${f.rent}</p>
+                <!-- FIX [24]: Sanitized numeric field -->
+                <p class="text-muted">${escHtml(f.city)} — ₹${escHtml(String(f.rent))}</p>
                 <div class="mt-lg">
                   <label class="label">Check-in</label>
                   <input type="date" class="input input-in" value="${new Date().toISOString().split('T')[0]}">
@@ -57,10 +62,13 @@ const Tenant = {
         </div>
       </div>
     `);
-    this.bindEvents(signal);
+    this.bindEvents();
   },
 
-  bindEvents(signal) {
+  bindEvents() {
+    // FIX [5], [20]: Extract signal AFTER await render completes
+    const { signal } = appState.activeController;
+
     // Fixes: Bug #6 — Event delegation for booking
     document.querySelectorAll('.btn-book').forEach(btn => {
       btn.addEventListener('click', async (e) => {

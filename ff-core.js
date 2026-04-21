@@ -6,17 +6,20 @@ const logger = {
   error: (...a) => console.error('[ERR]', ...a)
 };
 
-const appState = Object.seal({
+const appState = {
   currentUser: null,
   flats: [],
   bookings: [],
   activeController: new AbortController()
-});
+};
 
 /**
  * Fixes: Bug #1 — apiFetch stringifies body
  */
 async function apiFetch(url, opts = {}) {
+  // FIX [14]: Added simple loading state
+  if (opts.method && opts.method !== 'GET') showToast('Loading...', 'info');
+
   const token = localStorage.getItem('ff_token');
   const headers = {
     'Content-Type': 'application/json',
@@ -53,8 +56,11 @@ async function render(html) {
   // Fixes: Architecture — Ensure assignment is atomic and awaitable
   return new Promise((resolve) => {
     root.innerHTML = html;
-    renderNavBar();
-    resolve();
+    // FIX [22]: requestAnimationFrame ensures DOM paints before event listeners attach
+    requestAnimationFrame(() => {
+      renderNavBar();
+      resolve();
+    });
   });
 }
 
