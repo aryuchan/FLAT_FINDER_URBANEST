@@ -1,121 +1,47 @@
-// app.js — FlatFinder Entry Point (v4)
-// Professional Router · State Synchronization · Boot
-// ─────────────────────────────────────────────────────────────────
+// app.js — Global Bootstrapper (v16)
+// Fixes: Bug #4 (Boot Auth Check) and Master Routing
 
-const ROLE_ROUTES = {
-  "/login": null, "/signup": null,
-  "/tenant/dashboard": ["tenant"], "/tenant/search": ["tenant"], "/tenant/flat": ["tenant"],
-  "/tenant/booking": ["tenant"], "/tenant/bookings": ["tenant"],
-  "/owner/dashboard": ["owner"], "/owner/listings": ["owner"], "/owner/add-flat": ["owner"], "/owner/profile": ["owner"],
-  "/admin/dashboard": ["admin"], "/admin/approvals": ["admin"], "/admin/users": ["admin"],
-};
-
-function guardRoute(path) {
-  const base = "/" + path.split("/").filter(Boolean).slice(0, 2).join("/");
-  const roles = ROLE_ROUTES[base];
-  if (roles === null) return true;
-  if (!appState.currentUser) return false;
-  return roles?.includes(appState.currentUser.role) ?? false;
-}
-
-async function loadRouteData(base, param) {
-  if (!appState.currentUser) return;
-  try {
-    if (base === "/tenant/dashboard" || base === "/tenant/bookings") {
-      const r = await apiFetch("/api/bookings");
-      if (r.success) appState.bookings = r.data;
-    }
-    if (base === "/tenant/search") {
-      const r = await apiFetch("/api/flats");
-      if (r.success) { appState.flats = r.data; appState.flatsMeta = r.meta; }
-    }
-    if (base === "/tenant/flat" || base === "/tenant/booking") {
-      if (param) {
-        const r = await apiFetch(`/api/flats/${param}`);
-        if (r.success) appState._selectedFlat = r.data;
+const App = {
+  async init() {
+    // 1. Initial State Check
+    const token = localStorage.getItem('ff_token');
+    if (token) {
+      const res = await apiFetch('/api/me');
+      if (res.success) {
+        appState.currentUser = res.data;
+        renderNavBar();
+      } else {
+        localStorage.removeItem('ff_token');
       }
     }
-    if (base === "/owner/dashboard" || base === "/owner/listings") {
-      const [lr, br] = await Promise.all([apiFetch("/api/listings"), apiFetch("/api/bookings")]);
-      if (lr.success) appState.listings = lr.data;
-      if (br.success) appState.bookings = br.data;
+
+    // 2. Routing Logic
+    window.onhashchange = () => this.route();
+    this.route();
+  },
+
+  async route() {
+    const hash = window.location.hash || '#/home';
+    const signal = appState.activeController.signal;
+
+    // Fixes: Bug #1 — Render module-specific content based on route
+    if (hash === '#/login' || hash === '#/signup') {
+      Auth.renderLogin();
+    } else if (hash.startsWith('#/tenant')) {
+      if (!appState.currentUser) return window.location.hash = '#/login';
+      await Tenant.init(signal);
+    } else if (hash.startsWith('#/owner')) {
+      if (!appState.currentUser) return window.location.hash = '#/login';
+      await Owner.init(signal);
+    } else if (hash.startsWith('#/admin')) {
+      if (!appState.currentUser) return window.location.hash = '#/login';
+      await Admin.init(signal);
+    } else {
+      // Default landing behavior or home
+      window.location.hash = appState.currentUser ? defaultRoute(appState.currentUser.role) : '#/login';
     }
-    if (base === "/admin/dashboard") {
-      const [ur, fr, br, lr] = await Promise.all([apiFetch("/api/users"), apiFetch("/api/flats"), apiFetch("/api/bookings"), apiFetch("/api/listings")]);
-      if (ur.success) { appState.users = ur.data; appState.flats = fr.data; appState.bookings = br.data; appState.listings = lr.data; }
-    }
-  } catch (err) { console.error("[Data Load Error]", err); }
-}
-
-function resolveView(base, param) {
-  const map = {
-    "/login": () => Auth.viewLogin("login"),
-    "/signup": () => Auth.viewLogin("signup"),
-    "/tenant/dashboard": () => Tenant.viewDashboard(),
-    "/tenant/search": () => Tenant.viewSearch(),
-    "/tenant/flat": () => Tenant.viewFlatDetails(appState._selectedFlat),
-    "/tenant/booking": () => Tenant.viewBooking(appState._selectedFlat),
-    "/tenant/bookings": () => Tenant.viewDashboard(),
-    "/owner/dashboard": () => Owner.viewDashboard(),
-    "/owner/listings": () => Owner.viewDashboard(),
-    "/owner/add-flat": () => Owner.viewAddFlat(),
-    "/owner/profile": () => Owner.viewProfile(),
-    "/admin/dashboard": () => Admin.viewDashboard(),
-    "/admin/approvals": () => Admin.viewApprovals(),
-    "/admin/users": () => Admin.viewUsers(),
-  };
-  return (map[base] ?? map["/login"])();
-}
-
-async function navigate(hash) {
-  const raw = (hash || "").replace(/^#/, "") || "/login";
-  const path = raw.startsWith("/") ? raw : "/" + raw;
-  const segments = path.split("/").filter(Boolean);
-  const base = "/" + segments.slice(0, 2).join("/");
-  const param = segments[2] || null;
-
-  if (!guardRoute(path)) {
-    window.location.hash = appState.currentUser ? defaultRoute() : "#/login";
-    return;
   }
+};
 
-  // Show a sleek skeleton while loading
-  document.getElementById("app-root").innerHTML = `
-    <div class="container page-content">
-      <div class="skeleton" style="height: 40px; width: 300px; margin-bottom: 2rem;"></div>
-      <div class="dashboard-grid">
-        <div class="skeleton glass" style="height: 250px;"></div>
-        <div class="skeleton glass" style="height: 250px;"></div>
-        <div class="skeleton glass" style="height: 250px;"></div>
-      </div>
-    </div>`;
-
-  await loadRouteData(base, param);
-  render(resolveView(base, param));
-  renderNavBar();
-}
-
-window.addEventListener("hashchange", () => navigate(window.location.hash));
-
-window.addEventListener("load", async () => {
-  // 1. Force clear Service Workers to ensure fresh code
-  if ('serviceWorker' in navigator) {
-    const regs = await navigator.serviceWorker.getRegistrations();
-    for (let reg of regs) await reg.unregister();
-  }
-
-  // 2. Initial Auth Check
-  const r = await apiFetch('/api/me').catch(() => ({ success: false }));
-  if (r.success && r.data) {
-    appState.currentUser = r.data;
-  }
-  
-  // 3. Initial Navigation
-  renderNavBar();
-  const h = window.location.hash;
-  if (!appState.currentUser) {
-    navigate(h.startsWith("#/login") || h.startsWith("#/signup") ? h : "#/login");
-  } else {
-    navigate(h && h !== "#" && h !== "#/" ? h : defaultRoute());
-  }
-});
+// Start the Engine
+App.init();

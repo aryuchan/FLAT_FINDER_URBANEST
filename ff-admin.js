@@ -1,57 +1,78 @@
-// ff-admin.js — Hardened Admin Module
-// Fixes: Missing platform-wide control logic for administrators
+// ff-admin.js — Hardened Admin Engine (v16)
+// Fixes: Bug #1 (render mismatch) and Architecture (apiFetch)
 
 const Admin = {
   async init(signal) {
-    await this.renderDashboard(signal);
+    const route = window.location.hash;
+    if (route === '#/admin/users') await this.viewUsers(signal);
+    else await this.viewDashboard(signal);
   },
 
-  async renderDashboard(signal) {
-    const root = document.getElementById('app-root');
-    // Admin fetch sees all flats regardless of availability
-    const res = await fetch('/api/flats', { headers: { 'Authorization': `Bearer ${localStorage.getItem('ff_token')}` } });
-    const flats = await res.json();
+  async viewDashboard(signal) {
+    const res = await apiFetch('/api/flats');
+    appState.listings = res.success ? res.data : [];
 
-    root.innerHTML = `
+    const html = `
       <div class="container">
-        <div class="page-header">
+        <div class="flex-between page-header">
           <h1 class="page-title">Admin Terminal</h1>
+          <a href="#/admin/users" class="btn btn--secondary">Manage Users</a>
         </div>
         <div class="stat-grid mt-lg">
           <div class="stat-card" style="border-left: 5px solid var(--primary)">
-            <p class="stat-card__label">Total Properties</p>
-            <p class="stat-card__value">${flats.data?.length || 0}</p>
-          </div>
-          <div class="stat-card" style="border-left: 5px solid var(--success)">
-            <p class="stat-card__label">Platform Status</p>
-            <p class="stat-card__value" style="color: var(--success)">Active</p>
+            <p class="stat-card__label">Total Inventory</p>
+            <p class="stat-card__value">${appState.listings.length}</p>
           </div>
         </div>
-        
-        <h2 class="mt-lg">Global Inventory Audit</h2>
+        <h2 class="mt-lg">Global Audit</h2>
         <div class="table-wrap mt-sm">
           <table class="table">
             <thead>
-              <tr>
-                <th>Title</th>
-                <th>City</th>
-                <th>Owner ID</th>
-                <th>Status</th>
-              </tr>
+              <tr><th>Property</th><th>City</th><th>Owner</th><th>Status</th></tr>
             </thead>
             <tbody>
-              ${flats.data?.map(f => `
+              ${appState.listings.map(l => `
                 <tr>
-                  <td><b>${f.title}</b></td>
-                  <td>${f.city}</td>
-                  <td class="text-muted" style="font-size:0.8rem">${f.owner_id}</td>
-                  <td><span class="badge ${f.available ? 'badge--success' : 'badge--danger'}">${f.available ? 'Live' : 'Hidden'}</span></td>
+                  <td><b>${escHtml(l.title)}</b></td>
+                  <td>${escHtml(l.city)}</td>
+                  <td><code style="font-size:0.7rem">${l.owner_id}</code></td>
+                  <td><span class="badge ${l.available ? 'badge--success' : 'badge--danger'}">${l.available ? 'Active' : 'Archived'}</span></td>
                 </tr>
-              `).join('') || '<tr><td colspan="4" style="text-align:center; padding: 2rem">No properties found.</td></tr>'}
+              `).join('')}
             </tbody>
           </table>
         </div>
       </div>
     `;
+    render(html);
+  },
+
+  async viewUsers(signal) {
+    const res = await apiFetch('/api/users');
+    appState.users = res.success ? res.data : [];
+
+    const html = `
+      <div class="container">
+        <div class="page-header"><h1 class="page-title">User Directory</h1></div>
+        <div class="table-wrap mt-lg">
+          <table class="table">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
+            </thead>
+            <tbody>
+              ${appState.users.map(u => `
+                <tr>
+                  <td><b>${escHtml(u.name)}</b></td>
+                  <td>${escHtml(u.email)}</td>
+                  <td><span class="badge badge--neutral">${u.role}</span></td>
+                  <td class="text-muted">${new Date(u.created_at).toLocaleDateString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    render(html);
   }
 };

@@ -1,34 +1,60 @@
-// ff-auth.js — Secure Authentication Module
-// Fixes: Template mismatch and error display bugs
+// ff-auth.js — Secure Authentication (v16)
+// Fixes: Hash-based routing and Global state sync
 
 const Auth = {
   async login(credentials) {
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials)
-      });
-      const data = await res.json();
-      
-      if (data.success) {
-        localStorage.setItem('ff_token', data.data.token);
-        this.redirectToPortal(data.data.user.role);
-      } else {
-        showToast(data.message, 'danger');
-      }
-    } catch (err) {
-      console.error('Auth crash', err);
-      showToast('Connection failed', 'danger');
+    const res = await apiFetch('/api/login', {
+      method: 'POST',
+      body: credentials
+    });
+
+    if (res.success) {
+      localStorage.setItem('ff_token', res.data.token);
+      appState.currentUser = res.data.user;
+      showToast('Welcome back!', 'success');
+      this.redirectToPortal(res.data.user.role);
+    } else {
+      showToast(res.message, 'danger');
     }
   },
 
-  redirectToPortal(role) {
-    const portals = { tenant: '/tenant', owner: '/owner', admin: '/admin' };
-    window.location.href = portals[role] || '/';
+  async signup(data) {
+    const res = await apiFetch('/api/signup', {
+      method: 'POST',
+      body: data
+    });
+
+    if (res.success) {
+      showToast('Account created. Please login.', 'success');
+      window.location.hash = '#/login';
+    } else {
+      showToast(res.message, 'danger');
+    }
   },
 
-  bindAuthEvents() {
+  async logout() {
+    await apiFetch('/api/logout', { method: 'POST' });
+    localStorage.removeItem('ff_token');
+    appState.currentUser = null;
+    window.location.href = '/'; // Reset to landing
+  },
+
+  /**
+   * Fixes: Security — Use hash routing to avoid full page reloads
+   */
+  redirectToPortal(role) {
+    window.location.hash = defaultRoute(role);
+  },
+
+  renderLogin() {
+    render(populateTemplate('tmpl-auth', { 
+      title: 'Sign In', 
+      sub: 'Access your premium account' 
+    }));
+    this.bindEvents();
+  },
+
+  bindEvents() {
     const form = document.getElementById('auth-form');
     if (!form) return;
     form.addEventListener('submit', (e) => {
@@ -38,13 +64,3 @@ const Auth = {
     });
   }
 };
-
-function showToast(msg, type = 'neutral') {
-  // Fixes: spa uses #app-toast bug
-  const container = document.getElementById('app-toast');
-  const toast = document.createElement('div');
-  toast.className = `toast toast--${type}`;
-  toast.innerHTML = msg;
-  container.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
-}

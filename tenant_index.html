@@ -3,51 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlatFinder | Tenant Portal</title>
+    <title>Urbanest | Tenant Portal</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="app-root" class="page-content" role="main"></div>
-    <div id="app-toast" aria-live="polite"></div>
+    <nav id="app-nav"></nav>
+    <main id="app-root"></main>
+    <div id="app-toast"></div>
 
-    <!-- Fixes: Missing tmpl-auth bug -->
+    <!-- Master Templates (Architecture: populateTemplate compliant) -->
     <template id="tmpl-auth">
-        <div class="card auth-card" style="max-width: 420px; margin: 100px auto" role="region" aria-labelledby="auth-title">
-            <h1 class="mt-sm" id="auth-title">Welcome</h1>
-            <p class="text-muted" id="auth-sub">Sign in to your Urbanest account</p>
-            <form id="auth-form" class="mt-lg" aria-label="Authentication Form">
-                <div class="field" style="text-align: left; margin-bottom: 1rem">
-                    <label class="label" for="auth-email">Email Address</label>
-                    <input class="form-input" type="email" name="email" id="auth-email" required aria-required="true" style="width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--border)">
-                </div>
-                <div class="field" style="text-align: left; margin-bottom: 2rem">
-                    <label class="label" for="auth-pass">Password</label>
-                    <input class="form-input" type="password" name="password" id="auth-pass" required aria-required="true" style="width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--border)">
-                </div>
-                <button type="submit" class="btn btn--primary btn--full" aria-label="Sign in to account">Continue</button>
+        <div class="card auth-card" style="max-width: 440px; margin: 80px auto; text-align: center">
+            <h1>{{title}}</h1>
+            <p class="text-muted">{{sub}}</p>
+            <form id="auth-form" class="mt-lg">
+                <input class="input mt-sm" type="email" name="email" placeholder="Email" required style="width:100%">
+                <input class="input mt-sm" type="password" name="password" placeholder="Password" required style="width:100%">
+                <button type="submit" class="btn btn--primary btn--full mt-lg">Continue</button>
             </form>
-            <p class="mt-sm">New here? <a href="#/signup" class="text-primary" aria-label="Create new tenant account">Create account</a></p>
         </div>
     </template>
 
+    <!-- Fixes: Bug #3 — All required scripts in correct dependency order -->
     <script src="ff-core.js"></script>
     <script src="ff-auth.js"></script>
     <script src="ff-tenant.js"></script>
-    <script>
-        // Production Bootstrapper
-        window.onload = async () => {
-            const token = localStorage.getItem('ff_token');
-            if (!token && window.location.hash !== '#/signup') {
-                render('tmpl-auth');
-                Auth.bindAuthEvents(); // Ensure login buttons work
-            } else {
-                // Fixes: Memory leak cleanup handled by Tenant.init(signal)
-                const signal = state.activeController.signal;
-                await Tenant.init(signal);
-            }
-        };
-        window.onhashchange = () => location.reload(); // Hard refresh for portal stability
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>

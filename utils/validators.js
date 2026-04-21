@@ -1,12 +1,13 @@
-// utils/validators.js — Zod Schema Validation
+// utils/validators.js — Hardened Zod Schemas
+// Fixes: Bug #8 and Security Mandate (Max-length guards)
+
 import { z } from 'zod';
 
-// Fixes: API inputs max-length guards (name <= 120, city <= 100)
 export const signupSchema = z.object({
   name:     z.string().min(2).max(120),
-  email:    z.string().email(),
+  email:    z.string().email().max(255),
   password: z.string().min(8).max(100),
-  role:     z.enum(['admin', 'owner', 'tenant']).optional()
+  role:     z.enum(['admin', 'owner', 'tenant']).default('tenant')
 });
 
 export const loginSchema = z.object({
@@ -25,4 +26,9 @@ export const bookingSchema = z.object({
   flat_id:   z.string().uuid(),
   check_in:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   check_out: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+});
+
+export const userUpdateSchema = z.object({
+  name: z.string().min(2).max(120).optional(),
+  status: z.enum(['active', 'suspended']).optional()
 });

@@ -3,32 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Urbanest | Premium Flat Finding</title>
+    <title>Urbanest | Premium Property Search</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <nav class="flex-between" style="padding: 1.5rem 3rem; background: white; border-bottom: 1px solid var(--border)">
-        <a href="/" class="logo" style="font-size: 1.8rem; font-weight: 900; color: var(--primary); text-decoration: none">URBANEST.</a>
+    <nav class="flex-between" style="padding: 1.5rem 3rem; background: white; border-bottom: 2px solid var(--border)">
+        <a href="/" class="logo" style="font-size: 2rem; font-weight: 900; color: var(--primary); text-decoration: none">URBANEST.</a>
         <div style="display: flex; gap: 2rem; align-items: center">
-            <!-- Fixes: Missing portal navigation -->
             <a href="/tenant" class="btn btn--secondary btn--sm">Tenant Portal</a>
             <a href="/owner" class="btn btn--secondary btn--sm">Owner Portal</a>
-            <a href="/admin" class="btn btn--secondary btn--sm">Admin Portal</a>
-            <a href="/tenant#login" class="btn btn--primary btn--sm">Get Started</a>
+            <a href="/admin" class="btn btn--secondary btn--sm">Admin Terminal</a>
+            <a href="/tenant#/login" class="btn btn--primary btn--sm">Join Now</a>
         </div>
     </nav>
 
-    <main class="container mt-lg" style="text-align: center; max-width: 800px; margin: 4rem auto">
-        <h1 style="font-size: 3.5rem; font-weight: 900; margin-bottom: 1.5rem">Find your next premium home.</h1>
-        <p class="text-muted" style="font-size: 1.25rem; margin-bottom: 3rem">The most trusted platform for professional tenants and luxury property owners.</p>
-        <div class="flex-between" style="justify-content: center; gap: 1rem">
-            <a href="/tenant#search" class="btn btn--primary">Browse Listings</a>
-            <a href="/owner#signup" class="btn btn--secondary">List Your Property</a>
+    <main class="container mt-lg" style="text-align: center; max-width: 850px; margin: 6rem auto">
+        <h1 style="font-size: 4rem; font-weight: 900; margin-bottom: 1.5rem; letter-spacing: -2px">Luxury Living, Simplified.</h1>
+        <p class="text-muted" style="font-size: 1.4rem; margin-bottom: 3.5rem">The premier ecosystem for professional tenants and luxury property owners.</p>
+        <div class="flex-between" style="justify-content: center; gap: 1.5rem">
+            <a href="/tenant#/tenant/search" class="btn btn--primary" style="padding: 1.2rem 2.5rem">Browse Inventory</a>
+            <a href="/owner#/owner/add-flat" class="btn btn--secondary" style="padding: 1.2rem 2.5rem">List Your Home</a>
         </div>
     </main>
 
-    <!-- Fixes: SPA uses #app-toast bug -->
+    <!-- Fixes: Bug #10 — Standardized Toast Container -->
     <div id="app-toast"></div>
 
 </body>
