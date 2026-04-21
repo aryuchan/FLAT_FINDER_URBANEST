@@ -1,29 +1,27 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlatFinder | Ultimate Premium</title>
+    <title>FlatFinder | Premium Urbanest</title>
     <style>
-        /* ── UNBREAKABLE PREMIUM CSS ── */
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap');
+        /* ── SOLID STEEL PREMIUM CSS ── */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&display=swap');
 
         :root {
-            --primary: #1d4ed8;
+            --primary: #2563eb;
             --bg: #f8fafc;
             --card: #ffffff;
             --text: #0f172a;
-            --text-muted: #64748b;
-            --border: #cbd5e1;
+            --border: #e2e8f0;
         }
 
         [data-theme="dark"] {
-            --bg: #020617;
+            --bg: #0f172a;
             --card: #1e293b;
             --text: #f8fafc;
-            --text-muted: #94a3b8;
             --border: #334155;
-            --primary: #3b82f6;
+            --primary: #60a5fa;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,188 +30,236 @@
             background-color: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
         }
 
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
-        
         nav {
-            height: 70px; background: var(--card); border-bottom: 3px solid var(--primary);
-            display: flex; align-items: center; position: sticky; top: 0; z-index: 1000;
+            height: 80px; background: var(--card); border-bottom: 4px solid var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            position: sticky; top: 0; z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-        .nav-brand { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+        .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 1200px; padding: 0 1.5rem; }
+        .nav-brand { font-size: 1.8rem; font-weight: 800; color: var(--primary); text-decoration: none; }
         
-        .theme-toggle {
-            padding: 10px 15px; border-radius: 12px; border: 2px solid var(--border);
-            background: var(--card); color: var(--text); cursor: pointer; font-size: 1.2rem; font-weight: 800;
+        .theme-btn {
+            padding: 8px 16px; border-radius: 12px; border: 2px solid var(--border);
+            background: var(--card); color: var(--text); cursor: pointer; font-weight: 700;
         }
 
-        .auth-wrapper { display: flex; align-items: center; justify-content: center; padding: 4rem 1rem; }
+        .main-content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+        
         .auth-card {
-            width: 100%; max-width: 440px; padding: 3.5rem; background: var(--card);
-            border-radius: 30px; border: 3px solid var(--primary); box-shadow: 0 30px 60px rgba(0,0,0,0.12);
+            width: 100%; max-width: 440px; padding: 3rem; background: var(--card);
+            border-radius: 32px; border: 1px solid var(--border); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1);
             text-align: center;
         }
 
+        .h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text); }
+        .sub { color: #64748b; margin-bottom: 2.5rem; font-weight: 500; }
+
         .form-group { text-align: left; margin-bottom: 1.5rem; }
-        .form-label { display: block; font-weight: 800; margin-bottom: 0.5rem; font-size: 0.95rem; }
-        .form-input {
-            width: 100%; padding: 1rem 1.2rem; border-radius: 16px;
+        .label { display: block; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text); }
+        .input {
+            width: 100%; padding: 1rem 1.25rem; border-radius: 16px;
             border: 2px solid var(--border); background: var(--bg); color: var(--text);
-            font-family: inherit; font-size: 1.1rem;
+            font-family: inherit; font-size: 1rem; transition: 0.2s;
         }
-        .form-input:focus { outline: none; border-color: var(--primary); }
+        .input:focus { outline: none; border-color: var(--primary); }
 
         .btn {
-            padding: 1rem 2rem; border-radius: 16px; font-weight: 800; cursor: pointer;
-            border: none; font-size: 1.1rem; width: 100%; transition: 0.2s;
+            width: 100%; padding: 1rem; border-radius: 16px; font-weight: 800;
+            cursor: pointer; border: none; font-size: 1.1rem; transition: 0.2s;
+            background: var(--primary); color: white; margin-top: 1rem;
         }
-        .btn-primary { background: var(--primary); color: white; margin-top: 1rem; }
-        .btn-primary:hover { transform: scale(1.02); filter: brightness(1.2); }
-        
-        .auth-switch { margin-top: 2rem; color: var(--text-muted); font-size: 1rem; }
-        .auth-switch a { color: var(--primary); font-weight: 800; cursor: pointer; text-decoration: underline; }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        .switch { margin-top: 1.5rem; font-size: 0.95rem; color: #64748b; }
+        .switch a { color: var(--primary); font-weight: 800; cursor: pointer; text-decoration: underline; }
+
+        .err { background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: 14px; margin-bottom: 1.5rem; font-weight: 700; border: 1px solid #f87171; }
         .hidden { display: none !important; }
-        .form-error { background: #fee2e2; color: #991b1b; padding: 1.2rem; border-radius: 16px; margin-bottom: 2rem; font-weight: 800; border: 2px solid #ef4444; }
 
-        .role-pills { display: flex; gap: 0.8rem; }
-        .role-pill { flex: 1; cursor: pointer; }
-        .role-pill input { display: none; }
-        .role-pill-inner { padding: 0.8rem; border: 2px solid var(--border); border-radius: 16px; font-weight: 800; text-align: center; }
-        .role-pill input:checked + .role-pill-inner { border-color: var(--primary); background: var(--primary); color: white; }
-
-        #app-toast { position: fixed; top: 1rem; right: 1rem; z-index: 2000; }
-        .toast { padding: 1.2rem 2rem; border-radius: 16px; background: var(--primary); color: white; font-weight: 800; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        #toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; }
+        .toast { padding: 1rem 2rem; background: var(--text); color: var(--bg); border-radius: 12px; font-weight: 700; margin-top: 0.5rem; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
     </style>
 </head>
-<body>
+<body id="body">
 
     <nav>
-        <div class="container nav-inner">
-            <a class="nav-brand" href="#/">🏠 URBANEST</a>
-            <div style="display:flex;gap:1rem;align-items:center">
-                <button class="theme-toggle" id="theme-btn">🌙</button>
-                <div id="nav-user"></div>
+        <div class="nav-inner">
+            <a class="nav-brand" href="/">🏠 URBANEST</a>
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <button class="theme-btn" onclick="toggleTheme()" id="theme-icon">🌙 DARK</button>
+                <div id="user-nav"></div>
             </div>
         </div>
     </nav>
 
-    <main id="app-root"></main>
-    <div id="app-toast"></div>
+    <main class="main-content" id="app">
+        <!-- DEFAULT CONTENT: LOGIN FORM (Prevents empty screen) -->
+        <div class="auth-card" id="auth-view">
+            <h1 class="h1" id="page-title">Welcome Back</h1>
+            <p class="sub" id="page-sub">Sign in to your premium account</p>
+            
+            <form id="auth-form">
+                <div id="error-msg" class="err hidden"></div>
+                
+                <div id="signup-only" class="hidden">
+                    <div class="form-group">
+                        <label class="label">Full Name</label>
+                        <input class="input" name="name" id="field-name" placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label class="label">I am a...</label>
+                        <div style="display:flex; gap:0.5rem;">
+                            <label style="flex:1;"><input type="radio" name="role" value="tenant" checked> Tenant</label>
+                            <label style="flex:1;"><input type="radio" name="role" value="owner"> Owner</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="label">Email Address</label>
+                    <input class="input" type="email" name="email" id="field-email" placeholder="name@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="label">Password</label>
+                    <input class="input" type="password" name="password" id="field-password" placeholder="••••••••" required>
+                </div>
+                
+                <button class="btn" type="submit" id="submit-btn">SIGN IN</button>
+            </form>
+            
+            <p class="switch" id="switch-area">
+                New here? <a onclick="routeTo('signup')">Create account</a>
+            </p>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
 
     <script>
-        // ── UNBREAKABLE CORE ──
-        const state = { user: null };
-        const LS = {
-            get: (k) => localStorage.getItem(k),
-            set: (k, v) => localStorage.setItem(k, v),
-            clear: (k) => localStorage.removeItem(k)
-        };
+        // ── SOLID STATE ──
+        let user = null;
+        let mode = 'login';
 
-        const Theme = {
-            init() { this.set(LS.get('ff_theme') || 'light'); },
-            set(t) {
-                document.documentElement.setAttribute('data-theme', t);
-                LS.set('ff_theme', t);
-                document.getElementById('theme-btn').innerHTML = t === 'dark' ? '☀️ LIGHT' : '🌙 DARK';
-            },
-            toggle() { this.set(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
-        };
-
-        async function callApi(path, body = null) {
-            try {
-                const res = await fetch(path, {
-                    method: body ? 'POST' : 'GET',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${LS.get('ff_jwt')}` },
-                    body: body ? JSON.stringify(body) : null
-                });
-                const data = await res.json();
-                if (data?.data?.token) LS.set('ff_jwt', data.data.token);
-                return data;
-            } catch (e) { return { success: false, message: 'Connection Error' }; }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('ff_theme', target);
+            document.getElementById('theme-icon').innerHTML = target === 'dark' ? '☀️ LIGHT' : '🌙 DARK';
         }
 
-        function showPage() {
-            const hash = window.location.hash || '#/login';
-            const root = document.getElementById('app-root');
-            
-            if (hash === '#/signup') {
-                root.innerHTML = `
-                    <div class="auth-wrapper">
-                        <div class="auth-card">
-                            <h1 style="font-size:2.5rem;margin-bottom:1rem">Welcome</h1>
-                            <p style="color:var(--text-muted);margin-bottom:2rem">Create your premium account</p>
-                            <form id="auth-form">
-                                <div id="err" class="form-error hidden"></div>
-                                <div class="form-group"><label class="form-label">Name</label><input class="form-input" name="name" required></div>
-                                <div class="form-group">
-                                    <label class="form-label">Role</label>
-                                    <div class="role-pills">
-                                        <label class="role-pill"><input type="radio" name="role" value="tenant" checked><div class="role-pill-inner">Tenant</div></label>
-                                        <label class="role-pill"><input type="radio" name="role" value="owner"><div class="role-pill-inner">Landlord</div></label>
-                                    </div>
-                                </div>
-                                <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" name="email" required></div>
-                                <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" name="password" required></div>
-                                <button class="btn btn-primary" type="submit">JOIN NOW</button>
-                            </form>
-                            <p class="auth-switch">Already a member? <a href="#/login">Login here</a></p>
-                        </div>
-                    </div>`;
-            } else if (hash === '#/login') {
-                root.innerHTML = `
-                    <div class="auth-wrapper">
-                        <div class="auth-card">
-                            <h1 style="font-size:2.5rem;margin-bottom:1rem">Hello</h1>
-                            <p style="color:var(--text-muted);margin-bottom:2rem">Sign in to continue</p>
-                            <form id="auth-form">
-                                <div id="err" class="form-error hidden"></div>
-                                <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" name="email" required></div>
-                                <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" name="password" required></div>
-                                <button class="btn btn-primary" type="submit">LOGIN</button>
-                            </form>
-                            <p class="auth-switch">Don't have an account? <a href="#/signup">Sign up free</a></p>
-                        </div>
-                    </div>`;
-            } else {
-                root.innerHTML = `<div class="container" style="padding:5rem"><h1>Welcome, ${state.user?.name || 'User'}!</h1><button class="btn btn-primary" style="width:auto" onclick="location.hash='#/login'">Back to Login</button></div>`;
-            }
+        // Initialize Theme
+        if (localStorage.getItem('ff_theme') === 'dark' || (!localStorage.getItem('ff_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.getElementById('theme-icon').innerHTML = '☀️ LIGHT';
+        }
 
-            const f = document.getElementById('auth-form');
-            if (f) f.onsubmit = async (e) => {
-                e.preventDefault();
-                const b = f.querySelector('button'); b.disabled = true; b.innerHTML = 'PROCESSING...';
-                const r = await callApi(hash === '#/signup' ? '/api/signup' : '/api/login', Object.fromEntries(new FormData(f)));
-                if (r.success) {
-                    state.user = r.data.user;
-                    window.location.hash = '#/dashboard';
+        function routeTo(m) {
+            mode = m;
+            const title = document.getElementById('page-title');
+            const sub = document.getElementById('page-sub');
+            const signupFields = document.getElementById('signup-only');
+            const submitBtn = document.getElementById('submit-btn');
+            const switchArea = document.getElementById('switch-area');
+            const errorMsg = document.getElementById('error-msg');
+
+            errorMsg.classList.add('hidden');
+            
+            if (m === 'signup') {
+                title.innerHTML = "Join Urbanest";
+                sub.innerHTML = "Start your property journey today";
+                signupFields.classList.remove('hidden');
+                submitBtn.innerHTML = "CREATE ACCOUNT";
+                switchArea.innerHTML = 'Already a member? <a onclick="routeTo(\'login\')">Sign in</a>';
+                document.getElementById('field-name').required = true;
+            } else {
+                title.innerHTML = "Welcome Back";
+                sub.innerHTML = "Sign in to your premium account";
+                signupFields.classList.add('hidden');
+                submitBtn.innerHTML = "SIGN IN";
+                switchArea.innerHTML = 'New here? <a onclick="routeTo(\'signup\')">Create account</a>';
+                document.getElementById('field-name').required = false;
+            }
+        }
+
+        document.getElementById('auth-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const err = document.getElementById('error-msg');
+            const fd = new FormData(e.target);
+            const data = Object.fromEntries(fd);
+
+            btn.disabled = true;
+            btn.innerHTML = "WORKING...";
+            err.classList.add('hidden');
+
+            try {
+                const res = await fetch(`/api/${mode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    localStorage.setItem('ff_jwt', result.data.token);
+                    user = result.data.user;
+                    showToast("Success! Welcome.");
+                    document.getElementById('app').innerHTML = `<div style="text-align:center"><h1>Welcome, ${user.name}!</h1><p>Dashboard loading...</p><button class="btn" onclick="location.reload()" style="width:auto">Refresh</button></div>`;
                     updateNav();
                 } else {
-                    const ed = document.getElementById('err'); ed.innerHTML = r.message; ed.classList.remove('hidden');
-                    b.disabled = false; b.innerHTML = 'TRY AGAIN';
+                    err.innerHTML = result.message || "Error occurred";
+                    err.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerHTML = mode === 'signup' ? "CREATE ACCOUNT" : "SIGN IN";
                 }
-            };
-        }
+            } catch (e) {
+                err.innerHTML = "Connection failed. Please check your internet.";
+                err.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = "TRY AGAIN";
+            }
+        };
 
         function updateNav() {
-            const area = document.getElementById('nav-user');
-            if (state.user) {
-                area.innerHTML = `<b>${state.user.name}</b> <button onclick="logout()" style="margin-left:1rem;cursor:pointer">Logout</button>`;
-            } else { area.innerHTML = ''; }
+            if (user) {
+                document.getElementById('user-nav').innerHTML = `<b>${user.name}</b> <a onclick="localStorage.removeItem('ff_jwt'); location.reload();" style="margin-left:1rem; cursor:pointer; color:var(--primary); font-weight:700;">Logout</a>`;
+            }
         }
 
-        function logout() { LS.clear('ff_jwt'); state.user = null; updateNav(); window.location.hash = '#/login'; }
+        function showToast(m) {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.innerHTML = m;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
 
-        window.onhashchange = showPage;
-        window.onload = async () => {
-            Theme.init();
-            document.getElementById('theme-btn').onclick = () => Theme.toggle();
-            showPage(); // Show page IMMEDIATELY
-            const r = await callApi('/api/me');
-            if (r.success) { state.user = r.data; updateNav(); }
-        };
+        // Check if logged in
+        (async () => {
+            const token = localStorage.getItem('ff_jwt');
+            if (token) {
+                try {
+                    const res = await fetch('/api/me', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const result = await res.json();
+                    if (result.success) {
+                        user = result.data;
+                        updateNav();
+                        if (mode === 'login') {
+                           document.getElementById('app').innerHTML = `<div style="text-align:center"><h1>Welcome Back, ${user.name}!</h1><p>Redirecting to dashboard...</p></div>`;
+                        }
+                    }
+                } catch (e) {}
+            }
+        })();
     </script>
 </body>
 </html>
