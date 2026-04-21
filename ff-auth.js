@@ -43,65 +43,68 @@ const Auth = {
   },
 
   bindEvents(root) {
-    root.querySelector("#toggle-password")?.addEventListener("click", () => {
+    // 1. Password Toggle (Delegated)
+    root.querySelector("#toggle-password")?.addEventListener("click", (e) => {
       const input = root.querySelector("#auth-password");
       if (input) {
         const isHidden = input.type === "password";
         input.type = isHidden ? "text" : "password";
-        // Keep aria state accurate for screen readers
-        root.querySelector("#toggle-password")
-          ?.setAttribute("aria-pressed", String(isHidden));
+        e.target.textContent = isHidden ? "🙈" : "👁";
       }
     });
 
+    // 2. Form Submission (Bulletproof)
     const authForm = root.querySelector("#auth-form");
     if (!authForm) return;
 
     authForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      // Use the mode baked into the form's data attribute — no hash parsing needed.
       const mode  = authForm.dataset.mode || "login";
       const btn   = root.querySelector("#auth-submit");
       const errEl = root.querySelector("#auth-error");
 
-      if (!btn) return; // Guard: button missing from DOM
+      if (!btn || btn.disabled) return; 
+
+      // Reset UI
       if (errEl) { errEl.textContent = ""; errEl.classList.add("hidden"); }
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Please wait...";
 
-      const fd       = new FormData(authForm);
-      const email    = (fd.get("email") || "").trim();
-      const password = fd.get("password") || "";
+      try {
+        const fd = new FormData(authForm);
+        const payload = mode === "signup" 
+          ? { 
+              name: fd.get("name")?.trim(), 
+              email: (fd.get("email") || "").trim().toLowerCase(), 
+              password: fd.get("password") || "", 
+              role: fd.get("role") || "tenant" 
+            }
+          : { 
+              email: (fd.get("email") || "").trim().toLowerCase(), 
+              password: fd.get("password") || "" 
+            };
 
-      if (!email || !password) {
-        const msg = "Email and password are required.";
-        if (errEl) { errEl.textContent = msg; errEl.classList.remove("hidden"); }
-        return;
-      }
+        const r = await apiFetch(`/api/${mode}`, { method: "POST", body: payload });
 
-      btn.disabled    = true;
-      btn.textContent = "Please wait…";
-
-      const payload =
-        mode === "signup"
-          ? { name: fd.get("name")?.trim(), email, password, role: fd.get("role") || "tenant" } // (4b fix) fallback safely handles null from unselected FormData radio group
-          : { email, password };
-
-      const r = await apiFetch(`/api/${mode}`, { method: "POST", body: payload });
-
-      btn.disabled    = false;
-      // Restore original label from data attribute — single source of truth.
-      btn.textContent = btn.dataset.label;
-      // (4a fix) intentional: password field is deliberately not cleared to allow native browser autofill behavior on re-render.
-
-      if (r.success) {
-        appState.currentUser = r.data.user;
-        renderNavBar();
-        window.location.hash = defaultRoute();
-        showToast(r.message || "Welcome!", "success");
-      } else {
-        const msg = r.message || "Something went wrong.";
-        if (errEl) { errEl.textContent = msg; errEl.classList.remove("hidden"); }
-        showToast(msg, "error");
+        if (r.success) {
+          appState.currentUser = r.data.user;
+          renderNavBar();
+          window.location.hash = defaultRoute();
+          showToast(r.message || "Success!", "success");
+        } else {
+          const msg = r.message || "Authentication failed.";
+          if (errEl) { errEl.textContent = msg; errEl.classList.remove("hidden"); }
+          showToast(msg, "error");
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
+      } catch (err) {
+        console.error("[Auth Error]", err);
+        showToast("Connection error. Is the server running?", "error");
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     });
   },
