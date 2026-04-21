@@ -24,25 +24,34 @@ const Owner = {
           <div class="stat-card"><p class="stat-card__label">Bookings</p><p class="stat-card__value">${bookings.length}</p></div>
         </div>
         <h2 class="mt-lg">Manage Bookings</h2>
-        <div class="grid mt-sm">
-          ${bookings.map(b => `
-            <div class="card" data-id="${escHtml(String(b.id))}">
-              <div class="flex-between">
-                <h3 class="stat-card__label">${escHtml(b.flat_title)}</h3>
-                <!-- FIX [24]: Sanitized enum field -->
-                <span class="badge badge--neutral">${escHtml(String(b.status))}</span>
+        ${bookings.length === 0 ? `
+          <div class="empty-state mt-sm">
+            <h3>No Active Bookings</h3>
+            <p class="text-muted mt-sm">You have no bookings to manage at this time.</p>
+          </div>
+        ` : `
+          <div class="grid mt-sm">
+            ${bookings.map(b => `
+              <div class="card" data-id="${escHtml(String(b.id))}">
+                <div class="flex-between">
+                  <h3 class="stat-card__label">${escHtml(b.flat_title)}</h3>
+                  <!-- FIX [24]: Sanitized enum field -->
+                  <span class="badge badge--${b.status === 'confirmed' ? 'success' : b.status === 'cancelled' ? 'danger' : 'warning'}">${escHtml(String(b.status))}</span>
+                </div>
+                <!-- FIX [12]: Added check-in, check-out, and tenant id to owner bookings -->
+                <p class="text-muted mt-sm">Tenant ID: ${escHtml(String(b.tenant_id))}</p>
+                <p class="text-muted mt-sm">Check-in: ${formatDate(b.check_in)}</p>
+                <p class="text-muted mt-sm">Check-out: ${formatDate(b.check_out)}</p>
+                ${b.status === 'pending' ? `
+                  <div class="mt-lg flex-between">
+                    <button class="btn btn--primary btn--sm btn-confirm">Confirm</button>
+                    <button class="btn btn--danger btn--sm btn-cancel">Cancel</button>
+                  </div>
+                ` : ''}
               </div>
-              <!-- FIX [12]: Added check-in, check-out, and tenant id to owner bookings -->
-              <p class="text-muted mt-sm">Tenant ID: ${escHtml(String(b.tenant_id))}</p>
-              <p class="text-muted mt-sm">Check-in: ${new Date(b.check_in).toLocaleDateString()}</p>
-              <p class="text-muted mt-sm">Check-out: ${new Date(b.check_out).toLocaleDateString()}</p>
-              <div class="mt-lg flex-between">
-                <button class="btn btn--primary btn--sm btn-confirm">Confirm</button>
-                <button class="btn btn--danger btn--sm btn-cancel">Cancel</button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
+            `).join('')}
+          </div>
+        `}
       </div>
     `);
     this.bindEvents();
@@ -81,12 +90,17 @@ const Owner = {
     // Property Creation
     document.getElementById('add-flat-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const data = Object.fromEntries(new FormData(e.target));
-      data.rent = parseFloat(data.rent);
-      // FIX [13]: Removed hardcoded data.type = "Premium Residence";
-      const res = await apiFetch('/api/flats', { method: 'POST', body: data });
-      if (res.success) { showToast('Listed!', 'success'); window.location.hash = '#/dashboard'; }
-      else showToast(res.message, 'danger');
+      const btn = e.target.querySelector('button[type="submit"]');
+      showLoading(btn);
+      try {
+        const data = Object.fromEntries(new FormData(e.target));
+        data.rent = parseFloat(data.rent);
+        const res = await apiFetch('/api/flats', { method: 'POST', body: data });
+        if (res.success) { showToast('Listed!', 'success'); window.location.hash = '#/dashboard'; }
+        else showToast(res.message, 'danger');
+      } finally {
+        hideLoading(btn);
+      }
     }, { signal });
 
     // Booking Confirmation/Cancellation
@@ -95,9 +109,14 @@ const Owner = {
         btn.addEventListener('click', async (e) => {
           const id = e.target.closest('.card').dataset.id;
           const status = e.target.classList.contains('btn-confirm') ? 'confirmed' : 'cancelled';
-          const res = await apiFetch(`/api/bookings/${id}`, { method: 'PATCH', body: { status } });
-          if (res.success) { showToast(`Booking ${status}`); await this.viewDashboard(); }
-          else showToast(res.message, 'danger');
+          showLoading(btn);
+          try {
+            const res = await apiFetch(`/api/bookings/${id}`, { method: 'PATCH', body: { status } });
+            if (res.success) { showToast(`Booking ${status}`, 'success'); await this.viewDashboard(); }
+            else showToast(res.message, 'danger');
+          } finally {
+            hideLoading(btn);
+          }
         }, { signal });
       });
     }

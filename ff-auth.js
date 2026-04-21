@@ -2,14 +2,19 @@
 // Fixes: Bug #6 — Removed inline onclick
 
 const Auth = {
-  async login(credentials) {
-    const res = await apiFetch('/api/login', { method: 'POST', body: credentials });
-    if (res.success) {
-      localStorage.setItem('ff_token', res.data.token);
-      appState.currentUser = res.data.user;
-      this.redirectToPortal(res.data.user.role);
-    } else {
-      showToast(res.message, 'danger');
+  async login(data, btn) {
+    showLoading(btn);
+    try {
+      const res = await apiFetch('/api/login', { method: 'POST', body: data });
+      if (res.success) {
+        localStorage.setItem('ff_token', res.data.token);
+        appState.currentUser = res.data.user;
+        this.redirectToPortal(res.data.user.role);
+      } else {
+        showToast(res.message, 'danger');
+      }
+    } finally {
+      hideLoading(btn);
     }
   },
 
@@ -39,13 +44,18 @@ const Auth = {
     this.bindEvents();
   },
 
-  async signup(data) {
-    const res = await apiFetch('/api/signup', { method: 'POST', body: data });
-    if (res.success) {
-      showToast('Account created. Please login.', 'success');
-      window.location.hash = '#/login';
-    } else {
-      showToast(res.message, 'danger');
+  async signup(data, btn) {
+    showLoading(btn);
+    try {
+      const res = await apiFetch('/api/signup', { method: 'POST', body: data });
+      if (res.success) {
+        showToast('Account created. Please login.', 'success');
+        window.location.hash = '#/login';
+      } else {
+        showToast(res.message, 'danger');
+      }
+    } finally {
+      hideLoading(btn);
     }
   },
 
@@ -55,7 +65,7 @@ const Auth = {
       loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(loginForm));
-        this.login(data);
+        this.login(data, e.target.querySelector('button[type="submit"]'));
       }, { signal: appState.activeController.signal });
     }
 
@@ -64,7 +74,7 @@ const Auth = {
       signupForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(signupForm));
-        this.signup(data);
+        this.signup(data, e.target.querySelector('button[type="submit"]'));
       }, { signal: appState.activeController.signal });
     }
   }

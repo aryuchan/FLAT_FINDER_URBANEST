@@ -23,6 +23,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app     = express();
+// FIX [11]: Mandatory trust proxy for dual-platform deployment behind load balancers
+app.set('trust proxy', 1);
 const PORT    = process.env.PORT || 3000;
 const SECRET  = process.env.JWT_SECRET;
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -50,7 +52,19 @@ app.use(helmet({
   },
 }));
 
-app.use(cors({ origin: IS_PROD ? process.env.FRONTEND_URL : true, credentials: true }));
+// FIX [15]: CORS multiple-origin support
+const allowedOrigins = IS_PROD
+  ? (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean)
+  : true;
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!IS_PROD || !origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
 app.use(compression());
 app.use(express.json());
 app.use(cookieParser());
@@ -59,6 +73,8 @@ app.use(cookieParser());
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // limit each IP to 10 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
 });
 
@@ -245,6 +261,10 @@ app.get('/api/bookings', authenticate, async (req, res) => {
 app.patch('/api/bookings/:id', authenticate, async (req, res) => {
   try {
     const { status } = req.body;
+    // FIX [18]: Validation for booking status
+    if (!['confirmed', 'cancelled', 'pending'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
     const b = await queryOne('SELECT b.tenant_id, f.owner_id FROM bookings b JOIN flats f ON b.flat_id = f.id WHERE b.id = ?', [req.params.id]);
     if (!b) return res.status(404).json({ success: false, message: 'Not found' });
     const isTenant = b.tenant_id === req.user.id && status === 'cancelled';
@@ -275,7 +295,11 @@ app.use((req, res, next) => {
 
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-app.listen(PORT, async () => {
+const server = app.listen(PORT, '0.0.0.0', async () => {
   await validateConnection();
-  logger.info(`🚀 [Production v17.1] Online at ${PORT}`);
+  logger.info(`🚀 [Production v17.2] Online at ${PORT}`);
 });
+
+// FIX [13]: Server timeouts to handle Render load balancers
+server.keepAliveTimeout = 120000;
+server.headersTimeout   = 125000;

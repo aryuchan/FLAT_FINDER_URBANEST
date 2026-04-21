@@ -17,8 +17,6 @@ const appState = {
  * Fixes: Bug #1 — apiFetch stringifies body
  */
 async function apiFetch(url, opts = {}) {
-  // FIX [14]: Added simple loading state
-  if (opts.method && opts.method !== 'GET') showToast('Loading...', 'info');
 
   const token = localStorage.getItem('ff_token');
   const headers = {
@@ -92,6 +90,28 @@ function showToast(msg, type = 'info') {
   toast.textContent = msg;
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
+}
+
+function showLoading(btn) {
+  if (!btn) return;
+  btn.dataset.origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+}
+
+function hideLoading(btn) {
+  if (!btn) return;
+  btn.textContent = btn.dataset.origText || 'Submit';
+  btn.disabled = false;
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  return new Date(str).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatCurrency(n) {
+  return '₹' + Number(n).toLocaleString('en-IN');
 }
 
 function renderNavBar() {

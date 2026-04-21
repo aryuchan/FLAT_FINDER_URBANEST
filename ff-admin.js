@@ -18,20 +18,26 @@ const Admin = {
           <a href="#/users" class="btn btn--secondary">Manage Users</a>
         </div>
         <div class="table-wrap mt-lg">
-          <table class="table">
-            <thead><tr><th>Flat</th><th>City</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody>
-              ${flats.map(f => `
-                <tr data-id="${escHtml(String(f.id))}">
-                  <td><b>${escHtml(f.title)}</b></td>
-                  <td>${escHtml(f.city)}</td>
-                  <!-- FIX [24]: Sanitized fields -->
-                  <td><span class="badge ${f.available ? 'badge--success' : 'badge--danger'}">${f.available ? 'Live' : 'Hidden'}</span></td>
-                  <td><button class="btn btn--danger btn--sm btn-del">Delete</button></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+          ${flats.length === 0 ? `
+            <div class="empty-state">
+              <h3>No Flats in Database</h3>
+            </div>
+          ` : `
+            <table class="table">
+              <thead><tr><th>Flat</th><th>City</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${flats.map(f => `
+                  <tr data-id="${escHtml(String(f.id))}">
+                    <td><b>${escHtml(f.title)}</b></td>
+                    <td>${escHtml(f.city)}</td>
+                    <!-- FIX [24]: Sanitized fields -->
+                    <td><span class="badge ${f.available ? 'badge--success' : 'badge--danger'}">${f.available ? 'Live' : 'Hidden'}</span></td>
+                    <td><button class="btn btn--danger btn--sm btn-del">Delete</button></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `}
         </div>
       </div>
     `);
@@ -45,26 +51,32 @@ const Admin = {
       <div class="container">
         <div class="page-header"><h1 class="page-title">User Management</h1></div>
         <div class="table-wrap mt-lg">
-          <table class="table">
-            <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody>
-              ${users.map(u => `
-                <tr data-id="${escHtml(String(u.id))}">
-                  <td><b>${escHtml(u.name)}</b></td>
-                  <td>${escHtml(u.role)}</td>
-                  <!-- FIX [24]: Real user status -->
-                  <td><span class="badge badge--neutral">${escHtml(String(u.status || 'active'))}</span></td>
-                  <!-- FIX [11]: Fully implemented suspend button -->
-                  <td>
-                    ${u.role !== 'admin' ? 
-                      `<button class="btn btn--danger btn--sm btn-suspend">${u.status === 'suspended' ? 'Activate' : 'Suspend'}</button>` 
-                      : ''
-                    }
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+          ${users.length === 0 ? `
+            <div class="empty-state">
+              <h3>No Users Found</h3>
+            </div>
+          ` : `
+            <table class="table">
+              <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${users.map(u => `
+                  <tr data-id="${escHtml(String(u.id))}">
+                    <td><b>${escHtml(u.name)}</b></td>
+                    <td>${escHtml(u.role)}</td>
+                    <!-- FIX [24]: Real user status -->
+                    <td><span class="badge badge--${u.status === 'suspended' ? 'danger' : 'success'}">${escHtml(String(u.status || 'active'))}</span></td>
+                    <!-- FIX [11]: Fully implemented suspend button -->
+                    <td>
+                      ${u.role !== 'admin' ? 
+                        `<button class="btn btn--${u.status === 'suspended' ? 'success' : 'danger'} btn--sm btn-suspend">${u.status === 'suspended' ? 'Activate' : 'Suspend'}</button>` 
+                        : ''
+                      }
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `}
         </div>
       </div>
     `);
@@ -80,8 +92,13 @@ const Admin = {
       btn.addEventListener('click', async (e) => {
         const id = e.target.closest('tr').dataset.id;
         if (!confirm('Permanent delete?')) return;
-        const res = await apiFetch(`/api/flats/${id}`, { method: 'DELETE' });
-        if (res.success) { showToast('Property deleted'); await this.viewDashboard(); }
+        showLoading(btn);
+        try {
+          const res = await apiFetch(`/api/flats/${id}`, { method: 'DELETE' });
+          if (res.success) { showToast('Property deleted'); await this.viewDashboard(); }
+        } finally {
+          hideLoading(btn);
+        }
       }, { signal });
     });
 
@@ -90,12 +107,17 @@ const Admin = {
       btn.addEventListener('click', async (e) => {
         const id = e.target.closest('tr').dataset.id;
         const newStatus = e.target.textContent === 'Suspend' ? 'suspended' : 'active';
-        const res = await apiFetch(`/api/users/${id}`, { method: 'PATCH', body: { status: newStatus } });
-        if (res.success) {
-          showToast(`User ${newStatus}`);
-          await this.viewUsers();
-        } else {
-          showToast(res.message, 'danger');
+        showLoading(btn);
+        try {
+          const res = await apiFetch(`/api/users/${id}`, { method: 'PATCH', body: { status: newStatus } });
+          if (res.success) {
+            showToast(`User ${newStatus}`, 'success');
+            await this.viewUsers();
+          } else {
+            showToast(res.message, 'danger');
+          }
+        } finally {
+          hideLoading(btn);
         }
       }, { signal });
     });
