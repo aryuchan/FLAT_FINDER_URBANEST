@@ -1,20 +1,20 @@
-// ff-core.js — Master SPA Engine (v16)
-// Fixes: Bug #1 (render mismatch) & Bug #2 (missing globals)
+// ff-core.js — Master SPA Engine (v17)
+// Fixes: Bug #1 (stringify body) | Architecture: render awaitable, populateTemplate raw
 
-// Architecture: Frozen-shape appState
+const logger = {
+  info:  (...a) => console.log('[INFO]',  ...a),
+  error: (...a) => console.error('[ERR]', ...a)
+};
+
 const appState = Object.seal({
   currentUser: null,
   flats: [],
-  listings: [],
   bookings: [],
-  users: [],
-  flatsMeta: null,
-  _selectedFlat: null,
   activeController: new AbortController()
 });
 
 /**
- * Fixes: Bug #2 — Global apiFetch with fallback JWT logic
+ * Fixes: Bug #1 — apiFetch stringifies body
  */
 async function apiFetch(url, opts = {}) {
   const token = localStorage.getItem('ff_token');
@@ -24,54 +24,53 @@ async function apiFetch(url, opts = {}) {
     ...(opts.headers || {})
   };
 
+  // Fixes: Bug #1 — Stringify body if object
+  const body = opts.body && typeof opts.body === 'object' 
+    ? JSON.stringify(opts.body) 
+    : opts.body;
+
   try {
-    const res = await fetch(url, {
-      ...opts,
-      headers,
-      credentials: 'include' // Fixes: Bug #5 — Support cookie auth
-    });
-    return await res.json();
+    const res = await fetch(url, { ...opts, body, headers, credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+    return data;
   } catch (err) {
-    console.error(`[API ERROR] ${url}`, err);
-    return { success: false, message: 'Network error' };
+    logger.error(`API FAIL: ${url}`, err.message);
+    return { success: false, message: err.message };
   }
 }
 
 /**
- * Fixes: Bug #1 — Unified render engine (Accepts HTML string)
+ * Fixes: Architecture — render() resolves after DOM update
  */
-async function render(htmlContent) {
-  // Cleanup previous listeners
+async function render(html) {
   appState.activeController.abort();
   appState.activeController = new AbortController();
 
   const root = document.getElementById('app-root');
   if (!root) return;
 
-  // Fixes: Safety — Clear root before injection
-  root.innerHTML = htmlContent;
-
-  // Bind dynamic nav
-  renderNavBar();
+  // Fixes: Architecture — Ensure assignment is atomic and awaitable
+  return new Promise((resolve) => {
+    root.innerHTML = html;
+    renderNavBar();
+    resolve();
+  });
 }
 
 /**
- * Architecture: populateTemplate using cloning and token replacement
+ * Fixes: Architecture — Raw token replacement (No auto-escHtml)
  */
 function populateTemplate(templateId, vars = {}) {
   const template = document.getElementById(templateId);
   if (!template) return '';
-  
   let content = template.innerHTML;
   for (const [key, val] of Object.entries(vars)) {
-    content = content.replace(new RegExp(`{{${key}}}`, 'g'), escHtml(val));
+    content = content.replace(new RegExp(`{{${key}}}`, 'g'), val);
   }
   return content;
 }
 
-/**
- * Fixes: Security — HTML Escape Utility
- */
 function escHtml(str) {
   if (!str) return '';
   const div = document.createElement('div');
@@ -79,9 +78,6 @@ function escHtml(str) {
   return div.innerHTML;
 }
 
-/**
- * Architecture: Global Toast Moved from ff-auth.js
- */
 function showToast(msg, type = 'info') {
   const container = document.getElementById('app-toast');
   if (!container) return;
@@ -92,32 +88,20 @@ function showToast(msg, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-/**
- * Architecture: Role-based default routes
- */
-function defaultRoute(role) {
-  const routes = {
-    admin: '#/admin/dashboard',
-    owner: '#/owner/dashboard',
-    tenant: '#/tenant/dashboard'
-  };
-  return routes[role] || '#/home';
-}
-
-/**
- * Architecture: Consistent Navbar Injection
- */
 function renderNavBar() {
   const nav = document.getElementById('app-nav');
   if (!nav || !appState.currentUser) return;
 
+  // Fixes: Bug #6 — Removed inline onclick="Auth.logout()"
   nav.innerHTML = `
     <div class="nav-inner flex-between">
       <a href="/" class="logo">URBANEST.</a>
       <div class="nav-user">
         <span class="nav-name">${escHtml(appState.currentUser.name)}</span>
-        <button class="btn btn--sm" onclick="Auth.logout()">Logout</button>
+        <button class="btn btn--sm" id="btn-logout">Logout</button>
       </div>
     </div>
   `;
+
+  document.getElementById('btn-logout')?.addEventListener('click', () => Auth.logout(), { signal: appState.activeController.signal });
 }

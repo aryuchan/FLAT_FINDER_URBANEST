@@ -1,78 +1,83 @@
-// ff-admin.js — Hardened Admin Engine (v16)
-// Fixes: Bug #1 (render mismatch) and Architecture (apiFetch)
+// ff-admin.js — Hardened Admin Engine (v17)
+// Fixes: Bug #6 — Removed inline onclick
 
 const Admin = {
   async init(signal) {
-    const route = window.location.hash;
-    if (route === '#/admin/users') await this.viewUsers(signal);
+    if (window.location.hash === '#/users') await this.viewUsers(signal);
     else await this.viewDashboard(signal);
   },
 
   async viewDashboard(signal) {
     const res = await apiFetch('/api/flats');
-    appState.listings = res.success ? res.data : [];
-
-    const html = `
+    const flats = res.success ? res.data : [];
+    await render(`
       <div class="container">
         <div class="flex-between page-header">
-          <h1 class="page-title">Admin Terminal</h1>
-          <a href="#/admin/users" class="btn btn--secondary">Manage Users</a>
+          <h1 class="page-title">Global Control</h1>
+          <a href="#/users" class="btn btn--secondary">Manage Users</a>
         </div>
-        <div class="stat-grid mt-lg">
-          <div class="stat-card" style="border-left: 5px solid var(--primary)">
-            <p class="stat-card__label">Total Inventory</p>
-            <p class="stat-card__value">${appState.listings.length}</p>
-          </div>
-        </div>
-        <h2 class="mt-lg">Global Audit</h2>
-        <div class="table-wrap mt-sm">
+        <div class="table-wrap mt-lg">
           <table class="table">
-            <thead>
-              <tr><th>Property</th><th>City</th><th>Owner</th><th>Status</th></tr>
-            </thead>
+            <thead><tr><th>Flat</th><th>City</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
-              ${appState.listings.map(l => `
-                <tr>
-                  <td><b>${escHtml(l.title)}</b></td>
-                  <td>${escHtml(l.city)}</td>
-                  <td><code style="font-size:0.7rem">${l.owner_id}</code></td>
-                  <td><span class="badge ${l.available ? 'badge--success' : 'badge--danger'}">${l.available ? 'Active' : 'Archived'}</span></td>
+              ${flats.map(f => `
+                <tr data-id="${escHtml(f.id)}">
+                  <td><b>${escHtml(f.title)}</b></td>
+                  <td>${escHtml(f.city)}</td>
+                  <td><span class="badge ${f.available ? 'badge--success' : 'badge--danger'}">${f.available ? 'Live' : 'Hidden'}</span></td>
+                  <td><button class="btn btn--danger btn--sm btn-del">Delete</button></td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
       </div>
-    `;
-    render(html);
+    `);
+    this.bindEvents(signal);
   },
 
   async viewUsers(signal) {
     const res = await apiFetch('/api/users');
-    appState.users = res.success ? res.data : [];
-
-    const html = `
+    const users = res.success ? res.data : [];
+    await render(`
       <div class="container">
-        <div class="page-header"><h1 class="page-title">User Directory</h1></div>
+        <div class="page-header"><h1 class="page-title">User Management</h1></div>
         <div class="table-wrap mt-lg">
           <table class="table">
-            <thead>
-              <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
-            </thead>
+            <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
-              ${appState.users.map(u => `
-                <tr>
+              ${users.map(u => `
+                <tr data-id="${escHtml(u.id)}">
                   <td><b>${escHtml(u.name)}</b></td>
-                  <td>${escHtml(u.email)}</td>
-                  <td><span class="badge badge--neutral">${u.role}</span></td>
-                  <td class="text-muted">${new Date(u.created_at).toLocaleDateString()}</td>
+                  <td>${u.role}</td>
+                  <td><span class="badge badge--neutral">Active</span></td>
+                  <td><button class="btn btn--danger btn--sm btn-suspend">Suspend</button></td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
       </div>
-    `;
-    render(html);
+    `);
+    this.bindEvents(signal);
+  },
+
+  bindEvents(signal) {
+    // Delete Flat
+    document.querySelectorAll('.btn-del').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.closest('tr').dataset.id;
+        if (!confirm('Permanent delete?')) return;
+        const res = await apiFetch(`/api/flats/${id}`, { method: 'DELETE' });
+        if (res.success) { showToast('Property deleted'); await this.viewDashboard(signal); }
+      }, { signal });
+    });
+
+    // Suspend User
+    document.querySelectorAll('.btn-suspend').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        showToast('Administrative Suspension: Coming Soon', 'warning');
+      }, { signal });
+    });
   }
 };

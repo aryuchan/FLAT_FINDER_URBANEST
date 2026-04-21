@@ -1,47 +1,58 @@
-// app.js — Global Bootstrapper (v16)
-// Fixes: Bug #4 (Boot Auth Check) and Master Routing
+// app.js — Global Bootstrapper (v17)
+// Fixes: Bug #5 — Use addEventListener for hashchange
 
 const App = {
   async init() {
-    // 1. Initial State Check
     const token = localStorage.getItem('ff_token');
     if (token) {
       const res = await apiFetch('/api/me');
       if (res.success) {
         appState.currentUser = res.data;
-        renderNavBar();
       } else {
         localStorage.removeItem('ff_token');
       }
     }
 
-    // 2. Routing Logic
-    window.onhashchange = () => this.route();
+    // Fixes: Bug #5 — Prevent overwriting other handlers
+    window.addEventListener('hashchange', () => this.route());
     this.route();
   },
 
   async route() {
-    const hash = window.location.hash || '#/home';
-    const signal = appState.activeController.signal;
+    const hash = window.location.hash || '#/dashboard';
+    
+    // Fixes: Architecture — Module Guards
+    const isTenant = typeof Tenant !== 'undefined';
+    const isOwner = typeof Owner !== 'undefined';
+    const isAdmin = typeof Admin !== 'undefined';
 
-    // Fixes: Bug #1 — Render module-specific content based on route
-    if (hash === '#/login' || hash === '#/signup') {
-      Auth.renderLogin();
-    } else if (hash.startsWith('#/tenant')) {
-      if (!appState.currentUser) return window.location.hash = '#/login';
-      await Tenant.init(signal);
-    } else if (hash.startsWith('#/owner')) {
-      if (!appState.currentUser) return window.location.hash = '#/login';
-      await Owner.init(signal);
-    } else if (hash.startsWith('#/admin')) {
-      if (!appState.currentUser) return window.location.hash = '#/login';
-      await Admin.init(signal);
-    } else {
-      // Default landing behavior or home
-      window.location.hash = appState.currentUser ? defaultRoute(appState.currentUser.role) : '#/login';
+    if (!appState.currentUser) {
+      return Auth.renderLogin();
+    }
+
+    // Role-based portal validation
+    const role = appState.currentUser.role;
+    const path = window.location.pathname;
+
+    if (path.includes('/tenant') && !isTenant) return window.location.href = '/tenant';
+    if (path.includes('/owner') && !isOwner) return window.location.href = '/owner';
+    if (path.includes('/admin') && !isAdmin) return window.location.href = '/admin';
+
+    // Route Execution
+    try {
+      if (role === 'tenant' && isTenant) await Tenant.init(appState.activeController.signal);
+      else if (role === 'owner' && isOwner) await Owner.init(appState.activeController.signal);
+      else if (role === 'admin' && isAdmin) await Admin.init(appState.activeController.signal);
+      else {
+        // Fallback to role-specific dashboard
+        const routes = { tenant: '/tenant', owner: '/owner', admin: '/admin' };
+        if (!path.includes(routes[role])) window.location.href = routes[role];
+      }
+    } catch (err) {
+      logger.error('Routing failed', err.message);
     }
   }
 };
 
-// Start the Engine
+// Start the System
 App.init();

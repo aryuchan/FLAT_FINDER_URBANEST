@@ -1,16 +1,8 @@
 // utils/logger.js — Hardened Production Logger
-// Fixes: Bug #8 — Wrapping console with [INFO]/[ERROR] prefixes
+// Fixes: Bug #2 — Missing utility crash
 
-const logger = {
-  info: (msg, ...meta) => {
-    console.log(`[INFO] [${new Date().toISOString()}] ${msg}`, ...meta);
-  },
-  error: (msg, ...meta) => {
-    console.error(`[ERROR] [${new Date().toISOString()}] ${msg}`, ...meta);
-  },
-  warn: (msg, ...meta) => {
-    console.warn(`[WARN] [${new Date().toISOString()}] ${msg}`, ...meta);
-  }
+export default {
+  info:  (...a) => console.log('[INFO]',  ...a),
+  warn:  (...a) => console.warn('[WARN]', ...a),
+  error: (...a) => console.error('[ERR]', ...a),
 };
-
-export default logger;

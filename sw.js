@@ -1,21 +1,20 @@
-// sw.js — Production Service Worker (v16)
-// Fixes: Performance — Portal caching for offline resilience
+// sw.js — Final Production Service Worker (v17)
+// Fixes: Bug #8 — Network-first for API routes
 
-const CACHE_NAME = 'urbanest-v16'; // Fixes: Cache version bump
+const CACHE_NAME = 'urbanest-v17';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/tenant_index.html',
-  '/owner_index.html',
-  '/admin_index.html',
+  '/tenant',
+  '/owner',
+  '/admin',
   '/style.css',
   '/ff-core.js',
   '/ff-auth.js',
   '/ff-tenant.js',
   '/ff-owner.js',
   '/ff-admin.js',
-  '/app.js',
-  'https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap'
+  '/app.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -28,16 +27,35 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
       );
     })
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+  const url = new URL(event.request.url);
+
+  // Fixes: Bug #8 — Never cache mutations
+  if (event.request.method !== 'GET') return;
+
+  // Fixes: Bug #8 — Network-first for API (always fresh)
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((r) => {
+          if (r.ok) {
+            const clone = r.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+          }
+          return r;
+        })
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    // Cache-first for static assets
+    event.respondWith(
+      caches.match(event.request).then((r) => r || fetch(event.request))
+    );
+  }
 });

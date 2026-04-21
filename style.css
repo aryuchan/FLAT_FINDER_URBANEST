@@ -88,3 +88,19 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .nav-name { font-weight: 800; color: var(--primary); }
 .dashboard-grid { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
 .nudge-banner { background: var(--primary); color: white; padding: 1rem; border-radius: var(--radius); margin-bottom: 2rem; font-weight: 700; }
+
+/* ── MISSING CSS CLASSES (Bug 3) ── */
+.input { width: 100%; border: 1px solid var(--border); padding: 0.75rem; border-radius: var(--radius); font-family: inherit; }
+.label { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--text-muted); }
+.field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+.logo { font-weight: 900; color: var(--primary); text-decoration: none; font-size: 1.5rem; }
+.nav-inner { max-width: 1200px; margin: auto; padding: 0 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+.page-title { font-size: 1.8rem; font-weight: 800; }
+.auth-card { padding: 2.5rem; background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.nav { background: white; border-bottom: 1px solid var(--border); padding: 1rem 0; }
+.flat-card { background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; transition: 0.3s; cursor: pointer; }
+.toast--success { background: var(--success); color: white; }
+.toast--danger { background: var(--danger); color: white; }
+.toast--warning { background: var(--warning); color: white; }
+.toast--info { background: var(--primary); color: white; }
