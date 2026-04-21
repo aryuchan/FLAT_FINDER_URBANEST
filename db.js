@@ -1,81 +1,61 @@
-// db.js — Industry-grade MySQL Module (Railway + Render Optimized)
-// ─────────────────────────────────────────────────────────────────
+// db.js — Production-Grade self-healing MySQL Pool
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
-
 dotenv.config();
 
-const IS_PROD = process.env.NODE_ENV === 'production';
-
-// ── ENV RESOLUTION ────────────────────────────────────────────────
-const DB_HOST     = process.env.MYSQLHOST     || process.env.DB_HOST     || 'localhost';
-const DB_PORT     = parseInt(process.env.MYSQLPORT || process.env.DB_PORT || '3306', 10);
-const DB_USER     = process.env.MYSQLUSER     || process.env.DB_USER     || 'root';
-const DB_PASSWORD = process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '';
-const DB_NAME     = process.env.MYSQLDATABASE || process.env.DB_NAME     || 'flatfinder';
-
-// ── SSL CONFIG ────────────────────────────────────────────────────
-const sslConfig = IS_PROD ? {
-  rejectUnauthorized: false,
-  minVersion: 'TLSv1.2'
-} : false;
-
-// ── POOL CONFIG ───────────────────────────────────────────────────
-const poolConfig = {
-  host:               DB_HOST,
-  port:               DB_PORT,
-  user:               DB_USER,
-  password:           DB_PASSWORD,
-  database:           DB_NAME,
-  ssl:                sslConfig,
+const dbConfig = {
+  host:     process.env.MYSQLHOST,
+  user:     process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port:     parseInt(process.env.MYSQLPORT || '3306', 10),
+  ssl:      { rejectUnauthorized: false }, // Critical for Railway/TiDB Cloud
   waitForConnections: true,
-  connectionLimit:    IS_PROD ? 15 : 5,
-  queueLimit:         0,
-  enableKeepAlive:    true,
+  connectionLimit: 15,
+  queueLimit: 0,
+  enableKeepAlive: true,
   keepAliveInitialDelay: 10000,
-  connectTimeout:     15000,
-  multipleStatements: false,
 };
 
-const pool = mysql.createPool(poolConfig);
+// RISK: Using a singleton pool is standard, but check env vars if connection fails.
+export const pool = mysql.createPool(dbConfig);
 
-export async function query(sql, params = []) {
+/**
+ * Execute a parameterized SQL query.
+ * @param {string} sql 
+ * @param {Array} params 
+ */
+export const query = async (sql, params = []) => {
   try {
-    const [results] = await pool.execute(sql, params);
-    return results;
+    const [rows] = await pool.execute(sql, params);
+    return rows;
   } catch (err) {
-    console.error(`[db.js] Query Error: ${err.message}`);
-    throw err;
+    // RISK: Log the error but never return raw DB errors to the client.
+    console.error(`[DB_ERROR] SQL: ${sql} | Error: ${err.message}`);
+    throw new Error('Database operation failed.');
   }
-}
+};
 
-export async function queryOne(sql, params = []) {
-  const results = await query(sql, params);
-  return results[0] || null;
-}
+/**
+ * Fetch a single row.
+ */
+export const queryOne = async (sql, params = []) => {
+  const rows = await query(sql, params);
+  return rows[0] || null;
+};
 
-export async function validateConnection() {
+/**
+ * Validate connection on startup.
+ */
+export const validateConnection = async () => {
   try {
     const conn = await pool.getConnection();
-    await conn.query('SELECT 1');
+    console.log('✅ [db.js] Connection pool initialized.');
     conn.release();
-    
-    console.log('[db.js] ✅ MySQL connection established successfully.');
-    if (IS_PROD) {
-      console.log(`[db.js]    Host     : ${DB_HOST}`);
-      console.log(`[db.js]    Database : ${DB_NAME}`);
-      console.log(`[db.js]    SSL      : ${sslConfig ? 'Enabled (TLSv1.2)' : 'Disabled'}`);
-    }
     return true;
   } catch (err) {
-    console.error('╔══════════════════════════════════════════════╗');
-    console.error('║  ❌  DATABASE CONNECTION FAILED               ║');
-    console.error('╚══════════════════════════════════════════════╝');
-    console.error(`[db.js] Message: ${err.message}`);
-    if (IS_PROD) process.exit(1);
-    return false;
+    console.error('❌ [db.js] CRITICAL: Database connection failed.');
+    console.error(err.message);
+    process.exit(1);
   }
-}
-
-export { pool };
-export default pool;
+};
