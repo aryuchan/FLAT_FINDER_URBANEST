@@ -1,131 +1,370 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlatFinder | Premium Urban Living</title>
-    
-    <!-- ── CACHE KILLER & THEME INITIALIZER ── -->
-    <script>
-        // 1. Kill all old Service Workers immediately
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(regs => {
-                for(let reg of regs) reg.unregister();
-            });
-        }
-        // 2. Initialize Theme before CSS to prevent flicker
-        const savedTheme = localStorage.getItem('ff_theme') || 
-            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    </script>
+    <title>FlatFinder | Premium Urbanest</title>
+    <style>
+        /* ── NEXT-GEN PREMIUM CSS (Merged) ── */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
-    <meta name="api-base" content="{{API_BASE}}">
-    
-    <!-- Added ?v=4.0 to force browser to load fresh CSS -->
-    <link rel="stylesheet" href="style.css?v=4.0">
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg: #f8fafc;
+            --surface: rgba(255, 255, 255, 0.7);
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: rgba(226, 232, 240, 0.8);
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --radius: 24px;
+            --shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="dark"] {
+            --bg: #020617;
+            --surface: rgba(15, 23, 42, 0.7);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(51, 65, 85, 0.5);
+            --accent-glow: rgba(96, 165, 250, 0.15);
+            --shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Mesh Background */
+        body::before {
+            content: ""; position: fixed; inset: 0; z-index: -1;
+            background: 
+                radial-gradient(at 0% 0%, var(--accent-glow) 0, transparent 50%),
+                radial-gradient(at 100% 100%, var(--accent-glow) 0, transparent 50%);
+            filter: blur(80px);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+        
+        /* ── NAVIGATION ── */
+        nav {
+            height: 80px; display: flex; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+            background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .nav-brand { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .nav-links { display: flex; gap: 0.75rem; align-items: center; }
+        .nav-link { 
+            padding: 0.6rem 1.2rem; border-radius: 16px; color: var(--text); 
+            font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: 0.3s;
+        }
+        .nav-link:hover { background: var(--border); color: var(--primary); }
+
+        .theme-toggle {
+            width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            background: var(--surface); font-size: 1.2rem; transition: 0.3s;
+        }
+        .theme-toggle:hover { transform: rotate(15deg) scale(1.1); background: var(--border); }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 0.8rem 1.8rem; border-radius: 18px; font-weight: 700;
+            cursor: pointer; transition: 0.3s; border: none; font-size: 1rem; text-decoration: none;
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+            color: white; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 30px -5px rgba(59, 130, 246, 0.6); }
+        .btn-secondary { background: var(--border); color: var(--text); }
+        .btn--full { width: 100%; }
+
+        /* ── AUTH CARDS ── */
+        .auth-wrapper { display: flex; align-items: center; justify-content: center; min-height: 80vh; padding: 2rem; }
+        .auth-card {
+            width: 100%; max-width: 440px; padding: 3.5rem; text-align: center;
+            background: var(--surface); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+            animation: fadeIn 0.6s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .form-group { text-align: left; margin-bottom: 1.5rem; }
+        .form-label { display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-muted); }
+        .form-input {
+            width: 100%; padding: 1.1rem 1.4rem; border-radius: 18px;
+            background: var(--bg); border: 2px solid var(--border); color: var(--text);
+            font-weight: 500; font-family: inherit; transition: 0.3s;
+        }
+        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 5px var(--accent-glow); }
+
+        .auth-switch { margin-top: 1.8rem; font-size: 0.95rem; color: var(--text-muted); }
+        .auth-switch a { font-weight: 800; color: var(--primary); cursor: pointer; }
+
+        .hidden { display: none !important; }
+        .form-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 1rem; border-radius: 14px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem; }
+
+        /* ── TOAST ── */
+        #app-toast { position: fixed; bottom: 2rem; right: 2rem; z-index: 2000; }
+        .toast { padding: 1.2rem 1.8rem; border-radius: 20px; background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border); box-shadow: var(--shadow); font-weight: 700; }
+
+        /* Role Pills */
+        .role-pills { display: flex; gap: 0.75rem; }
+        .role-pill { flex: 1; position: relative; cursor: pointer; }
+        .role-pill input { display: none; }
+        .role-pill-inner { 
+            display: flex; align-items: center; justify-content: center; padding: 0.8rem; 
+            border: 2px solid var(--border); border-radius: 16px; font-weight: 700; transition: 0.3s;
+        }
+        .role-pill input:checked + .role-pill-inner { border-color: var(--primary); background: var(--accent-glow); color: var(--primary); }
+
+        /* Dashboard */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem; margin-top: 2.5rem; }
+        .flat-card { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; transition: 0.4s; }
+        .flat-card:hover { transform: translateY(-8px); box-shadow: var(--shadow); }
+        .flat-body { padding: 1.5rem; }
+        .flat-title { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .flat-price { color: var(--primary); font-size: 1.5rem; font-weight: 800; }
+
+    </style>
 </head>
 <body>
 
-    <!-- ── NAVIGATION ── -->
     <nav id="app-nav"></nav>
-
-    <!-- ── MAIN CONTENT ── -->
-    <main id="app-root" role="main" aria-live="polite"></main>
-
-    <!-- ── TOAST NOTIFICATIONS ── -->
+    <main id="app-root"></main>
     <div id="app-toast"></div>
 
-    <!-- ── AUTH TEMPLATE (Login & Signup) ── -->
+    <!-- ── TEMPLATES ── -->
     <template id="tmpl-auth">
         <div class="auth-wrapper">
-            <div class="auth-card glass">
-                <div class="auth-logo">🏠</div>
-                <h1 class="auth-title">FlatFinder</h1>
-                <p class="auth-sub">{{SUBTITLE}}</p>
-                
-                <form id="auth-form" class="auth-form" data-mode="{{MODE}}">
+            <div class="auth-card">
+                <h1 style="font-size:2.5rem;margin-bottom:0.5rem">🏠</h1>
+                <h2 style="font-size:2.2rem;margin-bottom:0.5rem">{{TITLE}}</h2>
+                <p style="color:var(--text-muted);margin-bottom:2.5rem">{{SUBTITLE}}</p>
+                <form id="auth-form" data-mode="{{MODE}}">
                     <div id="auth-error" class="form-error hidden"></div>
-                    
                     {{SIGNUP_FIELDS}}
-                    
                     <div class="form-group">
-                        <label class="form-label" for="auth-email">Email Address</label>
-                        <input class="form-input" type="email" id="auth-email" name="email" 
-                               placeholder="name@example.com" required>
+                        <label class="form-label">Email Address</label>
+                        <input class="form-input" type="email" name="email" placeholder="you@example.com" required>
                     </div>
-                    
                     <div class="form-group">
-                        <label class="form-label" for="auth-password">Password</label>
-                        <div class="input-wrap">
-                            <input class="form-input" type="password" id="auth-password" name="password" 
-                                   placeholder="Your password" required>
-                            <button type="button" class="input-eye" id="toggle-password" tabindex="-1">👁</button>
-                        </div>
+                        <label class="form-label">Password</label>
+                        <input class="form-input" type="password" name="password" placeholder="••••••••" required>
                     </div>
-                    
-                    <button class="btn btn-primary btn--full" type="submit" id="auth-submit">
-                        {{SUBMIT_LABEL}}
-                    </button>
+                    <button class="btn btn-primary btn--full" type="submit" id="auth-submit">{{SUBMIT_LABEL}}</button>
                 </form>
-                
                 <p class="auth-switch">
-                    {{SWITCH_TEXT}} <a data-route="{{SWITCH_LINK}}" style="cursor:pointer; font-weight:700;">{{SWITCH_ACTION}}</a>
+                    {{SWITCH_TEXT}} <a data-route="{{SWITCH_LINK}}">{{SWITCH_ACTION}}</a>
                 </p>
             </div>
         </div>
     </template>
 
-    <!-- ── SIGNUP EXTRA FIELDS SNIPPET ── -->
     <template id="tmpl-signup-fields">
         <div class="form-group">
-            <label class="form-label" for="auth-name">Full Name</label>
-            <input class="form-input" type="text" id="auth-name" name="name" placeholder="John Doe" required>
+            <label class="form-label">Full Name</label>
+            <input class="form-input" type="text" name="name" placeholder="John Doe" required>
         </div>
         <div class="form-group">
             <label class="form-label">I am a...</label>
             <div class="role-pills">
                 <label class="role-pill">
-                    <input type="radio" name="role" value="tenant" checked> 🔑 Tenant
+                    <input type="radio" name="role" value="tenant" checked>
+                    <div class="role-pill-inner">Tenant</div>
                 </label>
                 <label class="role-pill">
-                    <input type="radio" name="role" value="owner"> 🏘 Landlord
+                    <input type="radio" name="role" value="owner">
+                    <div class="role-pill-inner">Landlord</div>
                 </label>
             </div>
         </div>
     </template>
 
-    <!-- ── DASHBOARD TEMPLATES ── -->
     <template id="tmpl-tenant-dash">
-        <div class="container page-content">
-            <div class="page-header">
-                <h1>Welcome Home, {{NAME}}</h1>
+        <div class="container" style="padding-top:4rem">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h1 style="font-size:2.5rem">Welcome, {{NAME}}</h1>
                 <button class="btn btn-primary" data-route="/tenant/search">🔍 Find a Flat</button>
             </div>
-            <div id="booking-stats" class="stat-grid mt-lg"></div>
-            <h2 class="mt-xl">My Recent Bookings</h2>
-            <div id="booking-list" class="dashboard-grid"></div>
+            <div class="dashboard-grid" id="booking-list"></div>
         </div>
     </template>
 
-    <template id="tmpl-owner-dash">
-        <div class="container page-content">
-            <div class="page-header">
-                <h1>Property Manager</h1>
-                <button class="btn btn-primary" data-route="/owner/add-flat">➕ List New Property</button>
-            </div>
-            <div id="owner-stats" class="stat-grid mt-lg"></div>
-            <h2 class="mt-xl">My Properties</h2>
-            <div id="property-list" class="dashboard-grid"></div>
-        </div>
-    </template>
+    <!-- ── CORE ENGINE (Single File) ── -->
+    <script>
+        const appState = { currentUser: null };
+        const Token = {
+            get: () => localStorage.getItem('ff_jwt'),
+            save: (t) => localStorage.setItem('ff_jwt', t),
+            clear: () => localStorage.removeItem('ff_jwt')
+        };
 
-    <!-- Added ?v=4.0 to force browser to load fresh JS -->
-    <script src="ff-core.js?v=4.0"></script>
-    <script src="ff-auth.js?v=4.0"></script>
-    <script src="ff-tenant.js?v=4.0"></script>
-    <script src="ff-owner.js?v=4.0"></script>
-    <script src="ff-admin.js?v=4.0"></script>
-    <script src="app.js?v=4.0"></script>
+        const Theme = {
+            init() {
+                const t = localStorage.getItem('ff_theme') || 'light';
+                this.set(t);
+            },
+            set(t) {
+                document.documentElement.setAttribute('data-theme', t);
+                localStorage.setItem('ff_theme', t);
+                const b = document.getElementById('theme-toggle-btn');
+                if (b) b.innerHTML = t === 'dark' ? '☀️' : '🌙';
+            },
+            toggle() {
+                const c = document.documentElement.getAttribute('data-theme');
+                this.set(c === 'dark' ? 'light' : 'dark');
+            }
+        };
 
+        // ── DEFINTIVE CLICK DELEGATION ──
+        window.onclick = (e) => {
+            const link = e.target.closest('[data-route]');
+            if (link) {
+                e.preventDefault();
+                const r = link.dataset.route;
+                window.location.hash = r.startsWith('/') ? '#' + r : r;
+                return;
+            }
+            if (e.target.id === 'theme-toggle-btn') Theme.toggle();
+            if (e.target.id === 'logout-btn') handleLogout();
+        };
+
+        async function apiFetch(path, options = {}) {
+            const t = Token.get();
+            const init = {
+                method: options.method || 'GET',
+                headers: {
+                    ...(t ? { Authorization: `Bearer ${t}` } : {}),
+                    'Content-Type': 'application/json'
+                },
+                ...options
+            };
+            if (options.body) init.body = JSON.stringify(options.body);
+            try {
+                const res = await fetch(path, init);
+                const json = await res.json();
+                if (json?.data?.token) Token.save(json.data.token);
+                return json;
+            } catch (e) { return { success: false, message: 'Server unreachable' }; }
+        }
+
+        function render(html) {
+            const r = document.getElementById('app-root');
+            r.innerHTML = html;
+            // Immediate re-bind of forms
+            const f = r.querySelector('#auth-form');
+            if (f) bindAuthForm(f);
+        }
+
+        function bindAuthForm(form) {
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const mode = form.dataset.mode;
+                const fd = new FormData(form);
+                const payload = Object.fromEntries(fd);
+                const btn = form.querySelector('button[type="submit"]');
+                const err = document.getElementById('auth-error');
+                
+                btn.disabled = true;
+                btn.innerHTML = "Processing...";
+                err.classList.add('hidden');
+
+                const r = await apiFetch(`/api/${mode}`, { method: 'POST', body: payload });
+                if (r.success) {
+                    appState.currentUser = r.data.user;
+                    renderNavBar();
+                    window.location.hash = r.data.user.role === 'owner' ? '#/owner/dashboard' : '#/tenant/dashboard';
+                    showToast("Success!", "success");
+                } else {
+                    err.innerHTML = r.message;
+                    err.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerHTML = mode === 'signup' ? 'Create Account' : 'Sign In';
+                }
+            };
+        }
+
+        function renderNavBar() {
+            const n = document.getElementById('app-nav');
+            const u = appState.currentUser;
+            n.innerHTML = `
+                <div class="container nav-inner">
+                    <a class="nav-brand" data-route="/">🏠 FlatFinder</a>
+                    <div class="nav-links">
+                        ${u ? `<a class="nav-link" data-route="/${u.role}/dashboard">Dashboard</a>` : ''}
+                        <button class="theme-toggle" id="theme-toggle-btn">🌙</button>
+                        ${u ? `<button class="btn btn-secondary" id="logout-btn">Logout</button>` : ''}
+                    </div>
+                </div>`;
+            Theme.init();
+        }
+
+        async function handleLogout() {
+            Token.clear();
+            appState.currentUser = null;
+            renderNavBar();
+            window.location.hash = "#/login";
+        }
+
+        function showToast(m) {
+            const t = document.getElementById('app-toast');
+            const d = document.createElement('div');
+            d.className = 'toast';
+            d.innerHTML = m;
+            t.appendChild(d);
+            setTimeout(() => d.remove(), 3000);
+        }
+
+        // ── ROUTER ──
+        async function navigate() {
+            const h = window.location.hash || '#/login';
+            const r = h.replace('#', '');
+            
+            if (r === '/signup') {
+                const html = document.getElementById('tmpl-auth').innerHTML
+                    .replace('{{TITLE}}', 'Join Us')
+                    .replace('{{SUBTITLE}}', 'Create your premium account')
+                    .replace('{{MODE}}', 'signup')
+                    .replace('{{SIGNUP_FIELDS}}', document.getElementById('tmpl-signup-fields').innerHTML)
+                    .replace('{{SUBMIT_LABEL}}', 'Create Account')
+                    .replace('{{SWITCH_TEXT}}', 'Already have an account?')
+                    .replace('{{SWITCH_ACTION}}', 'Sign In')
+                    .replace('{{SWITCH_LINK}}', '/login');
+                render(html);
+            } else {
+                const html = document.getElementById('tmpl-auth').innerHTML
+                    .replace('{{TITLE}}', 'Welcome Back')
+                    .replace('{{SUBTITLE}}', 'Sign in to your premium account')
+                    .replace('{{MODE}}', 'login')
+                    .replace('{{SIGNUP_FIELDS}}', '')
+                    .replace('{{SUBMIT_LABEL}}', 'Sign In')
+                    .replace('{{SWITCH_TEXT}}', "Don't have an account?")
+                    .replace('{{SWITCH_ACTION}}', 'Sign up free')
+                    .replace('{{SWITCH_LINK}}', '/signup');
+                render(html);
+            }
+            renderNavBar();
+        }
+
+        window.onhashchange = navigate;
+        window.onload = async () => {
+            Theme.init();
+            const r = await apiFetch('/api/me');
+            if (r.success) appState.currentUser = r.data;
+            navigate();
+        };
+
+    </script>
 </body>
 </html>
