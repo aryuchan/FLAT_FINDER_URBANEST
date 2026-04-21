@@ -33,5 +33,21 @@
 
     <script src="ff-core.js"></script>
     <script src="ff-auth.js"></script>
+    <script src="ff-tenant.js"></script>
+    <script>
+        // Production Bootstrapper
+        window.onload = async () => {
+            const token = localStorage.getItem('ff_token');
+            if (!token && window.location.hash !== '#/signup') {
+                render('tmpl-auth');
+                Auth.bindAuthEvents(); // Ensure login buttons work
+            } else {
+                // Fixes: Memory leak cleanup handled by Tenant.init(signal)
+                const signal = state.activeController.signal;
+                await Tenant.init(signal);
+            }
+        };
+        window.onhashchange = () => location.reload(); // Hard refresh for portal stability
+    </script>
 </body>
 </html>

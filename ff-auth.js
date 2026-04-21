@@ -26,6 +26,16 @@ const Auth = {
   redirectToPortal(role) {
     const portals = { tenant: '/tenant', owner: '/owner', admin: '/admin' };
     window.location.href = portals[role] || '/';
+  },
+
+  bindAuthEvents() {
+    const form = document.getElementById('auth-form');
+    if (!form) return;
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form));
+      this.login(data);
+    });
   }
 };
 

@@ -22,5 +22,14 @@
     </template>
     <script src="ff-core.js"></script>
     <script src="ff-auth.js"></script>
+    <script src="ff-admin.js"></script>
+    <script>
+        window.onload = async () => {
+            const token = localStorage.getItem('ff_token');
+            if (!token) { render('tmpl-auth'); Auth.bindAuthEvents(); }
+            else { await Admin.init(state.activeController.signal); }
+        };
+        window.onhashchange = () => location.reload();
+    </script>
 </body>
 </html>
