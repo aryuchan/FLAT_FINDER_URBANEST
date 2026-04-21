@@ -3,32 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlatFinder | Premium Urbanest</title>
+    <title>FlatFinder | Premium Urban Living</title>
+    
+    <script>
+        // ── THEME & CACHE KILLER ──
+        (function() {
+            // Force clear old service workers
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+            }
+            // Set version to force refresh if old
+            window.FF_VERSION = "4.2.0";
+            const theme = localStorage.getItem('ff_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
     <style>
-        /* ── NEXT-GEN PREMIUM CSS (Merged) ── */
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
         :root {
             --primary: #3b82f6;
             --primary-hover: #2563eb;
             --bg: #f8fafc;
-            --surface: rgba(255, 255, 255, 0.7);
+            --surface: rgba(255, 255, 255, 0.8);
             --text: #0f172a;
             --text-muted: #64748b;
             --border: rgba(226, 232, 240, 0.8);
-            --accent-glow: rgba(59, 130, 246, 0.15);
-            --radius: 24px;
-            --shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.08);
+            --accent-glow: rgba(59, 130, 246, 0.2);
+            --radius: 28px;
+            --shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.1);
         }
 
         [data-theme="dark"] {
             --bg: #020617;
-            --surface: rgba(15, 23, 42, 0.7);
+            --surface: rgba(15, 23, 42, 0.8);
             --text: #f8fafc;
             --text-muted: #94a3b8;
-            --border: rgba(51, 65, 85, 0.5);
-            --accent-glow: rgba(96, 165, 250, 0.15);
-            --shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent-glow: rgba(96, 165, 250, 0.2);
+            --shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.6);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,106 +50,100 @@
             font-family: 'Outfit', sans-serif;
             background: var(--bg);
             color: var(--text);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             min-height: 100vh;
+            transition: all 0.4s ease;
             overflow-x: hidden;
         }
 
-        /* Animated Mesh Background */
+        /* ULTRA-VIBRANT MESH GRADIENT */
         body::before {
             content: ""; position: fixed; inset: 0; z-index: -1;
             background: 
-                radial-gradient(at 0% 0%, var(--accent-glow) 0, transparent 50%),
-                radial-gradient(at 100% 100%, var(--accent-glow) 0, transparent 50%);
-            filter: blur(80px);
+                radial-gradient(at 10% 10%, #3b82f633 0, transparent 40%),
+                radial-gradient(at 90% 10%, #8b5cf633 0, transparent 40%),
+                radial-gradient(at 90% 90%, #ec489933 0, transparent 40%),
+                radial-gradient(at 10% 90%, #10b98133 0, transparent 40%);
+            filter: blur(100px);
+            animation: lava 20s infinite alternate;
         }
+        @keyframes lava { 0% { transform: scale(1); } 100% { transform: scale(1.2) rotate(5deg); } }
 
         .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
         
-        /* ── NAVIGATION ── */
+        /* PREMIUM NAVBAR */
         nav {
-            height: 80px; display: flex; align-items: center;
-            position: sticky; top: 0; z-index: 1000;
-            background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
+            height: 80px; position: sticky; top: 0; z-index: 1000;
+            background: var(--surface); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border-bottom: 1px solid var(--border); display: flex; align-items: center;
         }
         .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-        .nav-brand { font-size: 1.6rem; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
-        .nav-links { display: flex; gap: 0.75rem; align-items: center; }
-        .nav-link { 
-            padding: 0.6rem 1.2rem; border-radius: 16px; color: var(--text); 
-            font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: 0.3s;
-        }
-        .nav-link:hover { background: var(--border); color: var(--primary); }
+        .nav-brand { font-size: 1.7rem; font-weight: 800; color: var(--primary); text-decoration: none; cursor: pointer; }
+        .nav-links { display: flex; gap: 1rem; align-items: center; }
+        .nav-link { padding: 0.6rem 1.2rem; border-radius: 16px; font-weight: 700; color: var(--text); cursor: pointer; }
+        .nav-link:hover { background: var(--accent-glow); color: var(--primary); }
 
         .theme-toggle {
-            width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border);
+            width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--border);
             display: flex; align-items: center; justify-content: center; cursor: pointer;
-            background: var(--surface); font-size: 1.2rem; transition: 0.3s;
+            background: var(--surface); font-size: 1.3rem; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .theme-toggle:hover { transform: rotate(15deg) scale(1.1); background: var(--border); }
+        .theme-toggle:hover { transform: scale(1.1) rotate(15deg); border-color: var(--primary); }
 
-        /* ── BUTTONS ── */
+        /* PREMIUM BUTTONS */
         .btn {
             display: inline-flex; align-items: center; justify-content: center;
-            padding: 0.8rem 1.8rem; border-radius: 18px; font-weight: 700;
-            cursor: pointer; transition: 0.3s; border: none; font-size: 1rem; text-decoration: none;
+            padding: 0.9rem 2rem; border-radius: 20px; font-weight: 800;
+            cursor: pointer; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none; outline: none; font-size: 1.05rem;
         }
-        .btn-primary { 
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
-            color: white; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
-        }
-        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 30px -5px rgba(59, 130, 246, 0.6); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.5); }
+        .btn-primary:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 35px -8px rgba(59, 130, 246, 0.6); }
         .btn-secondary { background: var(--border); color: var(--text); }
         .btn--full { width: 100%; }
 
-        /* ── AUTH CARDS ── */
-        .auth-wrapper { display: flex; align-items: center; justify-content: center; min-height: 80vh; padding: 2rem; }
+        /* AUTH CARD (GLASS) */
+        .auth-wrapper { display: flex; align-items: center; justify-content: center; min-height: 85vh; padding: 2rem; }
         .auth-card {
-            width: 100%; max-width: 440px; padding: 3.5rem; text-align: center;
-            background: var(--surface); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            width: 100%; max-width: 460px; padding: 3.5rem; text-align: center;
+            background: var(--surface); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
             border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
-            animation: fadeIn 0.6s ease-out;
+            animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
 
         .form-group { text-align: left; margin-bottom: 1.5rem; }
-        .form-label { display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-muted); }
+        .form-label { display: block; font-size: 0.9rem; font-weight: 800; margin-bottom: 0.6rem; color: var(--text-muted); padding-left: 0.5rem; }
         .form-input {
-            width: 100%; padding: 1.1rem 1.4rem; border-radius: 18px;
-            background: var(--bg); border: 2px solid var(--border); color: var(--text);
-            font-weight: 500; font-family: inherit; transition: 0.3s;
+            width: 100%; padding: 1.1rem 1.5rem; border-radius: 20px;
+            background: var(--bg); border: 2.5px solid var(--border); color: var(--text);
+            font-weight: 600; transition: 0.3s; font-family: inherit;
         }
         .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 5px var(--accent-glow); }
 
-        .auth-switch { margin-top: 1.8rem; font-size: 0.95rem; color: var(--text-muted); }
-        .auth-switch a { font-weight: 800; color: var(--primary); cursor: pointer; }
+        .auth-switch { margin-top: 2rem; font-size: 1rem; color: var(--text-muted); }
+        .auth-switch a { font-weight: 800; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
 
         .hidden { display: none !important; }
-        .form-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 1rem; border-radius: 14px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem; }
+        .form-error { background: #fee2e2; color: #991b1b; padding: 1.2rem; border-radius: 18px; margin-bottom: 2rem; font-weight: 700; }
 
-        /* ── TOAST ── */
-        #app-toast { position: fixed; bottom: 2rem; right: 2rem; z-index: 2000; }
-        .toast { padding: 1.2rem 1.8rem; border-radius: 20px; background: var(--surface); backdrop-filter: blur(10px); border: 1px solid var(--border); box-shadow: var(--shadow); font-weight: 700; }
-
-        /* Role Pills */
-        .role-pills { display: flex; gap: 0.75rem; }
-        .role-pill { flex: 1; position: relative; cursor: pointer; }
+        /* ROLE PILLS */
+        .role-pills { display: flex; gap: 1rem; }
+        .role-pill { flex: 1; cursor: pointer; }
         .role-pill input { display: none; }
-        .role-pill-inner { 
-            display: flex; align-items: center; justify-content: center; padding: 0.8rem; 
-            border: 2px solid var(--border); border-radius: 16px; font-weight: 700; transition: 0.3s;
-        }
+        .role-pill-inner { padding: 0.9rem; border: 2.5px solid var(--border); border-radius: 18px; font-weight: 800; text-align: center; transition: 0.3s; }
         .role-pill input:checked + .role-pill-inner { border-color: var(--primary); background: var(--accent-glow); color: var(--primary); }
 
-        /* Dashboard */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem; margin-top: 2.5rem; }
-        .flat-card { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; transition: 0.4s; }
-        .flat-card:hover { transform: translateY(-8px); box-shadow: var(--shadow); }
-        .flat-body { padding: 1.5rem; }
-        .flat-title { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem; }
-        .flat-price { color: var(--primary); font-size: 1.5rem; font-weight: 800; }
+        /* TOAST */
+        #app-toast { position: fixed; top: 2rem; right: 2rem; z-index: 2000; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast { padding: 1.2rem 2rem; border-radius: 22px; background: var(--surface); backdrop-filter: blur(15px); border: 2px solid var(--border); box-shadow: var(--shadow); font-weight: 800; animation: toastIn 0.4s ease; }
+        @keyframes toastIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
+        /* DASHBOARD */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2.5rem; margin-top: 3rem; }
+        .flat-card { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); overflow: hidden; transition: 0.4s; cursor: pointer; }
+        .flat-card:hover { transform: translateY(-10px); box-shadow: var(--shadow); }
+        .flat-body { padding: 2rem; }
+        .flat-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem; }
     </style>
 </head>
 <body>
@@ -148,15 +156,16 @@
     <template id="tmpl-auth">
         <div class="auth-wrapper">
             <div class="auth-card">
-                <h1 style="font-size:2.5rem;margin-bottom:0.5rem">🏠</h1>
-                <h2 style="font-size:2.2rem;margin-bottom:0.5rem">{{TITLE}}</h2>
-                <p style="color:var(--text-muted);margin-bottom:2.5rem">{{SUBTITLE}}</p>
+                <h1 style="font-size:3.5rem;margin-bottom:1rem">🏘️</h1>
+                <h2 style="font-size:2.4rem;margin-bottom:0.5rem;letter-spacing:-0.05em">{{TITLE}}</h2>
+                <p style="color:var(--text-muted);margin-bottom:2.5rem;font-weight:500">{{SUBTITLE}}</p>
+                
                 <form id="auth-form" data-mode="{{MODE}}">
                     <div id="auth-error" class="form-error hidden"></div>
                     {{SIGNUP_FIELDS}}
                     <div class="form-group">
                         <label class="form-label">Email Address</label>
-                        <input class="form-input" type="email" name="email" placeholder="you@example.com" required>
+                        <input class="form-input" type="email" name="email" placeholder="name@example.com" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Password</label>
@@ -164,6 +173,7 @@
                     </div>
                     <button class="btn btn-primary btn--full" type="submit" id="auth-submit">{{SUBMIT_LABEL}}</button>
                 </form>
+                
                 <p class="auth-switch">
                     {{SWITCH_TEXT}} <a data-route="{{SWITCH_LINK}}">{{SWITCH_ACTION}}</a>
                 </p>
@@ -192,16 +202,16 @@
     </template>
 
     <template id="tmpl-tenant-dash">
-        <div class="container" style="padding-top:4rem">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-                <h1 style="font-size:2.5rem">Welcome, {{NAME}}</h1>
+        <div class="container" style="padding:5rem 1.5rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3rem">
+                <h1 style="font-size:3rem;letter-spacing:-0.05em">Hi, {{NAME}}!</h1>
                 <button class="btn btn-primary" data-route="/tenant/search">🔍 Find a Flat</button>
             </div>
             <div class="dashboard-grid" id="booking-list"></div>
         </div>
     </template>
 
-    <!-- ── CORE ENGINE (Single File) ── -->
+    <!-- ── THE SOUL OF THE APP ── -->
     <script>
         const appState = { currentUser: null };
         const Token = {
@@ -227,17 +237,21 @@
             }
         };
 
-        // ── DEFINTIVE CLICK DELEGATION ──
+        // GLOBAL CLICK HANDLER (ULTIMATE DEFENSE)
         window.onclick = (e) => {
             const link = e.target.closest('[data-route]');
             if (link) {
-                e.preventDefault();
+                e.preventDefault(); e.stopPropagation();
                 const r = link.dataset.route;
                 window.location.hash = r.startsWith('/') ? '#' + r : r;
                 return;
             }
-            if (e.target.id === 'theme-toggle-btn') Theme.toggle();
-            if (e.target.id === 'logout-btn') handleLogout();
+            if (e.target.id === 'theme-toggle-btn' || e.target.closest('#theme-toggle-btn')) {
+                Theme.toggle();
+            }
+            if (e.target.id === 'logout-btn') {
+                handleLogout();
+            }
         };
 
         async function apiFetch(path, options = {}) {
@@ -261,10 +275,13 @@
 
         function render(html) {
             const r = document.getElementById('app-root');
-            r.innerHTML = html;
-            // Immediate re-bind of forms
-            const f = r.querySelector('#auth-form');
-            if (f) bindAuthForm(f);
+            r.style.opacity = '0';
+            setTimeout(() => {
+                r.innerHTML = html;
+                r.style.opacity = '1';
+                const f = r.querySelector('#auth-form');
+                if (f) bindAuthForm(f);
+            }, 50);
         }
 
         function bindAuthForm(form) {
@@ -287,7 +304,7 @@
                     window.location.hash = r.data.user.role === 'owner' ? '#/owner/dashboard' : '#/tenant/dashboard';
                     showToast("Success!", "success");
                 } else {
-                    err.innerHTML = r.message;
+                    err.innerHTML = r.message || "Failed. Try again.";
                     err.classList.remove('hidden');
                     btn.disabled = false;
                     btn.innerHTML = mode === 'signup' ? 'Create Account' : 'Sign In';
@@ -300,11 +317,11 @@
             const u = appState.currentUser;
             n.innerHTML = `
                 <div class="container nav-inner">
-                    <a class="nav-brand" data-route="/">🏠 FlatFinder</a>
+                    <a class="nav-brand" data-route="/">🏘️ Urbanest</a>
                     <div class="nav-links">
                         ${u ? `<a class="nav-link" data-route="/${u.role}/dashboard">Dashboard</a>` : ''}
                         <button class="theme-toggle" id="theme-toggle-btn">🌙</button>
-                        ${u ? `<button class="btn btn-secondary" id="logout-btn">Logout</button>` : ''}
+                        ${u ? `<button class="btn btn-secondary" id="logout-btn" style="padding:0.5rem 1.2rem;font-size:0.9rem">Logout</button>` : ''}
                     </div>
                 </div>`;
             Theme.init();
@@ -323,36 +340,32 @@
             d.className = 'toast';
             d.innerHTML = m;
             t.appendChild(d);
-            setTimeout(() => d.remove(), 3000);
+            setTimeout(() => d.remove(), 4000);
         }
 
-        // ── ROUTER ──
         async function navigate() {
             const h = window.location.hash || '#/login';
             const r = h.replace('#', '');
             
+            const tmpl = document.getElementById('tmpl-auth').innerHTML;
             if (r === '/signup') {
-                const html = document.getElementById('tmpl-auth').innerHTML
-                    .replace('{{TITLE}}', 'Join Us')
-                    .replace('{{SUBTITLE}}', 'Create your premium account')
-                    .replace('{{MODE}}', 'signup')
-                    .replace('{{SIGNUP_FIELDS}}', document.getElementById('tmpl-signup-fields').innerHTML)
-                    .replace('{{SUBMIT_LABEL}}', 'Create Account')
-                    .replace('{{SWITCH_TEXT}}', 'Already have an account?')
-                    .replace('{{SWITCH_ACTION}}', 'Sign In')
-                    .replace('{{SWITCH_LINK}}', '/login');
-                render(html);
+                render(tmpl.replace('{{TITLE}}', 'Join Urbanest')
+                           .replace('{{SUBTITLE}}', 'Start your premium property journey')
+                           .replace('{{MODE}}', 'signup')
+                           .replace('{{SIGNUP_FIELDS}}', document.getElementById('tmpl-signup-fields').innerHTML)
+                           .replace('{{SUBMIT_LABEL}}', 'Create Account')
+                           .replace('{{SWITCH_TEXT}}', 'Already a member?')
+                           .replace('{{SWITCH_ACTION}}', 'Sign In')
+                           .replace('{{SWITCH_LINK}}', '/login'));
             } else {
-                const html = document.getElementById('tmpl-auth').innerHTML
-                    .replace('{{TITLE}}', 'Welcome Back')
-                    .replace('{{SUBTITLE}}', 'Sign in to your premium account')
-                    .replace('{{MODE}}', 'login')
-                    .replace('{{SIGNUP_FIELDS}}', '')
-                    .replace('{{SUBMIT_LABEL}}', 'Sign In')
-                    .replace('{{SWITCH_TEXT}}', "Don't have an account?")
-                    .replace('{{SWITCH_ACTION}}', 'Sign up free')
-                    .replace('{{SWITCH_LINK}}', '/signup');
-                render(html);
+                render(tmpl.replace('{{TITLE}}', 'Welcome Back')
+                           .replace('{{SUBTITLE}}', 'Sign in to access your dashboard')
+                           .replace('{{MODE}}', 'login')
+                           .replace('{{SIGNUP_FIELDS}}', '')
+                           .replace('{{SUBMIT_LABEL}}', 'Sign In')
+                           .replace('{{SWITCH_TEXT}}', "New here?")
+                           .replace('{{SWITCH_ACTION}}', 'Sign up free')
+                           .replace('{{SWITCH_LINK}}', '/signup'));
             }
             renderNavBar();
         }
@@ -360,11 +373,11 @@
         window.onhashchange = navigate;
         window.onload = async () => {
             Theme.init();
+            renderNavBar();
             const r = await apiFetch('/api/me');
             if (r.success) appState.currentUser = r.data;
             navigate();
         };
-
     </script>
 </body>
 </html>
