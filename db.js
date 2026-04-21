@@ -15,7 +15,6 @@ const DB_PASSWORD = process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '';
 const DB_NAME     = process.env.MYSQLDATABASE || process.env.DB_NAME     || 'flatfinder';
 
 // ── SSL CONFIG ────────────────────────────────────────────────────
-// Required for cloud providers like TiDB Cloud and Aiven
 const sslConfig = IS_PROD ? {
   rejectUnauthorized: false,
   minVersion: 'TLSv1.2'
@@ -35,14 +34,11 @@ const poolConfig = {
   enableKeepAlive:    true,
   keepAliveInitialDelay: 10000,
   connectTimeout:     15000,
-  multipleStatements: false, // SECURITY: Prevent SQL Injection
+  multipleStatements: false,
 };
 
 const pool = mysql.createPool(poolConfig);
 
-/**
- * Executes a SQL query with parameters.
- */
 export async function query(sql, params = []) {
   try {
     const [results] = await pool.execute(sql, params);
@@ -53,17 +49,11 @@ export async function query(sql, params = []) {
   }
 }
 
-/**
- * Executes a SQL query and returns the first row.
- */
 export async function queryOne(sql, params = []) {
   const results = await query(sql, params);
   return results[0] || null;
 }
 
-/**
- * Validates the database connection on startup.
- */
 export async function validateConnection() {
   try {
     const conn = await pool.getConnection();
@@ -81,10 +71,7 @@ export async function validateConnection() {
     console.error('╔══════════════════════════════════════════════╗');
     console.error('║  ❌  DATABASE CONNECTION FAILED               ║');
     console.error('╚══════════════════════════════════════════════╝');
-    console.error(`[db.js] Error Code: ${err.code}`);
-    console.error(`[db.js] Message   : ${err.message}`);
-    console.error(`[db.js] Check your Environment Variables (MYSQLHOST, etc.)`);
-    
+    console.error(`[db.js] Message: ${err.message}`);
     if (IS_PROD) process.exit(1);
     return false;
   }

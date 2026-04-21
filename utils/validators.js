@@ -35,7 +35,7 @@ export const addFlatSchema = z.object({
 }).passthrough();
 
 export const bookingSchema = z.object({
-  flat_id:   z.coerce.number().int().positive(),
+  flat_id:   z.string().uuid('Invalid Flat ID format'),
   check_in:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
   check_out: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
 }).refine(

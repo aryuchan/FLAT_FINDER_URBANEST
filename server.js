@@ -292,12 +292,14 @@ app.post('/api/signup', validateBody(signupSchema), async (req, res) => {
     if (existing) return fail(res, 'An account with this email already exists.', 409);
 
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
+    const userId = crypto.randomUUID();
+
     await query(
-      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-      [name.trim(), normalEmail, hashed, role]
+      'INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)',
+      [userId, name.trim(), normalEmail, hashed, role]
     );
 
-    const user  = await queryOne('SELECT * FROM users WHERE email = ?', [normalEmail]);
+    const user  = await queryOne('SELECT * FROM users WHERE id = ?', [userId]);
     const token = signToken(user);
     setTokenCookie(res, token);
     return ok(res, { user: strip(user), token }, 'Account created successfully.', 201);
