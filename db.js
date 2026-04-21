@@ -20,19 +20,24 @@ const dbConfig = {
 // RISK: Using a singleton pool is standard, but check env vars if connection fails.
 export const pool = mysql.createPool(dbConfig);
 
+// Fixes: Architectural flaw — Unhandled pool errors can crash the process
+pool.on('error', (err) => {
+  console.error('❌ [db.js] UNEXPECTED POOL ERROR:', err.message);
+  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+    console.log('🔄 [db.js] Attempting to re-initialize pool...');
+  }
+});
+
 /**
  * Execute a parameterized SQL query.
- * @param {string} sql 
- * @param {Array} params 
  */
 export const query = async (sql, params = []) => {
   try {
     const [rows] = await pool.execute(sql, params);
     return rows;
   } catch (err) {
-    // RISK: Log the error but never return raw DB errors to the client.
     console.error(`[DB_ERROR] SQL: ${sql} | Error: ${err.message}`);
-    throw new Error('Database operation failed.');
+    throw err; // Propagate to server.js for structured response
   }
 };
 

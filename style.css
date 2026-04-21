@@ -22,9 +22,19 @@
 body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
 
 /* ── LAYOUT ── */
+.container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
 .page-header { padding: 2rem 0; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
 .page-content { padding-bottom: 4rem; }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+
+/* Mobile Adaptability Fixes */
+@media (max-width: 768px) {
+  .flex-between { flex-direction: column; align-items: flex-start; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .auth-card { padding: 2rem; border-radius: 0; border: none; box-shadow: none; }
+}
+
 .mt-lg { margin-top: 3rem; }
 .mt-sm { margin-top: 1rem; }
 .hidden { display: none !important; }

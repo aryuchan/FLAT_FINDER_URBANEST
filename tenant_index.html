@@ -8,26 +8,26 @@
 </head>
 <body>
 
-    <div id="app-root" class="page-content"></div>
-    <div id="app-toast"></div>
+    <div id="app-root" class="page-content" role="main"></div>
+    <div id="app-toast" aria-live="polite"></div>
 
     <!-- Fixes: Missing tmpl-auth bug -->
     <template id="tmpl-auth">
-        <div class="card auth-card" style="max-width: 420px; margin: 100px auto">
+        <div class="card auth-card" style="max-width: 420px; margin: 100px auto" role="region" aria-labelledby="auth-title">
             <h1 class="mt-sm" id="auth-title">Welcome</h1>
-            <p class="text-muted" id="auth-sub">Sign in to continue</p>
-            <form id="auth-form" class="mt-lg">
+            <p class="text-muted" id="auth-sub">Sign in to your Urbanest account</p>
+            <form id="auth-form" class="mt-lg" aria-label="Authentication Form">
                 <div class="field" style="text-align: left; margin-bottom: 1rem">
-                    <label class="label">Email Address</label>
-                    <input class="form-input" type="email" name="email" required style="width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--border)">
+                    <label class="label" for="auth-email">Email Address</label>
+                    <input class="form-input" type="email" name="email" id="auth-email" required aria-required="true" style="width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--border)">
                 </div>
                 <div class="field" style="text-align: left; margin-bottom: 2rem">
-                    <label class="label">Password</label>
-                    <input class="form-input" type="password" name="password" required style="width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--border)">
+                    <label class="label" for="auth-pass">Password</label>
+                    <input class="form-input" type="password" name="password" id="auth-pass" required aria-required="true" style="width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--border)">
                 </div>
-                <button type="submit" class="btn btn--primary btn--full">Continue</button>
+                <button type="submit" class="btn btn--primary btn--full" aria-label="Sign in to account">Continue</button>
             </form>
-            <p class="mt-sm">New here? <a href="#/signup" class="text-primary">Create account</a></p>
+            <p class="mt-sm">New here? <a href="#/signup" class="text-primary" aria-label="Create new tenant account">Create account</a></p>
         </div>
     </template>
 
