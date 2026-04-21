@@ -152,7 +152,8 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:     ["'self'"],
-      scriptSrc:      ["'self'"],
+      scriptSrc:      ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr:  ["'unsafe-inline'"],
       styleSrc:       ["'self'", 'https://fonts.googleapis.com', "'unsafe-inline'"],
       fontSrc:        ["'self'", 'https://fonts.gstatic.com'],
       imgSrc:         ["'self'", 'data:', 'https://res.cloudinary.com', 'https://*.cloudinary.com'],
@@ -162,7 +163,7 @@ app.use(helmet({
       upgradeInsecureRequests: IS_PROD ? [] : null,
     },
   },
-  crossOriginEmbedderPolicy: false, // Allow Cloudinary embeds
+  crossOriginEmbedderPolicy: false, 
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 app.use(compression());
