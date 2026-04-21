@@ -22,6 +22,7 @@ import { LRUCache } from 'lru-cache';
 import logger from './utils/logger.js';
 import { validateBody, signupSchema, loginSchema, addFlatSchema, bookingSchema } from './utils/validators.js';
 import { pool, query, queryOne, validateConnection } from './db.js';
+import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
 
@@ -71,29 +72,24 @@ const VALID_STATUSES = {
 };
 
 // ── CLOUDINARY (server-side, for image deletion only) ─────────────
-// Loaded lazily to avoid crashing if the package is not installed.
+const { CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, CLOUDINARY_CLOUD_NAME } = process.env;
 let cloudinaryApi = null;
-(async () => {
-  const { CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, CLOUDINARY_CLOUD_NAME } = process.env;
-  if (CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET && CLOUDINARY_CLOUD_NAME) {
-    try {
-      const { v2: cloudinary } = await import('cloudinary');
-      cloudinary.config({
-        cloud_name: CLOUDINARY_CLOUD_NAME,
-        api_key:    CLOUDINARY_API_KEY,
-        api_secret: CLOUDINARY_API_SECRET,
-      });
-      cloudinaryApi = cloudinary;
-      console.log('[server.js] ✅ Cloudinary SDK configured for server-side deletions.');
-    } catch (_) {
-      console.warn('[server.js] ⚠️  cloudinary npm package not installed — images will NOT be deleted from Cloudinary on flat removal.');
-      console.warn('[server.js]    Run: npm install cloudinary');
-    }
-  } else {
-    console.warn('[server.js] ⚠️  Cloudinary API credentials missing — image deletion from Cloudinary disabled.');
-    console.warn('[server.js]    Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in Railway Variables.');
+
+if (CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET && CLOUDINARY_CLOUD_NAME) {
+  try {
+    cloudinary.config({
+      cloud_name: CLOUDINARY_CLOUD_NAME,
+      api_key:    CLOUDINARY_API_KEY,
+      api_secret: CLOUDINARY_API_SECRET,
+    });
+    cloudinaryApi = cloudinary;
+    console.log('[server.js] ✅ Cloudinary SDK configured.');
+  } catch (err) {
+    console.warn('[server.js] ⚠️  Cloudinary configuration failed:', err.message);
   }
-})();
+} else {
+  console.warn('[server.js] ⚠️  Cloudinary API credentials missing — image deletion disabled.');
+}
 
 // ── CORS ──────────────────────────────────────────────────────────
 // Allow:
