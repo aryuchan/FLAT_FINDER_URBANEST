@@ -8,15 +8,31 @@
 </head>
 <body>
 
-    <nav class="flex-between" style="padding: 1.5rem 3rem; background: white; border-bottom: 2px solid var(--border)">
+    <nav class="flex-between" style="padding: 1.5rem 3rem; background: var(--nav-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100;">
         <a href="/" class="logo" style="font-size: 2rem; font-weight: 900; color: var(--primary); text-decoration: none">URBANEST.</a>
         <div style="display: flex; gap: 2rem; align-items: center">
+            <button class="btn btn--secondary btn--sm" id="btn-theme-landing" title="Toggle Dark Mode" style="border-radius: 50%; padding: 0.5rem; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center;">🌙</button>
             <a href="/tenant" class="btn btn--secondary btn--sm">Tenant Portal</a>
             <a href="/owner" class="btn btn--secondary btn--sm">Owner Portal</a>
             <a href="/admin" class="btn btn--secondary btn--sm">Admin Terminal</a>
             <a href="/tenant#/login" class="btn btn--primary btn--sm">Join Now</a>
         </div>
     </nav>
+    <script>
+        const savedTheme = localStorage.getItem('ff_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const themeBtn = document.getElementById('btn-theme-landing');
+        if (themeBtn) {
+            themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+            themeBtn.addEventListener('click', () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('ff_theme', next);
+                themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+            });
+        }
+    </script>
 
     <main class="container mt-lg" style="text-align: center; max-width: 850px; margin: 6rem auto">
         <h1 style="font-size: 4rem; font-weight: 900; margin-bottom: 1.5rem; letter-spacing: -2px">Luxury Living, Simplified.</h1>

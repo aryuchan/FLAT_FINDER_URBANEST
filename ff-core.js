@@ -92,16 +92,32 @@ function renderNavBar() {
   const nav = document.getElementById('app-nav');
   if (!nav || !appState.currentUser) return;
 
-  // Fixes: Bug #6 — Removed inline onclick="Auth.logout()"
+  // Initialize theme from storage
+  const savedTheme = localStorage.getItem('ff_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
   nav.innerHTML = `
     <div class="nav-inner flex-between">
       <a href="/" class="logo">URBANEST.</a>
-      <div class="nav-user">
+      <div class="nav-user" style="display:flex; gap:1rem; align-items:center;">
         <span class="nav-name">${escHtml(appState.currentUser.name)}</span>
-        <button class="btn btn--sm" id="btn-logout">Logout</button>
+        <button class="btn btn--secondary btn--sm" id="btn-theme" title="Toggle Dark Mode">🌙</button>
+        <button class="btn btn--primary btn--sm" id="btn-logout">Logout</button>
       </div>
     </div>
   `;
 
   document.getElementById('btn-logout')?.addEventListener('click', () => Auth.logout(), { signal: appState.activeController.signal });
+  
+  document.getElementById('btn-theme')?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('ff_theme', next);
+    document.getElementById('btn-theme').textContent = next === 'dark' ? '☀️' : '🌙';
+  }, { signal: appState.activeController.signal });
+
+  // Update initial icon
+  const themeBtn = document.getElementById('btn-theme');
+  if (themeBtn) themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
 }

@@ -34,14 +34,38 @@ const Auth = {
     this.bindEvents();
   },
 
+  async renderSignup() {
+    await render(populateTemplate('tmpl-signup', {}));
+    this.bindEvents();
+  },
+
+  async signup(data) {
+    const res = await apiFetch('/api/signup', { method: 'POST', body: data });
+    if (res.success) {
+      showToast('Account created. Please login.', 'success');
+      window.location.hash = '#/login';
+    } else {
+      showToast(res.message, 'danger');
+    }
+  },
+
   bindEvents() {
-    const form = document.getElementById('auth-form');
-    if (!form) return;
-    // Fixes: Quality — AbortController signal
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(form));
-      this.login(data);
-    }, { signal: appState.activeController.signal });
+    const loginForm = document.getElementById('auth-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(loginForm));
+        this.login(data);
+      }, { signal: appState.activeController.signal });
+    }
+
+    const signupForm = document.getElementById('signup-form');
+    if (signupForm) {
+      signupForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(signupForm));
+        this.signup(data);
+      }, { signal: appState.activeController.signal });
+    }
   }
 };

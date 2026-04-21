@@ -22,6 +22,22 @@
                 <input class="input mt-sm" type="password" name="password" placeholder="Password" required style="width:100%">
                 <button type="submit" class="btn btn--primary btn--full mt-lg">Continue</button>
             </form>
+            <p class="mt-sm" style="font-size: 0.9rem">Don't have an account? <a href="#/signup" style="color: var(--primary); text-decoration: none; font-weight: bold;">Sign Up</a></p>
+        </div>
+    </template>
+
+    <template id="tmpl-signup">
+        <div class="card auth-card" style="max-width: 440px; margin: 80px auto; text-align: center">
+            <h1>Create Account</h1>
+            <p class="text-muted">Join Urbanest today</p>
+            <form id="signup-form" class="mt-lg">
+                <input class="input mt-sm" type="text" name="name" placeholder="Full Name" required style="width:100%">
+                <input class="input mt-sm" type="email" name="email" placeholder="Email" required style="width:100%">
+                <input class="input mt-sm" type="password" name="password" placeholder="Password (min 8 chars)" required style="width:100%">
+                <input type="hidden" name="role" value="tenant">
+                <button type="submit" class="btn btn--primary btn--full mt-lg">Sign Up</button>
+            </form>
+            <p class="mt-sm" style="font-size: 0.9rem">Already have an account? <a href="#/login" style="color: var(--primary); text-decoration: none; font-weight: bold;">Login</a></p>
         </div>
     </template>
 

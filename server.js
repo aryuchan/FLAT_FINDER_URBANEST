@@ -76,6 +76,23 @@ app.post('/api/login', async (req, res) => {
   } catch (err) { logger.error('Login error', err.message); res.status(400).json({ success: false, message: err.message }); }
 });
 
+app.post('/api/signup', async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password || password.length < 8) return res.status(400).json({ success: false, message: 'Invalid input' });
+    
+    const existing = await queryOne('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing) return res.status(409).json({ success: false, message: 'Email already exists' });
+    
+    const hashed = await bcrypt.hash(password, 10);
+    const id = crypto.randomUUID();
+    const userRole = ['tenant', 'owner', 'admin'].includes(role) ? role : 'tenant';
+    
+    await query('INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)', [id, name, email, hashed, userRole]);
+    res.json({ success: true, message: 'Account created' });
+  } catch (err) { logger.error('Signup error', err.message); res.status(500).json({ success: false, message: 'Server error' }); }
+});
+
 app.post('/api/logout', (req, res) => {
   res.clearCookie('ff_token');
   res.json({ success: true });

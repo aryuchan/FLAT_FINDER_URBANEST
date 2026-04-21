@@ -27,6 +27,7 @@ const App = {
     const isAdmin = typeof Admin !== 'undefined';
 
     if (!appState.currentUser) {
+      if (hash === '#/signup') return Auth.renderSignup();
       return Auth.renderLogin();
     }
 
