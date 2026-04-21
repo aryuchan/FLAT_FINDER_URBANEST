@@ -1,27 +1,20 @@
+// utils/logger.js — Winston Production Logger
 import winston from 'winston';
 
-const { combine, timestamp, printf, colorize, json } = winston.format;
-const IS_PROD = process.env.NODE_ENV === 'production';
-
-const devFormat = combine(
-  colorize(),
-  timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  printf(({ level, message, timestamp, ...meta }) => {
-    return `${timestamp} [${level}]: ${message} ${Object.keys(meta).length ? JSON.stringify(meta) : ''}`;
-  })
-);
-
-const prodFormat = combine(
-  timestamp(),
-  json()
-);
-
 const logger = winston.createLogger({
-  level: IS_PROD ? 'info' : 'debug',
-  format: IS_PROD ? prodFormat : devFormat,
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
   transports: [
-    new winston.transports.Console()
-  ],
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    })
+  ]
 });
 
 export default logger;

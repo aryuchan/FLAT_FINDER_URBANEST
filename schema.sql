@@ -1,9 +1,9 @@
--- FlatFinder Production Schema (v12)
--- Mandate: Referential Integrity · High Performance · Security
+-- FlatFinder Production Schema (Hardened)
+-- Fixes: Missing CHAR(36) UUIDs and performance indexes
 
 CREATE TABLE IF NOT EXISTS users (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role ENUM('admin', 'owner', 'tenant') DEFAULT 'tenant',
@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS flats (
-    id VARCHAR(36) PRIMARY KEY,
-    owner_id VARCHAR(36) NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    owner_id CHAR(36) NOT NULL,
     title VARCHAR(255) NOT NULL,
     city VARCHAR(100) NOT NULL,
     rent DECIMAL(10, 2) NOT NULL,
@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS flats (
 );
 
 CREATE TABLE IF NOT EXISTS bookings (
-    id VARCHAR(36) PRIMARY KEY,
-    flat_id VARCHAR(36) NOT NULL,
-    tenant_id VARCHAR(36) NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    flat_id CHAR(36) NOT NULL,
+    tenant_id CHAR(36) NOT NULL,
     check_in DATE NOT NULL,
     check_out DATE NOT NULL,
     status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
