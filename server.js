@@ -91,38 +91,59 @@ if (CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET && CLOUDINARY_CLOUD_NAME) {
   console.warn('[server.js] ⚠️  Cloudinary API credentials missing — image deletion disabled.');
 }
 
-// ── CORS ──────────────────────────────────────────────────────────
-// Allow:
-//   • explicit origins listed in FRONTEND_ORIGIN (comma-separated)
-//   • any localhost / 127.0.0.1 origin (dev)
-//   • common cloud subdomains (*.railway.app, *.onrender.com, *.koyeb.app)
-//   • same-origin requests (no Origin header, e.g. Postman / curl)
-const ALLOWED_ORIGINS   = (process.env.FRONTEND_ORIGIN || '')
+// ── CORS & SECURITY ───────────────────────────────────────────────
+const ALLOWED_ORIGINS = (process.env.FRONTEND_ORIGIN || '')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
 
-const LOCAL_ORIGIN_RE   = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
-const CLOUD_ORIGIN_RE   = /^https?:\/\/[\w-]+\.(up\.railway\.app|onrender\.com|koyeb\.app)$/;
+const CLOUD_SUBDOMAINS = [
+  '.up.railway.app',
+  '.onrender.com',
+  '.koyeb.app',
+  '.vercel.app'
+];
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Same-origin or no-origin requests (server-to-server, curl, Postman)
-    if (!origin || (origin === 'null' && !IS_PROD)) return cb(null, true); 
-    if (ALLOWED_ORIGINS.includes(origin))           return cb(null, true);
-    if (LOCAL_ORIGIN_RE.test(origin))               return cb(null, true);
-    if (CLOUD_ORIGIN_RE.test(origin))               return cb(null, true);
+    if (!origin || !IS_PROD) return cb(null, true);
     
-    // Fallback: If in production, be strict. In dev, be lenient if needed.
-    if (!IS_PROD) return cb(null, true);
+    // Check explicit allowed origins
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
     
-    cb(new Error(`CORS: origin ${origin} not allowed`));
+    // Check common cloud subdomains
+    if (CLOUD_SUBDOMAINS.some(domain => origin.endsWith(domain))) return cb(null, true);
+    
+    // Allow localhost in all environments for easier debugging
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return cb(null, true);
+
+    cb(new Error(`CORS Error: Origin ${origin} not authorized.`));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
+// ── SECURITY RATE LIMITING (EARLY STAGE) ──────────────────────────
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Limit each IP to 300 requests per window
+  message: { success: false, message: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 50, // Limit each IP to 50 auth attempts per hour
+  message: { success: false, message: 'Too many authentication attempts.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiLimiter);
+app.use('/api/login',  authLimiter);
+app.use('/api/signup', authLimiter);
+
 // ── TRUST PROXY ───────────────────────────────────────────────────
-// Required for express-rate-limit when running behind Railway's load balancer
 app.set('trust proxy', 1);
 
 // ── MIDDLEWARE ───────────────────────────────────────────────────────
@@ -150,24 +171,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(cookieParser());
 
-// ── RATE LIMITING ─────────────────────────────────────────────────
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per `window`
-  message: { success: false, message: 'Too many requests, please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 30, // Limit each IP to 30 auth requests per hour
-  message: { success: false, message: 'Too many authentication attempts, please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', apiLimiter);
-app.use('/api/login',  authLimiter);
-app.use('/api/signup', authLimiter);
+
 
 
 // ── CLOUDINARY META TAG INJECTION ─────────────────────────────────
