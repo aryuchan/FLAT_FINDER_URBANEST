@@ -144,8 +144,12 @@ function renderNavBar() {
 
 // ── UI UTILITIES ──────────────────────────────────────────────────
 function showToast(message, type = "info") {
-  const toast = document.getElementById("app-toast");
-  if (!toast) return;
+  const container = document.getElementById("app-toast");
+  if (!container) return;
+  
+  // Limit to 3 toasts max
+  if (container.children.length >= 3) container.firstChild.remove();
+
   const cls = {
     success: "toast--success",
     error: "toast--error",
@@ -154,10 +158,18 @@ function showToast(message, type = "info") {
   };
   const div = document.createElement("div");
   div.className = `toast ${cls[type] || "toast--info"}`;
-  div.innerHTML = `<span class="toast__message">${escHtml(message)}</span>
-    <button class="toast__close" onclick="this.parentElement.remove()" aria-label="Dismiss">×</button>`;
-  toast.appendChild(div);
-  setTimeout(() => div.remove(), 4000);
+  div.innerHTML = `
+    <span class="toast__message">${escHtml(message)}</span>
+    <button class="toast__close" onclick="this.parentElement.remove()" aria-label="Dismiss">×</button>
+  `;
+  container.appendChild(div);
+  
+  // Auto-remove with fade-out
+  setTimeout(() => {
+    div.style.opacity = "0";
+    div.style.transform = "translateX(20px)";
+    setTimeout(() => div.remove(), 300);
+  }, 4000);
 }
 
 function showModal(html) {

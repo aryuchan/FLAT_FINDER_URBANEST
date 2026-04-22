@@ -354,11 +354,25 @@ app.patch("/api/users/:id", auth(["admin"]), async (req, res) => {
 
 app.delete("/api/users/:id", auth(["admin"]), async (req, res) => {
   try {
-    if (req.params.id === req.user.id) return res.status(400).json({ success: false, message: "Cannot delete yourself" });
-    await query("DELETE FROM users WHERE id = ?", [req.params.id]);
-    res.json({ success: true, message: "User deleted" });
+    const targetId = req.params.id;
+    if (targetId === req.user.id) return res.status(400).json({ success: false, message: "Cannot delete yourself" });
+
+    // 1. Delete Bookings (either as tenant or for owner's flats)
+    await query(`DELETE FROM bookings WHERE tenant_id = ? OR flat_id IN (SELECT id FROM flats WHERE owner_id = ?)`, [targetId, targetId]);
+    
+    // 2. Delete Listings
+    await query(`DELETE FROM listings WHERE owner_id = ? OR flat_id IN (SELECT id FROM flats WHERE owner_id = ?)`, [targetId, targetId]);
+
+    // 3. Delete Flats
+    await query(`DELETE FROM flats WHERE owner_id = ?`, [targetId]);
+
+    // 4. Finally delete User
+    await query("DELETE FROM users WHERE id = ?", [targetId]);
+
+    res.json({ success: true, message: "User and all associated data deleted" });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to delete user" });
+    logger.error(`[USER_DELETE_FAIL] ${err.message}`);
+    res.status(500).json({ success: false, message: "Failed to delete user: " + err.message });
   }
 });
 

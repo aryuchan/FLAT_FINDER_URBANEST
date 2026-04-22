@@ -183,16 +183,35 @@ const Admin = {
       }
 
       if (action === "delete" && userId) {
-        if (!confirm("Permanently delete this user and all their data?")) return;
-        btn.disabled = true;
-        const r = await apiFetch(`/api/users/${userId}`, { method: "DELETE" });
-        btn.disabled = false;
-        if (r.success) {
-          showToast("User deleted.", "info");
-          const ur = await apiFetch("/api/users");
-          if (ur.success) appState.users = ur.data;
-          render(Admin.viewUsers());
-        } else showToast(r.message, "error");
+        showModal(`
+          <div style="text-align:center; padding:var(--space-md)">
+            <p style="font-size:3rem">⚠️</p>
+            <h3>Confirm Deletion</h3>
+            <p class="text-muted">Are you sure you want to permanently delete this user and all their associated data (flats, bookings, etc.)?</p>
+            <div style="display:flex; gap:var(--space-md); margin-top:var(--space-lg)">
+              <button class="btn btn--neutral btn--full" onclick="closeModal()">Cancel</button>
+              <button class="btn btn--danger btn--full" id="confirm-delete-btn">Yes, Delete</button>
+            </div>
+          </div>
+        `);
+
+        document.getElementById("confirm-delete-btn").addEventListener("click", async () => {
+          const confirmBtn = document.getElementById("confirm-delete-btn");
+          confirmBtn.disabled = true;
+          confirmBtn.textContent = "Deleting...";
+          
+          const r = await apiFetch(`/api/users/${userId}`, { method: "DELETE" });
+          closeModal();
+          
+          if (r.success) {
+            showToast("User and data deleted.", "success");
+            const ur = await apiFetch("/api/users");
+            if (ur.success) appState.users = ur.data;
+            render(Admin.viewUsers());
+          } else {
+            showToast(r.message, "error");
+          }
+        });
       }
     });
 
