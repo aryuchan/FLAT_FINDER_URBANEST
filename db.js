@@ -26,8 +26,8 @@ logger.info(
 export const pool = mysql.createPool({
   ...dbConfig,
   waitForConnections: true,
-  connectionLimit: 10,
-  maxIdle: 10,
+  connectionLimit: 20,
+  maxIdle: 20,
   idleTimeout: 60000,
   queueLimit: 0,
   enableKeepAlive: true,

@@ -7,6 +7,10 @@ const App = {
   async init() {
     console.log("🚀 FlatFinder Initializing…");
     window.addEventListener("hashchange", () => this.router());
+    window.addEventListener("unhandledrejection", (e) => {
+      console.error("Unhandled Error:", e.reason);
+      showToast("A network or system error occurred. Please refresh.", "error");
+    });
     document.addEventListener("click", (e) => this.handleLinkClick(e));
     await this.checkAuth();
     this.router();

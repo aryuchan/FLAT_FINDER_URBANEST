@@ -45,7 +45,12 @@ async function apiFetch(path, options = {}) {
           : options.body;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    init.signal = controller.signal;
+
     const res = await fetch(`${API}${path}`, init);
+    clearTimeout(timeoutId);
     const ct = res.headers.get("content-type") || "";
     if (!ct.includes("application/json")) {
       return {

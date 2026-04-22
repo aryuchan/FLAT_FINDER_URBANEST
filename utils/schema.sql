@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   tenant_id CHAR(36) NOT NULL,
   check_in DATE NOT NULL,
   check_out DATE NOT NULL,
+  total_rent DECIMAL(12,2) DEFAULT 0,
   status ENUM('pending','confirmed','cancelled') DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_booking_flat FOREIGN KEY (flat_id) REFERENCES flats(id) ON DELETE CASCADE,
