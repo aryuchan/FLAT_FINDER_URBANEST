@@ -3,7 +3,7 @@
 // Depends on: ff-core.js, ff-auth.js, ff-tenant.js, ff-owner.js, ff-admin.js
 // ─────────────────────────────────────────────────────────────────
 
-const App = {
+window.App = {
   async init() {
     console.log("🚀 FlatFinder Initializing…");
     window.addEventListener("hashchange", () => this.router());

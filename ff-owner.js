@@ -3,7 +3,7 @@
 // Depends on: ff-core.js
 // ─────────────────────────────────────────────────────────────────
 
-const Owner = {
+window.Owner = {
   _uploadedImages: [], // holds Cloudinary secure_urls
 
   _cloudConfig() {

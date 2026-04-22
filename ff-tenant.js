@@ -3,7 +3,7 @@
 // Depends on: ff-core.js
 // ─────────────────────────────────────────────────────────────────
 
-const Tenant = {
+window.Tenant = {
   viewDashboard() {
     const bookings = appState.bookings || [];
     const rows = bookings.length

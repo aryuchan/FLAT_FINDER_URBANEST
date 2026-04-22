@@ -3,7 +3,7 @@
 // Depends on: ff-core.js
 // ─────────────────────────────────────────────────────────────────
 
-const Admin = {
+window.Admin = {
   viewDashboard() {
     const users = appState.users || [];
     const flats = appState.flats || [];

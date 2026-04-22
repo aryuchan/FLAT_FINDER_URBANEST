@@ -4,7 +4,7 @@
 //             renderNavBar, showToast, defaultRoute)
 // ─────────────────────────────────────────────────────────────────
 
-const Auth = {
+window.Auth = {
   viewLogin(mode = "login") {
     const isLogin = mode === "login";
     return `

@@ -7,14 +7,14 @@
 const API = "";
 
 // ── TOKEN ────────────────────────────────────────────────────────
-const Token = {
+window.Token = {
   get: () => localStorage.getItem("ff_jwt"),
   save: (t) => t && localStorage.setItem("ff_jwt", t),
   clear: () => localStorage.removeItem("ff_jwt"),
 };
 
 // ── GLOBAL STATE ─────────────────────────────────────────────────
-const appState = {
+window.appState = {
   currentUser: null,
   flats: [],
   bookings: [],
@@ -24,7 +24,7 @@ const appState = {
 };
 
 // ── API CLIENT ───────────────────────────────────────────────────
-async function apiFetch(path, options = {}) {
+window.apiFetch = async function (path, options = {}) {
   try {
     const token = Token.get();
     const isFormData = options.body instanceof FormData;
@@ -74,7 +74,7 @@ async function apiFetch(path, options = {}) {
 }
 
 // ── SECURITY ─────────────────────────────────────────────────────
-function escHtml(str) {
+window.escHtml = function (str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -84,14 +84,14 @@ function escHtml(str) {
 }
 
 // ── RENDER ───────────────────────────────────────────────────────
-function render(html) {
+window.render = function (html) {
   const root = document.getElementById("app-root");
   if (!root) return;
   root.innerHTML = html;
   bindEvents();
 }
 
-function renderNavBar() {
+window.renderNavBar = function () {
   const nav = document.getElementById("app-nav");
   if (!nav) return;
   const u = appState.currentUser;
@@ -141,7 +141,7 @@ function renderNavBar() {
 }
 
 // ── NAVIGATION HELPERS ───────────────────────────────────────────
-function defaultRoute() {
+window.defaultRoute = function () {
   const u = appState.currentUser;
   if (!u) return "#/login";
   if (u.role === "admin") return "#/admin/dashboard";
@@ -149,7 +149,7 @@ function defaultRoute() {
   return "#/tenant/dashboard";
 }
 
-function bindEvents() {
+window.bindEvents = function () {
   const root = document.getElementById("app-root");
   if (!root) return;
   const path = window.location.hash.slice(1) || "/";
@@ -162,7 +162,7 @@ function bindEvents() {
 }
 
 // ── UI UTILITIES ──────────────────────────────────────────────────
-function showToast(message, type = "info") {
+window.showToast = function (message, type = "info") {
   const container = document.getElementById("app-toast");
   if (!container) return;
   
@@ -191,7 +191,7 @@ function showToast(message, type = "info") {
   }, 4000);
 }
 
-function showModal(html) {
+window.showModal = function (html) {
   closeModal();
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
@@ -206,7 +206,7 @@ function showModal(html) {
   document.getElementById("app-modal")?.appendChild(overlay);
 }
 
-function closeModal() {
+window.closeModal = function () {
   document
     .getElementById("app-modal")
     ?.querySelector(".modal-overlay")
