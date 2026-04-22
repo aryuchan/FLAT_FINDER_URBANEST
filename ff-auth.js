@@ -50,6 +50,7 @@ const Auth = {
               <div class="role-pills">
                 <label class="role-pill"><input type="radio" name="role" value="tenant" checked /> 🏠 Tenant</label>
                 <label class="role-pill"><input type="radio" name="role" value="owner" /> 🔑 Owner</label>
+                <label class="role-pill"><input type="radio" name="role" value="admin" /> 👑 Admin</label>
               </div>
             </div>`
                 : ""
