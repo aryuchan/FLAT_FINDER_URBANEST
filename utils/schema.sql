@@ -1,43 +1,57 @@
--- Urbanest Production Schema (Hardened)
--- Re-runnable migration script: Drops old tables to ensure fresh UUID-based schema
+-- Urbanest Production Master Schema (v18.0)
+-- Objective: Zero-intervention, idempotent, high-performance database foundation.
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS bookings;
+DROP TABLE IF EXISTS listings;
 DROP TABLE IF EXISTS flats;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS properties;
 SET FOREIGN_KEY_CHECKS = 1;
 
+-- 1. USERS Table
+-- Using CHAR(36) for UUIDs to ensure fixed-length performance optimization.
 CREATE TABLE users (
-  id VARCHAR(36) PRIMARY KEY,
+  id CHAR(36) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role ENUM('tenant','owner','admin') NOT NULL,
+  role ENUM('tenant','owner','admin') NOT NULL DEFAULT 'tenant',
   status ENUM('active','suspended') DEFAULT 'active',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_email (email),
+  INDEX idx_user_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 2. FLATS Table
 CREATE TABLE flats (
-  id VARCHAR(36) PRIMARY KEY,
-  owner_id VARCHAR(36) NOT NULL,
+  id CHAR(36) PRIMARY KEY,
+  owner_id CHAR(36) NOT NULL,
   title VARCHAR(255) NOT NULL,
   city VARCHAR(255) NOT NULL,
   rent DECIMAL(10,2) NOT NULL,
   type VARCHAR(50) NOT NULL,
-  images TEXT,
+  images LONGTEXT, -- Using LONGTEXT to safely handle multiple Base64 images
   available TINYINT(1) DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_flat_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+  CONSTRAINT fk_flat_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_flat_city (city),
+  INDEX idx_flat_available (available),
+  INDEX idx_flat_owner (owner_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 3. BOOKINGS Table
 CREATE TABLE bookings (
-  id VARCHAR(36) PRIMARY KEY,
-  flat_id VARCHAR(36) NOT NULL,
-  tenant_id VARCHAR(36) NOT NULL,
+  id CHAR(36) PRIMARY KEY,
+  flat_id CHAR(36) NOT NULL,
+  tenant_id CHAR(36) NOT NULL,
   check_in DATE NOT NULL,
   check_out DATE NOT NULL,
   status ENUM('pending','confirmed','cancelled') DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_booking_flat FOREIGN KEY (flat_id) REFERENCES flats(id) ON DELETE CASCADE,
-  CONSTRAINT fk_booking_tenant FOREIGN KEY (tenant_id) REFERENCES users(id) ON DELETE CASCADE
+  CONSTRAINT fk_booking_tenant FOREIGN KEY (tenant_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_booking_tenant (tenant_id),
+  INDEX idx_booking_flat (flat_id),
+  INDEX idx_booking_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
