@@ -54,7 +54,7 @@ const Owner = {
                 </div>
                 <!-- FIX [12]: Added check-in, check-out, and tenant id to owner bookings -->
                 <p class="text-muted mt-sm">Tenant: ${escHtml(b.tenant_name || String(b.tenant_id))}</p>
-                <p class="text-muted mt-sm">Check-in: ${formatDate(b.check_in)}</p>>
+                <p class="text-muted mt-sm">Check-in: ${formatDate(b.check_in)}</p>
                 <p class="text-muted mt-sm">Check-out: ${formatDate(b.check_out)}</p>
                 ${b.status === 'pending' ? `
                   <div class="mt-lg flex-between">
