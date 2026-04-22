@@ -70,8 +70,9 @@ const App = {
 
     // ── TENANT ROUTES ──
     if (path === "/tenant/dashboard" && u.role === "tenant") {
-      const r = await apiFetch("/api/bookings");
-      if (r.success) appState.bookings = r.data;
+      const [br, fr] = await Promise.all([apiFetch("/api/bookings"), apiFetch("/api/flats")]);
+      if (br.success) appState.bookings = br.data;
+      if (fr.success) appState.flats = fr.data;
       return render(Tenant.viewDashboard());
     }
     if (path === "/tenant/search" && u.role === "tenant") {
