@@ -373,23 +373,31 @@ app.post("/api/flats", auth(["owner"]), async (req, res) => {
       title, city, type, rent, address, description,
       deposit, floor, total_floors, area_sqft,
       parking, preferred_tenants, food_preference,
-      images, amenities,
+      furnished, images, amenities,
     } = req.body;
 
     const flatId = crypto.randomUUID();
     const listingId = crypto.randomUUID();
 
+    // Numeric conversion for DECIMAL and INT fields
+    const nRent = parseFloat(rent) || 0;
+    const nDeposit = parseFloat(deposit) || 0;
+    const nFloor = parseInt(floor) || 0;
+    const nTotalFloors = parseInt(total_floors) || 0;
+    const nArea = parseInt(area_sqft) || 0;
+    const nFurnished = parseInt(furnished) || 0;
+
     await query(
       `INSERT INTO flats (
         id, owner_id, title, city, type, rent, address, description, 
         deposit, floor, total_floors, area_sqft, 
-        parking, preferred_tenants, food_preference,
+        parking, preferred_tenants, food_preference, furnished,
         images, amenities, available
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
       [
-        flatId, req.user.id, title, city, type, rent, address || "", description || "",
-        deposit || 0, floor || 0, total_floors || 0, area_sqft || 0,
-        parking || "none", preferred_tenants || "any", food_preference || "any",
+        flatId, req.user.id, title, city, type, nRent, address || "", description || "",
+        nDeposit, nFloor, nTotalFloors, nArea,
+        parking || "none", preferred_tenants || "any", food_preference || "any", nFurnished,
         JSON.stringify(images || []), JSON.stringify(amenities || []),
       ],
     );
@@ -401,8 +409,8 @@ app.post("/api/flats", auth(["owner"]), async (req, res) => {
 
     res.json({ success: true, data: { id: flatId }, message: "Flat submitted for review." });
   } catch (err) {
-    logger.error("Flat creation failed:", err.message);
-    res.status(500).json({ success: false, message: "Failed to create listing" });
+    logger.error(`[LISTING_FAILED] ${err.message}`);
+    res.status(500).json({ success: false, message: `Failed to create listing: ${err.message}` });
   }
 });
 
