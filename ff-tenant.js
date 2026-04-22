@@ -1,173 +1,155 @@
 // ff-tenant.js — Hardened Tenant Engine (v18.0)
-
 const Tenant = {
+  async init() {
+    await this.route();
+  },
+
   async route() {
-    if (window.location.hash === '#/search') await this.viewSearch();
+    const hash = window.location.hash || '#/dashboard';
+    if (hash === '#/search') await this.viewSearch();
     else await this.viewDashboard();
+    this.bindEvents();
   },
 
   async viewDashboard() {
     const res = await apiFetch('/api/bookings');
-    appState.bookings = res.success ? res.data : [];
+    const bookings = res.success ? res.data : [];
 
     await render(`
-      <div class="container">
-        <div class="flex-between page-header">
-          <h1 class="page-title">My Journey</h1>
-          <a href="#/search" class="btn btn--primary">Find a Flat</a>
+      <div class="container page-content">
+        <div class="page-header">
+          <h2>Tenant Dashboard</h2>
+          <a class="btn btn--primary" href="#/search" data-route="/search">🔍 Find a Flat</a>
         </div>
-        ${appState.bookings.length === 0 ? `
-          <div class="empty-state mt-lg">
-            <h3>Start Your Search</h3>
-            <p class="text-muted mt-sm">You haven't booked any premium residences yet.</p>
-            <a href="#/search" class="btn btn--primary mt-lg">Explore Properties</a>
-          </div>
-        ` : `
-          <div class="grid mt-lg">
-            ${appState.bookings.map(b => `
-              <div class="card" data-id="${escHtml(b.id)}">
-                <h3 class="stat-card__label">${escHtml(b.flat_title)}</h3>
-                <p class="text-muted mt-sm">Check-in: ${formatDate(b.check_in)}</p>
-                <p class="text-muted mt-sm">Check-out: ${formatDate(b.check_out)}</p>
-                <div class="flex-between mt-lg">
-                  <span class="badge badge--${b.status === 'confirmed' ? 'success' : b.status === 'cancelled' ? 'danger' : 'warning'}">${escHtml(b.status)}</span>
-                  ${['pending', 'confirmed'].includes(b.status) ? `<button class="btn btn--danger btn--sm btn-cancel">Cancel</button>` : ''}
-                </div>
+        
+        <h3 class="mt-xl">My Rental Requests</h3>
+        <div class="grid mt-sm">
+          ${bookings.length ? bookings.map(b => `
+            <div class="card">
+              <div class="flex-between">
+                <h4 style="font-size:1.1rem">${escHtml(b.flat_title)}</h4>
+                <span class="badge badge--${b.status === 'confirmed' ? 'success' : b.status === 'cancelled' ? 'danger' : 'warning'}">${escHtml(b.status)}</span>
               </div>
-            `).join('')}
-          </div>
-        `}
+              <p class="text-muted mt-sm">📍 ${escHtml(b.city || 'Location unavailable')}</p>
+              <p class="text-muted" style="font-size:0.85rem">📅 Stay: ${formatDate(b.check_in)} to ${formatDate(b.check_out)}</p>
+            </div>
+          `).join('') : `
+            <div class="card" style="grid-column: 1/-1; text-align:center; padding: 4rem;">
+              <p class="text-muted">You haven't requested any flats yet.</p>
+              <a href="#/search" class="btn btn--secondary btn--sm mt-md">Start Searching</a>
+            </div>
+          `}
+        </div>
       </div>
     `);
-    this.bindEvents();
   },
 
   async viewSearch() {
+    // Initial fetch
     const res = await apiFetch('/api/flats');
-    appState.flats = res.success ? res.data : [];
-    const cities = [...new Set(appState.flats.map(f => f.city))];
+    const flats = res.success ? res.data : [];
 
     await render(`
-      <div class="container">
-        <div class="page-header"><h1 class="page-title">Explore Urbanest</h1></div>
-        
-        <div class="filter-bar mt-lg">
-          <select id="filter-city" class="input form-select">
-            <option value="">All Cities</option>
-            ${cities.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('')}
-          </select>
-          <select id="filter-type" class="input form-select">
-            <option value="">All Types</option>
-            <option value="Studio">Studio</option>
-            <option value="1BHK">1BHK</option>
-            <option value="2BHK">2BHK</option>
-            <option value="Penthouse">Penthouse</option>
-          </select>
-          <input type="number" id="filter-rent" class="input" placeholder="Max Budget (₹)">
+      <div class="container page-content">
+        <div class="page-header">
+          <h2>Find Your Next Home</h2>
         </div>
 
-        <div id="flat-grid-container" class="mt-lg">
-          ${this.renderFlatGrid(appState.flats)}
+        <!-- Search Bar -->
+        <div class="card mb-xl" style="padding: 1.5rem">
+          <form id="search-filter-form" class="grid-4" style="gap:1rem; align-items:end">
+            <div class="form-group mb-0">
+              <label class="form-label" style="font-size:0.75rem">City</label>
+              <input class="form-input" name="city" placeholder="e.g. Pune" style="padding: 0.5rem" />
+            </div>
+            <div class="form-group mb-0">
+              <label class="form-label" style="font-size:0.75rem">Type</label>
+              <select class="form-select" name="type" style="padding: 0.5rem">
+                <option value="">Any Type</option>
+                <option>1BHK</option><option>2BHK</option><option>3BHK</option><option>Studio</option>
+              </select>
+            </div>
+            <div class="form-group mb-0">
+              <label class="form-label" style="font-size:0.75rem">Max Rent (₹)</label>
+              <input class="form-input" name="maxRent" type="number" placeholder="50000" style="padding: 0.5rem" />
+            </div>
+            <button type="submit" class="btn btn--primary" id="btn-apply-filters">Apply Filters</button>
+          </form>
+        </div>
+
+        <div id="search-results" class="grid">
+          ${this._renderFlatGrid(flats)}
         </div>
       </div>
     `);
-    this.bindEvents();
   },
 
-  renderFlatGrid(flats) {
-    if (flats.length === 0) return `<div class="empty-state"><h3>No results match your criteria</h3><button class="btn btn--secondary mt-sm btn-clear-filters">Clear All</button></div>`;
-    return `
-      <div class="flat-grid">
-        ${flats.map(f => `
-          <div class="card flat-card" data-id="${escHtml(f.id)}">
-            ${f.images ? `<img src="${escHtml(f.images)}" class="flat-gallery__img" loading="lazy">` : `<div class="flat-gallery__img" style="display:flex;align-items:center;justify-content:center;background:var(--border)">🏢</div>`}
-            <div class="flat-body">
-              <div class="flex-between">
-                <h3>${escHtml(f.title)}</h3>
-                <span class="badge badge--neutral">${escHtml(f.type)}</span>
-              </div>
-              <p class="text-muted mt-sm">${escHtml(f.city)} — <strong>${formatCurrency(f.rent)}</strong>/mo</p>
-              <div class="mt-lg">
-                <div class="field"><label class="label">Check-in</label><input type="date" class="input input-in" value="${new Date().toISOString().split('T')[0]}"></div>
-                <div class="field mt-sm"><label class="label">Check-out</label><input type="date" class="input input-out" value="${new Date(Date.now()+86400000).toISOString().split('T')[0]}"></div>
-                <button class="btn btn--primary btn--full mt-lg btn-book">Reserve Now</button>
-              </div>
+  _renderFlatGrid(flats) {
+    if (!flats.length) return '<p class="text-muted" style="grid-column:1/-1; text-align:center; padding:3rem">No matching properties found.</p>';
+    
+    return flats.map(f => {
+      const imgs = JSON.parse(f.images || '[]');
+      const cover = imgs[0] || 'https://via.placeholder.com/400x300?text=No+Image';
+      
+      return `
+        <div class="card flat-card" data-id="${escHtml(f.id)}">
+          <img src="${cover}" class="flat-card__img" style="width:100%; height:200px; object-fit:cover; border-radius:0.5rem">
+          <div class="mt-md">
+            <div class="flex-between">
+              <h4 style="font-size:1.1rem">${escHtml(f.title)}</h4>
+              <span class="badge badge--success">${escHtml(f.type)}</span>
             </div>
+            <p class="text-muted mt-sm">📍 ${escHtml(f.city)}</p>
+            <p class="mt-sm" style="font-weight:700; color:var(--primary)">${formatCurrency(f.rent)}/mo</p>
+            <button class="btn btn--secondary btn--sm btn--full mt-lg btn-book">Book Viewing</button>
           </div>
-        `).join('')}
-      </div>
-    `;
+        </div>
+      `;
+    }).join('');
   },
 
   bindEvents() {
     const { signal } = appState.activeController;
 
-    const applyFilters = () => {
-      const city = document.getElementById('filter-city')?.value.toLowerCase() || '';
-      const type = document.getElementById('filter-type')?.value.toLowerCase() || '';
-      const rent = parseFloat(document.getElementById('filter-rent')?.value) || Infinity;
+    // Filter Logic
+    document.getElementById('search-filter-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-apply-filters');
+      showLoading(btn);
       
-      const filtered = appState.flats.filter(f => 
-        (city === '' || f.city.toLowerCase().includes(city)) &&
-        (type === '' || f.type.toLowerCase().includes(type)) &&
-        f.rent <= rent
-      );
+      const fd = new FormData(e.target);
+      const params = new URLSearchParams(Object.fromEntries(fd));
+      const res = await apiFetch(`/api/flats?${params.toString()}`);
       
-      const container = document.getElementById('flat-grid-container');
-      if (container) {
-        container.innerHTML = this.renderFlatGrid(filtered);
-        this.bindDynamicEvents(signal);
+      if (res.success) {
+        document.getElementById('search-results').innerHTML = this._renderFlatGrid(res.data);
       }
-    };
+      hideLoading(btn);
+    }, { signal });
 
-    document.getElementById('filter-city')?.addEventListener('change', applyFilters, { signal });
-    document.getElementById('filter-type')?.addEventListener('change', applyFilters, { signal });
-    document.getElementById('filter-rent')?.addEventListener('input', applyFilters, { signal });
-
-    document.querySelectorAll('.btn-cancel').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        if (!confirm('Cancel this booking?')) return;
-        const id = e.target.closest('.card').dataset.id;
-        showLoading(btn);
-        try {
-          const res = await apiFetch(`/api/bookings/${id}`, { method: 'PATCH', body: { status: 'cancelled' } });
-          if (res.success) { showToast('Cancelled successfully'); await this.viewDashboard(); }
-          else showToast(res.message, 'danger');
-        } finally { hideLoading(btn); }
-      }, { signal });
-    });
-
-    this.bindDynamicEvents(signal);
-  },
-
-  bindDynamicEvents(signal) {
+    // Booking Logic
     document.querySelectorAll('.btn-book').forEach(btn => {
       btn.addEventListener('click', async (e) => {
-        const card = e.target.closest('.flat-card');
-        const flatId = card.dataset.id;
-        const checkIn = card.querySelector('.input-in').value;
-        const checkOut = card.querySelector('.input-out').value;
-        
-        if (new Date(checkOut) <= new Date(checkIn)) return showToast('Invalid dates', 'warning');
+        const id = e.target.closest('.card').dataset.id;
+        const check_in = new Date().toISOString().split('T')[0];
+        const check_out = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
 
+        if (!confirm(`Request a viewing for this property?`)) return;
+        
         showLoading(btn);
-        try {
-          const res = await apiFetch('/api/bookings', { method: 'POST', body: { flat_id: flatId, check_in: checkIn, check_out: checkOut } });
-          if (res.success) { showToast('Reserved!', 'success'); window.location.hash = '#/dashboard'; }
-          else showToast(res.message, 'danger');
-        } finally { hideLoading(btn); }
+        const res = await apiFetch('/api/bookings', {
+          method: 'POST',
+          body: { flat_id: id, check_in, check_out }
+        });
+        
+        if (res.success) {
+          showToast('Inquiry sent to owner!', 'success');
+          window.location.hash = '#/dashboard';
+        } else {
+          showToast(res.message, 'danger');
+          hideLoading(btn);
+        }
       }, { signal });
     });
-
-    document.querySelector('.btn-clear-filters')?.addEventListener('click', () => {
-      document.getElementById('filter-city').value = '';
-      document.getElementById('filter-type').value = '';
-      document.getElementById('filter-rent').value = '';
-      const container = document.getElementById('flat-grid-container');
-      if (container) {
-        container.innerHTML = this.renderFlatGrid(appState.flats);
-        this.bindDynamicEvents(signal);
-      }
-    }, { signal });
   }
 };

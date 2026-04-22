@@ -19,6 +19,30 @@ import logger from './utils/logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+// Cloudinary Injection (from Backup Reference)
+const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
+const UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET || '';
+
+async function serveInjectedHtml(file, req, res) {
+  const filePath = path.join(__dirname, file);
+  try {
+    const data = await fs.promises.readFile(filePath, 'utf8');
+    const injected = data
+      .replace(/{{CLOUDINARY_CLOUD_NAME}}/g, CLOUD_NAME)
+      .replace(/{{CLOUDINARY_UPLOAD_PRESET}}/g, UPLOAD_PRESET);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(injected);
+  } catch (err) {
+    res.status(404).send('Page not found');
+  }
+}
+
+app.get('/', (req, res) => serveInjectedHtml('index.html', req, res));
+app.get('/tenant', (req, res) => serveInjectedHtml('tenant_index.html', req, res));
+app.get('/owner', (req, res) => serveInjectedHtml('owner_index.html', req, res));
+app.get('/admin', (req, res) => serveInjectedHtml('admin_index.html', req, res));
+
 const PORT = process.env.PORT || 3000;
 const SECRET = process.env.JWT_SECRET;
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -173,17 +197,45 @@ app.patch('/api/me', auth(), async (req, res) => {
 
 // Flats
 app.get('/api/flats', async (req, res) => {
-  const flats = await query('SELECT * FROM flats WHERE available = 1 ORDER BY created_at DESC');
+  const { city, type, minRent, maxRent } = req.query;
+  let sql = 'SELECT * FROM flats WHERE available = 1';
+  const params = [];
+
+  if (city) { sql += ' AND city LIKE ?'; params.push(`%${city}%`); }
+  if (type) { sql += ' AND type = ?'; params.push(type); }
+  if (minRent) { sql += ' AND rent >= ?'; params.push(minRent); }
+  if (maxRent) { sql += ' AND rent <= ?'; params.push(maxRent); }
+
+  sql += ' ORDER BY created_at DESC';
+  const flats = await query(sql, params);
   res.json({ success: true, data: flats });
 });
 
 app.post('/api/flats', auth(['owner']), async (req, res) => {
   try {
-    const { title, city, type, rent } = req.body;
+    const { 
+      title, city, type, rent, address, description, 
+      deposit, floor, total_floors, area_sqft, 
+      parking, preferred_tenants, food_preference,
+      images, amenities 
+    } = req.body;
+    
     const id = crypto.randomUUID();
-    await query('INSERT INTO flats (id, owner_id, title, city, type, rent) VALUES (?,?,?,?,?,?)', [id, req.user.id, title, city, type, rent]);
+    await query(`
+      INSERT INTO flats (
+        id, owner_id, title, city, type, rent, address, description, 
+        deposit, floor, total_floors, area_sqft, 
+        parking, preferred_tenants, food_preference,
+        images, amenities
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
+      id, req.user.id, title, city, type, rent, address || '', description || '',
+      deposit || 0, floor || 0, total_floors || 0, area_sqft || 0,
+      parking || 'none', preferred_tenants || 'any', food_preference || 'any',
+      JSON.stringify(images || []), JSON.stringify(amenities || [])
+    ]);
     res.json({ success: true, data: { id } });
   } catch (err) {
+    logger.error('Flat creation failed:', err.message);
     res.status(500).json({ success: false, message: 'Failed to create listing' });
   }
 });
