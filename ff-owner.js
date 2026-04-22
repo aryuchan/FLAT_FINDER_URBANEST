@@ -644,18 +644,35 @@ const Owner = {
 
       const btnDel = e.target.closest(".btn-del-flat");
       if (btnDel) {
-        if (!confirm("Delete this listing permanently?")) return;
-        btnDel.disabled = true;
-        const res = await apiFetch(`/api/flats/${flatId}`, { method: "DELETE" });
-        if (res.success) {
-          showToast("Listing deleted", "success");
-          const r = await apiFetch("/api/listings");
-          if (r.success) appState.listings = r.data;
-          render(Owner.viewDashboard());
-        } else {
-          showToast(res.message, "error");
-          btnDel.disabled = false;
-        }
+        showModal(`
+          <div style="text-align:center; padding:var(--space-md)">
+            <p style="font-size:3rem">🗑️</p>
+            <h3>Delete Listing?</h3>
+            <p class="text-muted">Are you sure you want to permanently delete this property listing? This action cannot be undone.</p>
+            <div style="display:flex; gap:var(--space-md); margin-top:var(--space-lg)">
+              <button class="btn btn--neutral btn--full" onclick="closeModal()">Cancel</button>
+              <button class="btn btn--danger btn--full" id="confirm-del-flat-btn">Delete Listing</button>
+            </div>
+          </div>
+        `);
+
+        document.getElementById("confirm-del-flat-btn").addEventListener("click", async () => {
+          const confirmBtn = document.getElementById("confirm-del-flat-btn");
+          confirmBtn.disabled = true;
+          confirmBtn.textContent = "Deleting...";
+          
+          const res = await apiFetch(`/api/flats/${flatId}`, { method: "DELETE" });
+          closeModal();
+          
+          if (res.success) {
+            showToast("Listing deleted", "success");
+            const r = await apiFetch("/api/listings");
+            if (r.success) appState.listings = r.data;
+            render(Owner.viewDashboard());
+          } else {
+            showToast(res.message, "error");
+          }
+        });
         return;
       }
 

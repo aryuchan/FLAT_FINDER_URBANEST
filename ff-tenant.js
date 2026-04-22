@@ -67,13 +67,13 @@ const Tenant = {
                 : '<span class="badge badge--neutral">Unfurnished</span>'
             }
           </div>
-          ${
-            f.images && f.images.length
-              ? `<div class="flat-card__img-wrap">
-                   <img class="flat-card__img" src="${escHtml(f.images[0])}" alt="${escHtml(f.title || f.flat_title || '')}" loading="lazy" onerror="this.style.display='none'" />
-                 </div>`
-              : ""
-          }
+          <div class="flat-card__img-wrap">
+            <img class="flat-card__img" 
+                 src="${(f.images && f.images.length > 0) ? escHtml(f.images[0]) : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop'}" 
+                 alt="${escHtml(f.title || f.flat_title || 'Flat image')}" 
+                 loading="lazy" 
+                 onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop'" />
+          </div>
           <h3 class="flat-card__title">${escHtml(f.title || f.flat_title || '')}</h3>
           <p class="flat-card__city">📍 ${escHtml(f.city)}</p>
           <p class="flat-card__rent">₹${Number(f.rent).toLocaleString("en-IN")}<span>/mo</span></p>
@@ -149,11 +149,15 @@ const Tenant = {
               (src, i) =>
                 `<img class="flat-gallery__img${i === 0 ? " flat-gallery__img--main" : ""}"
                       src="${escHtml(src)}" alt="Flat image ${i + 1}" loading="lazy"
-                      onerror="this.style.display='none'" />`,
+                      onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop'" />`,
             )
             .join("")}
          </div>`
-      : "";
+      : `<div class="flat-gallery">
+           <img class="flat-gallery__img flat-gallery__img--main" 
+                src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop" 
+                alt="Placeholder" />
+         </div>`;
 
     return `
       <div class="container page-content">
@@ -320,16 +324,37 @@ const Tenant = {
       const btn = e.target.closest('[data-action="cancel-booking"]');
       if (!btn) return;
       const bId = btn.dataset.bookingId;
-      if (!bId || !confirm("Cancel this booking?")) return;
-      btn.disabled = true;
-      const r = await apiFetch(`/api/bookings/${bId}`, { method: "PATCH", body: { status: "cancelled" } });
-      btn.disabled = false;
-      if (r.success) {
-        showToast("Booking cancelled.", "info");
-        const br = await apiFetch("/api/bookings");
-        if (br.success) appState.bookings = br.data;
-        render(Tenant.viewDashboard());
-      } else showToast(r.message, "error");
+      if (!bId) return;
+
+      showModal(`
+        <div style="text-align:center; padding:var(--space-md)">
+          <p style="font-size:3rem">📅</p>
+          <h3>Cancel Booking?</h3>
+          <p class="text-muted">Are you sure you want to cancel this booking? This will notify the property owner.</p>
+          <div style="display:flex; gap:var(--space-md); margin-top:var(--space-lg)">
+            <button class="btn btn--neutral btn--full" onclick="closeModal()">Keep Booking</button>
+            <button class="btn btn--danger btn--full" id="confirm-cancel-booking-btn">Yes, Cancel</button>
+          </div>
+        </div>
+      `);
+
+      document.getElementById("confirm-cancel-booking-btn").addEventListener("click", async () => {
+        const confirmBtn = document.getElementById("confirm-cancel-booking-btn");
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Cancelling...";
+        
+        const r = await apiFetch(`/api/bookings/${bId}`, { method: "PATCH", body: { status: "cancelled" } });
+        closeModal();
+        
+        if (r.success) {
+          showToast("Booking cancelled.", "info");
+          const br = await apiFetch("/api/bookings");
+          if (br.success) appState.bookings = br.data;
+          render(Tenant.viewDashboard());
+        } else {
+          showToast(r.message, "error");
+        }
+      });
     });
   },
 };

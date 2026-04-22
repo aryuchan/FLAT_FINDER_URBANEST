@@ -387,7 +387,13 @@ app.delete("/api/users/:id", auth(["admin"]), async (req, res) => {
 app.get("/api/flats/:id", async (req, res) => {
   try {
     const flat = await queryOne(
-      "SELECT f.*, u.name as owner_name, u.phone as owner_phone, u.email as owner_email, u.bio as owner_bio FROM flats f JOIN users u ON f.owner_id = u.id WHERE f.id = ?",
+      `SELECT f.*, 
+              u.name as owner_name, u.phone as owner_phone, u.email as owner_email, u.bio as owner_bio,
+              u.whatsapp as owner_whatsapp, u.telegram as owner_telegram, 
+              u.location as owner_location, u.languages as owner_languages
+       FROM flats f 
+       JOIN users u ON f.owner_id = u.id 
+       WHERE f.id = ?`,
       [req.params.id],
     );
     if (!flat)
