@@ -526,7 +526,101 @@ const Owner = {
     });
   },
 
-  _bindDashboardActions(root) {
+  },
+
+  viewProfile() {
+    const u = appState.currentUser || {};
+    return `
+      <div class="container page-content">
+        <a class="back-link" href="#/owner/dashboard" data-route="/owner/dashboard">← Back to Dashboard</a>
+        <div class="card form-card" style="max-width:600px; margin-top:var(--space-md)">
+          <h2 class="card-title">Update Contact Details</h2>
+          <p class="text-muted" style="margin-bottom:var(--space-lg)">These details help tenants contact you about your flats.</p>
+          
+          <form id="owner-profile-form" novalidate>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input class="form-input" type="text" name="name" value="${escHtml(u.name)}" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input class="form-input" type="tel" name="phone" value="${escHtml(u.phone || "")}" placeholder="e.g. +91 98765 43210" />
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">WhatsApp (Number only)</label>
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix">✆</span>
+                  <input class="form-input input-with-prefix" type="text" name="whatsapp" value="${escHtml(u.whatsapp || "")}" placeholder="919876543210" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Telegram Username</label>
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix">@</span>
+                  <input class="form-input input-with-prefix" type="text" name="telegram" value="${escHtml(u.telegram || "")}" placeholder="username" />
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">City / Location</label>
+                <input class="form-input" type="text" name="location" value="${escHtml(u.location || "")}" placeholder="e.g. Pune, Maharashtra" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Languages Spoken</label>
+                <input class="form-input" type="text" name="languages" value="${escHtml(u.languages || "")}" placeholder="e.g. English, Hindi, Marathi" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">About You / Professional Bio</label>
+              <textarea class="form-textarea" name="bio" placeholder="Tell tenants about your property management style...">${escHtml(u.bio || "")}</textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">New Password (leave blank to keep current)</label>
+              <input class="form-input" type="password" name="password" placeholder="At least 8 characters" minlength="8" />
+            </div>
+
+            <button type="submit" class="btn btn--primary btn--full mt-md" id="profile-save-btn">Save Profile Details</button>
+          </form>
+        </div>
+      </div>`;
+  },
+
+  bindEvents(root) {
+    const profileForm = root.querySelector("#owner-profile-form");
+    if (profileForm) {
+      profileForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(profileForm);
+        const data = Object.fromEntries(fd.entries());
+        const btn = root.querySelector("#profile-save-btn");
+        btn.disabled = true;
+        btn.textContent = "Saving...";
+        const res = await apiFetch("/api/me", { method: "PATCH", body: data });
+        btn.disabled = false;
+        btn.textContent = "Save Profile Details";
+        if (res.success) {
+          showToast("Profile updated successfully", "success");
+          appState.currentUser = res.data;
+          renderNavBar();
+        } else showToast(res.message, "error");
+      });
+      return;
+    }
+
+    const addFlatForm = root.querySelector("#add-flat-form");
+    if (addFlatForm) {
+      this._bindAddFlatEvents(root);
+      return;
+    }
+
+    // Default dashboard actions
     root.addEventListener("click", async (e) => {
       const row = e.target.closest("tr");
       if (!row) return;

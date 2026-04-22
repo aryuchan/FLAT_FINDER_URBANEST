@@ -69,7 +69,7 @@ const App = {
     }
 
     // ── TENANT ROUTES ──
-    if (path === "/tenant/dashboard" && u.role === "tenant") {
+    if ((path === "/tenant/dashboard" || path === "/tenant/bookings") && u.role === "tenant") {
       const [br, fr] = await Promise.all([apiFetch("/api/bookings"), apiFetch("/api/flats")]);
       if (br.success) appState.bookings = br.data;
       if (fr.success) appState.flats = fr.data;

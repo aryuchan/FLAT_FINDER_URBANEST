@@ -30,6 +30,10 @@ export async function migrate() {
     const addCols = [
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)",
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(20)",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram VARCHAR(50)",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(100)",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS languages VARCHAR(100)",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS address TEXT",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS description TEXT",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS deposit DECIMAL(10,2) DEFAULT 0",

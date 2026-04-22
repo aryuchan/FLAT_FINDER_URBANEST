@@ -232,7 +232,7 @@ app.post("/api/logout", (req, res) => {
 app.get("/api/me", auth(), async (req, res) => {
   try {
     const user = await queryOne(
-      "SELECT id, name, email, role, status, phone, whatsapp, telegram, bio FROM users WHERE id = ?",
+      "SELECT id, name, email, role, status, phone, whatsapp, telegram, bio, location, languages FROM users WHERE id = ?",
       [req.user.id],
     );
     res.json({ success: true, data: user });
@@ -245,7 +245,7 @@ app.get("/api/me", auth(), async (req, res) => {
 
 app.patch("/api/me", auth(), async (req, res) => {
   try {
-    const { name, password, phone, whatsapp, telegram, bio } = req.body;
+    const { name, password, phone, whatsapp, telegram, bio, location, languages } = req.body;
     const updates = [];
     const params = [];
 
@@ -268,6 +268,14 @@ app.patch("/api/me", auth(), async (req, res) => {
     if (bio) {
       updates.push("bio = ?");
       params.push(bio);
+    }
+    if (location) {
+      updates.push("location = ?");
+      params.push(location);
+    }
+    if (languages) {
+      updates.push("languages = ?");
+      params.push(languages);
     }
     if (password && password.length >= 8) {
       const hashed = await bcrypt.hash(password, 12);
@@ -417,6 +425,9 @@ app.post("/api/flats", auth(["owner"]), async (req, res) => {
     const flatId = crypto.randomUUID();
     const listingId = crypto.randomUUID();
 
+    // Admin can specify owner_id, otherwise use current user
+    const finalOwnerId = (req.user.role === "admin" && req.body.owner_id) ? req.body.owner_id : req.user.id;
+
     // Numeric conversion
     const nRent = parseFloat(rent) || 0;
     const nDeposit = parseFloat(deposit) || 0;
@@ -437,7 +448,7 @@ app.post("/api/flats", auth(["owner"]), async (req, res) => {
         images, amenities, available
       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
       [
-        flatId, req.user.id, title, city, type, nRent, address || "", description || "",
+        flatId, finalOwnerId, title, city, type, nRent, address || "", description || "",
         nDeposit, nFloor, nTotalFloors, nArea,
         parking || "none", preferred_tenants || "any", food_preference || "any", nFurnished,
         bathrooms || "", facing || "", landmarks || "", nPets, nSmoking, nVisitors,
@@ -447,7 +458,7 @@ app.post("/api/flats", auth(["owner"]), async (req, res) => {
 
     await query(
       "INSERT INTO listings (id, flat_id, owner_id, status) VALUES (?,?,?,?)",
-      [listingId, flatId, req.user.id, "pending"]
+      [listingId, flatId, finalOwnerId, "pending"]
     );
 
     res.json({ success: true, data: { id: flatId }, message: "Flat submitted for review." });
