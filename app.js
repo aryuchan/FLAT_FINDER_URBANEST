@@ -2,48 +2,60 @@
 
 const App = {
   async init() {
-    console.log('Urbanest Bootstrapping...');
-    
-    // Fix: Path-based Role Guard
-    const path = window.location.pathname;
-    const res = await apiFetch('/api/me');
-    
-    if (res.success) {
-      appState.currentUser = res.data;
-      // Redirect if on wrong portal
-      if (path === '/tenant' && res.data.role !== 'tenant') return window.location.href = `/${res.data.role}`;
-      if (path === '/owner' && res.data.role !== 'owner') return window.location.href = `/${res.data.role}`;
-      if (path === '/admin' && res.data.role !== 'admin') return window.location.href = `/${res.data.role}`;
-    } else {
-      // Not logged in: allow portal root (for login/signup) but redirect sub-pages if needed
-      // (SPA handles templates, so just ensure state is null)
-      appState.currentUser = null;
-    }
-
     window.addEventListener('hashchange', () => this.route());
+    
+    const res = await apiFetch('/api/me');
+    if (res.success) appState.currentUser = res.data;
+    
+    this.bindGlobalEvents();
     this.route();
+  },
+
+  bindGlobalEvents() {
+    const oldRoot = document.getElementById('app-root');
+    if (!oldRoot) return;
+    
+    // Hardened Click Handling: Clone node to purge old listeners
+    const root = oldRoot.cloneNode(true);
+    oldRoot.replaceWith(root);
+    
+    root.addEventListener('click', (e) => {
+      const link = e.target.closest('a[href^="#/"]');
+      if (link) {
+        // App.route() will trigger on hashchange
+      }
+    });
   },
 
   async route() {
     const hash = window.location.hash || '#/';
-    const path = window.location.pathname;
+    const path = hash.slice(1) || '/';
+    const portal = window.location.pathname;
 
-    // 1. Identify Portal Module
+    // Identify Portal Module
     let module = null;
-    if (path === '/tenant') module = typeof Tenant !== 'undefined' ? Tenant : null;
-    if (path === '/owner')  module = typeof Owner  !== 'undefined' ? Owner  : null;
-    if (path === '/admin')  module = typeof Admin  !== 'undefined' ? Admin  : null;
+    if (portal.includes('tenant')) module = typeof Tenant !== 'undefined' ? Tenant : null;
+    if (portal.includes('owner'))  module = typeof Owner  !== 'undefined' ? Owner  : null;
+    if (portal.includes('admin'))  module = typeof Admin  !== 'undefined' ? Admin  : null;
 
-    if (!module) return; // Not a portal page (e.g. index.html handled by landing.js)
+    if (!module) return;
 
-    // 2. Auth Interception
+    // Auth Guard
     if (!appState.currentUser) {
-      if (hash === '#/signup') return Auth.renderSignup();
+      if (path === '/signup') return Auth.renderSignup();
       return Auth.renderLogin();
     }
 
-    // 3. Delegation
+    // Role Guard
+    if (portal.includes('tenant') && appState.currentUser.role !== 'tenant') return window.location.href = '/';
+    if (portal.includes('owner') && appState.currentUser.role !== 'owner') return window.location.href = '/';
+    if (portal.includes('admin') && appState.currentUser.role !== 'admin') return window.location.href = '/';
+
+    // Delegate
     if (module.route) await module.route();
+    
+    // Refresh Global Events
+    this.bindGlobalEvents();
   }
 };
 
