@@ -114,6 +114,7 @@ window.Auth = {
 
       if (r.success) {
         appState.currentUser = r.data.user;
+        Token.save(r.data.token);
         renderNavBar();
         window.location.hash = defaultRoute();
         

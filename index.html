@@ -42,6 +42,24 @@
       </p>
     </noscript>
 
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").then((reg) => {
+            console.log("🚀 ServiceWorker Registered (v2)");
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
+                  window.location.reload();
+                }
+              };
+            };
+          });
+        });
+      }
+    </script>
+
     <!-- FlatFinder modules — load order matters -->
     <script src="ff-core.js?v=20260422" defer></script>
     <script src="ff-auth.js?v=20260422" defer></script>
