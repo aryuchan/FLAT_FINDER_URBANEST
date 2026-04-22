@@ -150,7 +150,7 @@ app.post("/api/signup", authLimiter, async (req, res) => {
       .object({
         name: z.string().min(2),
         email: z.string().email(),
-        password: z.string().min(8),
+        password: z.string().min(6),
         role: z.enum(["tenant", "owner"]),
       })
       .parse(req.body);
@@ -159,7 +159,7 @@ app.post("/api/signup", authLimiter, async (req, res) => {
       email.toLowerCase().trim(),
     ]);
     if (existing)
-      return res.status(409).json({ success: false, message: "Email taken" });
+      return res.status(409).json({ success: false, message: "Email already registered" });
 
     const hashed = await bcrypt.hash(password, 12);
     const id = crypto.randomUUID();
@@ -167,14 +167,25 @@ app.post("/api/signup", authLimiter, async (req, res) => {
       "INSERT INTO users (id, name, email, password, role) VALUES (?,?,?,?,?)",
       [id, name, email.toLowerCase().trim(), hashed, role],
     );
-    res.json({ success: true, message: "Account created" });
+
+    const token = jwt.sign({ id, name, role }, JWT_KEY, { expiresIn: "7d" });
+    res.cookie("ff_token", token, {
+      httpOnly: true,
+      secure: IS_PROD,
+      sameSite: "strict",
+      maxAge: 7 * 86400000,
+    });
+
+    res.json({
+      success: true,
+      data: { user: { id, name, role }, token },
+      message: "Account created and logged in!",
+    });
   } catch (err) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: err.errors?.[0]?.message || "Invalid input",
-      });
+    res.status(400).json({
+      success: false,
+      message: err.errors?.[0]?.message || "Invalid input details",
+    });
   }
 });
 
@@ -479,18 +490,39 @@ app.post(
   },
 );
 
-app.patch("/api/flats/:id", auth(["owner", "admin"]), async (req, res) => {
-  const { available } = req.body;
-  await query("UPDATE flats SET available = ? WHERE id = ?", [
-    available ? 1 : 0,
-    req.params.id,
-  ]);
-  res.json({ success: true });
+app.post("/api/flats/:id/toggle", auth(["owner", "admin"]), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [flat] = await query("SELECT available, owner_id FROM flats WHERE id = ?", [id]);
+    if (!flat) return res.status(404).json({ success: false, message: "Flat not found" });
+
+    if (req.user.role !== "admin" && flat.owner_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
+
+    const nextState = flat.available === 1 ? 0 : 1;
+    await query("UPDATE flats SET available = ? WHERE id = ?", [nextState, id]);
+    res.json({ success: true, message: `Flat is now ${nextState === 1 ? "visible" : "hidden"}` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Toggle failed" });
+  }
 });
 
-app.delete("/api/flats/:id", auth(["admin"]), async (req, res) => {
-  await query("DELETE FROM flats WHERE id = ?", [req.params.id]);
-  res.json({ success: true });
+app.delete("/api/flats/:id", auth(["owner", "admin"]), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [flat] = await query("SELECT owner_id FROM flats WHERE id = ?", [id]);
+    if (!flat) return res.status(404).json({ success: false, message: "Flat not found" });
+
+    if (req.user.role !== "admin" && flat.owner_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
+
+    await query("DELETE FROM flats WHERE id = ?", [id]);
+    res.json({ success: true, message: "Listing deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Delete failed" });
+  }
 });
 
 // Bookings

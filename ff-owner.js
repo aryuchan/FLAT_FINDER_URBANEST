@@ -22,25 +22,30 @@ const Owner = {
       ? flats
           .map(
             (l) => `
-        <tr data-id="${escHtml(l.id)}">
+        <tr data-id="${escHtml(l.id)}" data-flat-id="${escHtml(l.flat_id)}">
           <td>
-            <strong>${escHtml(l.title)}</strong>
+            <strong>${escHtml(l.flat_title)}</strong>
             <br><small class="text-muted">📍 ${escHtml(l.city)} · ${escHtml(l.type)}</small>
           </td>
           <td>₹${Number(l.rent).toLocaleString("en-IN")}</td>
           <td>
-            <button class="badge badge--${l.available ? "success" : "neutral"} btn-toggle-flat" style="cursor:pointer; border:none" data-avail="${l.available ? "1" : "0"}">
-              ${l.available ? "Available" : "Hidden"}
-            </button>
+            <span class="badge badge--${l.status === 'approved' ? 'success' : l.status === 'rejected' ? 'danger' : 'warning'}">
+              ${l.status}
+            </span>
           </td>
-          <td>${l.created_at?.slice(0, 10) || "—"}</td>
+          <td>
+            ${l.status === 'approved' 
+              ? `<button class="badge badge--neutral btn-toggle-flat" style="cursor:pointer; border:none">Toggle Visibility</button>` 
+              : `<small class="text-muted">Awaiting Review</small>`}
+          </td>
+          <td>${l.submitted_at?.slice(0, 10) || "—"}</td>
           <td>
             <button class="btn btn--danger btn--sm btn-del-flat">Delete</button>
           </td>
         </tr>`,
           )
           .join("")
-      : `<tr><td colspan="5" class="empty-cell">
+      : `<tr><td colspan="6" class="empty-cell">
           No listings yet. <a href="#/owner/add-flat" data-route="/owner/add-flat">Add your first flat →</a>
          </td></tr>`;
 
@@ -448,19 +453,18 @@ const Owner = {
 
   _bindDashboardActions(root) {
     root.addEventListener("click", async (e) => {
+      const row = e.target.closest("tr");
+      if (!row) return;
+      const flatId = row.dataset.flatId;
+
       const btnToggle = e.target.closest(".btn-toggle-flat");
       if (btnToggle) {
-        const id = e.target.closest("tr").dataset.id;
-        const isAvail = btnToggle.dataset.avail === "1";
         btnToggle.disabled = true;
-        const res = await apiFetch(`/api/flats/${id}`, {
-          method: "PATCH",
-          body: { available: !isAvail },
-        });
+        const res = await apiFetch(`/api/flats/${flatId}/toggle`, { method: "POST" });
         btnToggle.disabled = false;
         if (res.success) {
           showToast("Visibility toggled", "success");
-          const r = await apiFetch("/api/flats");
+          const r = await apiFetch("/api/listings");
           if (r.success) appState.listings = r.data;
           render(Owner.viewDashboard());
         } else {
@@ -472,12 +476,11 @@ const Owner = {
       const btnDel = e.target.closest(".btn-del-flat");
       if (btnDel) {
         if (!confirm("Delete this listing permanently?")) return;
-        const id = e.target.closest("tr").dataset.id;
         btnDel.disabled = true;
-        const res = await apiFetch(`/api/flats/${id}`, { method: "DELETE" });
+        const res = await apiFetch(`/api/flats/${flatId}`, { method: "DELETE" });
         if (res.success) {
           showToast("Listing deleted", "success");
-          const r = await apiFetch("/api/flats");
+          const r = await apiFetch("/api/listings");
           if (r.success) appState.listings = r.data;
           render(Owner.viewDashboard());
         } else {

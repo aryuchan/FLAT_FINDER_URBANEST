@@ -90,7 +90,7 @@ const App = {
 
     // ── OWNER ROUTES ──
     if (path === "/owner/dashboard" && u.role === "owner") {
-      const r = await apiFetch("/api/flats");
+      const r = await apiFetch("/api/listings");
       if (r.success) appState.listings = r.data;
       return render(Owner.viewDashboard());
     }

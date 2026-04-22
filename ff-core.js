@@ -108,6 +108,7 @@ function renderNavBar() {
     ],
     admin: [
       { label: "🏠 Dashboard", route: "/admin/dashboard" },
+      { label: "✅ Approvals", route: "/admin/approvals" },
       { label: "👥 Users", route: "/admin/users" },
     ],
   };
