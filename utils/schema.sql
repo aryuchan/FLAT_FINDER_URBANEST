@@ -2,16 +2,13 @@
 -- Objective: Zero-intervention, idempotent, high-performance database foundation.
 
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS bookings;
-DROP TABLE IF EXISTS listings;
-DROP TABLE IF EXISTS flats;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS properties;
+-- Non-destructive migration: tables are only created if they don't exist.
+-- To force a reset, manually drop tables in your DB dashboard.
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- 1. USERS Table
 -- Using CHAR(36) for UUIDs to ensure fixed-length performance optimization.
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id CHAR(36) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -19,12 +16,15 @@ CREATE TABLE users (
   role ENUM('tenant','owner','admin') NOT NULL DEFAULT 'tenant',
   status ENUM('active','suspended') DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  phone VARCHAR(20),
+  bio TEXT,
   INDEX idx_user_email (email),
   INDEX idx_user_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2. FLATS Table
-CREATE TABLE flats (
+CREATE TABLE IF NOT EXISTS flats (
   id CHAR(36) PRIMARY KEY,
   owner_id CHAR(36) NOT NULL,
   title VARCHAR(255) NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE flats (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3. BOOKINGS Table
-CREATE TABLE bookings (
+CREATE TABLE IF NOT EXISTS bookings (
   id CHAR(36) PRIMARY KEY,
   flat_id CHAR(36) NOT NULL,
   tenant_id CHAR(36) NOT NULL,

@@ -137,8 +137,38 @@ app.post('/api/logout', (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/me', auth(), (req, res) => {
-  res.json({ success: true, data: req.user });
+app.get('/api/me', auth(), async (req, res) => {
+  try {
+    const user = await queryOne('SELECT id, name, email, role, status, phone, bio FROM users WHERE id = ?', [req.user.id]);
+    res.json({ success: true, data: user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch profile' });
+  }
+});
+
+app.patch('/api/me', auth(), async (req, res) => {
+  try {
+    const { name, password, phone, bio } = req.body;
+    const updates = [];
+    const params = [];
+
+    if (name) { updates.push('name = ?'); params.push(name); }
+    if (phone) { updates.push('phone = ?'); params.push(phone); }
+    if (bio) { updates.push('bio = ?'); params.push(bio); }
+    if (password && password.length >= 8) {
+      const hashed = await bcrypt.hash(password, 12);
+      updates.push('password = ?');
+      params.push(hashed);
+    }
+
+    if (updates.length === 0) return res.status(400).json({ success: false, message: 'No updates provided' });
+
+    params.push(req.user.id);
+    await query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+    res.json({ success: true, message: 'Profile updated' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Update failed' });
+  }
 });
 
 // Flats

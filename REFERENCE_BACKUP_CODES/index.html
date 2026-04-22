@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="FlatFinder — Find and manage rental flats with ease." />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FlatFinder" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FlatFinder" />
+    <meta property="og:description" content="Find and manage rental flats with ease." />
+    <meta property="og:site_name" content="FlatFinder" />
+
+    <!--
+      ── Cloudinary public config ──────────────────────────────────────────────
+      These two <meta> tags are replaced at request time by server.js using
+      process.env values. API_KEY and API_SECRET are NEVER injected here.
+      The upload preset must be set to "Unsigned" in your Cloudinary dashboard.
+    -->
+    <meta name="cloudinary-cloud-name"    content="{{CLOUDINARY_CLOUD_NAME}}">
+    <meta name="cloudinary-upload-preset" content="{{CLOUDINARY_UPLOAD_PRESET}}">
+
+    <title>FlatFinder</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav id="app-nav" role="navigation" aria-label="Main navigation"></nav>
+    <main id="app-root" role="main" aria-live="polite" aria-atomic="false"></main>
+    <div id="app-toast" role="status" aria-live="assertive" aria-atomic="true" aria-relevant="additions text"></div>
+    <div id="app-modal" aria-hidden="true"></div>
+
+    <noscript>
+      <p style="text-align:center;padding:2rem;font-family:sans-serif;">
+        FlatFinder requires JavaScript to run. Please enable it in your browser settings.
+      </p>
+    </noscript>
+
+    <!-- Load order is critical — each file depends on the previous -->
+    <script src="ff-core.js"></script>
+    <script src="ff-auth.js"></script>
+    <script src="ff-tenant.js"></script>
+    <script src="ff-owner.js"></script>
+    <script src="ff-admin.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

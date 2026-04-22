@@ -78,10 +78,14 @@ async function render(html) {
   if (!root) return;
 
   return new Promise((resolve) => {
-    root.innerHTML = html;
+    // Settle-down phase: ensure previous state is cleared
+    root.innerHTML = '';
+    
     requestAnimationFrame(() => {
+      root.innerHTML = html;
       renderNavBar();
-      resolve();
+      // Human-click reliability: small delay to let browser process the new DOM
+      setTimeout(resolve, 20);
     });
   });
 }
@@ -156,7 +160,7 @@ function renderNavBar() {
       <a href="/" class="logo">URBANEST.</a>
       <div class="nav-user" style="display:flex; gap:1.5rem; align-items:center;">
         <span class="nav-name" style="font-weight:700">Hi, ${escHtml(appState.currentUser.name)}</span>
-        <button class="btn btn--secondary btn--sm" id="btn-theme" title="Toggle Theme" style="min-width:44px">🌙</button>
+        <button class="btn btn--secondary btn--sm btn-theme-toggle" title="Toggle Theme" style="min-width:44px">${savedTheme === 'dark' ? '☀️' : '🌙'}</button>
         <button class="btn btn--primary btn--sm" id="btn-logout">Logout</button>
       </div>
     </div>
@@ -165,15 +169,18 @@ function renderNavBar() {
   document.getElementById('btn-logout')?.addEventListener('click', () => {
     if (typeof Auth !== 'undefined') Auth.logout();
   }, { signal: appState.activeController.signal });
-  
-  document.getElementById('btn-theme')?.addEventListener('click', () => {
+}
+
+// Global Event Delegation for reliable "Human Clicks"
+document.addEventListener('click', (e) => {
+  // Theme Toggle
+  const themeBtn = e.target.closest('.btn-theme-toggle');
+  if (themeBtn) {
     const current = document.documentElement.getAttribute('data-theme');
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('ff_theme', next);
-    document.getElementById('btn-theme').textContent = next === 'dark' ? '☀️' : '🌙';
-  }, { signal: appState.activeController.signal });
+    themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+  }
+});
 
-  const themeBtn = document.getElementById('btn-theme');
-  if (themeBtn) themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-}
