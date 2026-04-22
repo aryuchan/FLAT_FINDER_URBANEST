@@ -28,7 +28,8 @@ export async function migrate() {
 
     // Dynamic Column Sync (Ensure v19.2 columns exist)
     const addCols = [
-      "ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram VARCHAR(50)",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(20)",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS address TEXT",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS description TEXT",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS deposit DECIMAL(10,2) DEFAULT 0",
