@@ -373,31 +373,38 @@ app.post("/api/flats", auth(["owner"]), async (req, res) => {
       title, city, type, rent, address, description,
       deposit, floor, total_floors, area_sqft,
       parking, preferred_tenants, food_preference,
-      furnished, images, amenities,
+      furnished, bathrooms, facing, landmarks,
+      pets_allowed, smoking_allowed, visitors_allowed,
+      images, amenities,
     } = req.body;
 
     const flatId = crypto.randomUUID();
     const listingId = crypto.randomUUID();
 
-    // Numeric conversion for DECIMAL and INT fields
+    // Numeric conversion
     const nRent = parseFloat(rent) || 0;
     const nDeposit = parseFloat(deposit) || 0;
     const nFloor = parseInt(floor) || 0;
     const nTotalFloors = parseInt(total_floors) || 0;
     const nArea = parseInt(area_sqft) || 0;
     const nFurnished = parseInt(furnished) || 0;
+    const nPets = parseInt(pets_allowed) || 0;
+    const nSmoking = parseInt(smoking_allowed) || 0;
+    const nVisitors = parseInt(visitors_allowed) || 0;
 
     await query(
       `INSERT INTO flats (
         id, owner_id, title, city, type, rent, address, description, 
         deposit, floor, total_floors, area_sqft, 
         parking, preferred_tenants, food_preference, furnished,
+        bathrooms, facing, landmarks, pets_allowed, smoking_allowed, visitors_allowed,
         images, amenities, available
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
       [
         flatId, req.user.id, title, city, type, nRent, address || "", description || "",
         nDeposit, nFloor, nTotalFloors, nArea,
         parking || "none", preferred_tenants || "any", food_preference || "any", nFurnished,
+        bathrooms || "", facing || "", landmarks || "", nPets, nSmoking, nVisitors,
         JSON.stringify(images || []), JSON.stringify(amenities || []),
       ],
     );

@@ -189,15 +189,16 @@ const Owner = {
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Floor Number</label>
-                <input class="form-input" name="floor" type="number" min="0" placeholder="e.g. 3" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Total Floors in Building</label>
-                <input class="form-input" name="total_floors" type="number" min="1" placeholder="e.g. 10" />
-              </div>
-              <div class="form-group">
+                       <div class="form-group">
                 <label class="form-label">Area (sq. ft.)</label>
                 <input class="form-input" name="area_sqft" type="number" min="0" placeholder="e.g. 850" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bathrooms</label>
+                <select class="form-select" name="bathrooms">
+                  <option value="">Select…</option>
+                  <option>1</option><option>2</option><option>3</option><option>4+</option>
+                </select>
               </div>
               <div class="form-group">
                 <label class="form-label">Parking</label>
@@ -206,6 +207,14 @@ const Owner = {
                   <option value="bike">Bike</option>
                   <option value="car">Car</option>
                   <option value="both">Bike + Car</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Facing Direction</label>
+                <select class="form-select" name="facing">
+                  <option value="">Select…</option>
+                  <option>North</option><option>South</option><option>East</option><option>West</option>
+                  <option>North-East</option><option>North-West</option><option>South-East</option><option>South-West</option>
                 </select>
               </div>
             </div>
@@ -232,14 +241,41 @@ const Owner = {
                 </select>
               </div>
             </div>
+            
+            <div style="display:flex; flex-wrap:wrap; gap:var(--space-md); margin-top:var(--space-md)">
+              <label style="display:flex; align-items:center; gap:var(--space-xs); font-size:var(--font-size-sm); cursor:pointer">
+                <input type="checkbox" name="pets_allowed" value="1" /> 🐾 Pets Allowed
+              </label>
+              <label style="display:flex; align-items:center; gap:var(--space-xs); font-size:var(--font-size-sm); cursor:pointer">
+                <input type="checkbox" name="smoking_allowed" value="1" /> 🚬 Smoking Allowed
+              </label>
+              <label style="display:flex; align-items:center; gap:var(--space-xs); font-size:var(--font-size-sm); cursor:pointer">
+                <input type="checkbox" name="visitors_allowed" value="1" /> 👥 Visitors Allowed
+              </label>
+            </div>
 
             <!-- ── Section 4: Description & Amenities ── -->
-            <h4 class="form-section-title">📝 Description</h4>
+            <h4 class="form-section-title">📝 Description & Extra Info</h4>
             <div class="form-group">
               <label class="form-label">Description</label>
               <textarea class="form-textarea" name="description" rows="3"
                 placeholder="Describe the flat — location highlights, nearby facilities, house rules…"></textarea>
             </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Amenities <span class="text-muted">(comma-separated)</span></label>
+                <input class="form-input" name="amenities" type="text"
+                  placeholder="WiFi, AC, Parking, Geyser, Lift, Gym, CCTV…" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nearby Landmarks</label>
+                <input class="form-input" name="landmarks" type="text"
+                  placeholder="2 min walk to Metro, Near Phoenix Mall…" />
+              </div>
+            </div>
+
+            <!-- ── Section 5: Photos (Cloudinary) ── -->
+        </div>
             <div class="form-group">
               <label class="form-label">Amenities <span class="text-muted">(comma-separated)</span></label>
               <input class="form-input" name="amenities" type="text"
@@ -467,6 +503,11 @@ const Owner = {
 
       data.amenities = (data.amenities || "").split(",").map(s => s.trim()).filter(Boolean);
       data.images = this._uploadedImages;
+      
+      // Collect checkboxes
+      data.pets_allowed = addFlatForm.querySelector('[name="pets_allowed"]')?.checked ? 1 : 0;
+      data.smoking_allowed = addFlatForm.querySelector('[name="smoking_allowed"]')?.checked ? 1 : 0;
+      data.visitors_allowed = addFlatForm.querySelector('[name="visitors_allowed"]')?.checked ? 1 : 0;
 
       const res = await apiFetch("/api/flats", {
         method: "POST",
