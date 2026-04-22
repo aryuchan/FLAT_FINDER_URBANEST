@@ -31,6 +31,7 @@ const Auth = {
   },
 
   async renderLogin() {
+    if (appState.currentUser) return this.redirectToPortal(appState.currentUser.role);
     // Fixes: Architecture — await render
     await render(populateTemplate('tmpl-auth', { 
       title: escHtml('Sign In'), 
@@ -40,11 +41,17 @@ const Auth = {
   },
 
   async renderSignup() {
+    if (appState.currentUser) return this.redirectToPortal(appState.currentUser.role);
     await render(populateTemplate('tmpl-signup', {}));
     this.bindEvents();
   },
 
   async signup(data, btn) {
+    if (!data.name || data.name.trim().length < 2) return showToast('Name must be at least 2 characters', 'warning');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!data.email || !emailRegex.test(data.email)) return showToast('Invalid email format', 'warning');
+    if (!data.password || data.password.length < 8) return showToast('Password must be at least 8 characters', 'warning');
+    
     showLoading(btn);
     try {
       const res = await apiFetch('/api/signup', { method: 'POST', body: data });
@@ -77,5 +84,17 @@ const Auth = {
         this.signup(data, e.target.querySelector('button[type="submit"]'));
       }, { signal: appState.activeController.signal });
     }
+
+    document.querySelectorAll('.toggle-password').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const input = e.target.parentElement.querySelector('input');
+        if (input) {
+          const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+          input.setAttribute('type', type);
+          e.target.textContent = type === 'password' ? '👁️' : '🙈';
+        }
+      }, { signal: appState.activeController.signal });
+    });
   }
 };

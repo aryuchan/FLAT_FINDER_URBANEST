@@ -31,7 +31,8 @@ if (process.env.DATABASE_URL) {
 
 const poolConfig = {
   ...dbConfig,
-  ssl: { rejectUnauthorized: false },  // Required for Railway, Render, PlanetScale, TiDB
+  // FIX [2]: SSL conditional (only apply in production)
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   waitForConnections: true,
   connectionLimit: parseInt(process.env.DB_POOL_SIZE || '5', 10),  // 5 default (Render-safe)
   queueLimit: 0,
@@ -42,20 +43,26 @@ const poolConfig = {
 
 export const pool = mysql.createPool(poolConfig);
 
-// FIX [6]: Removed invalid pool.on('error') event handler which is unsupported in mysql2
-
-/**
- * Execute a parameterized SQL query.
- */
-export const query = async (sql, params = []) => {
-  try {
-    const [rows] = await pool.execute(sql, params);
-    return rows;
-  } catch (err) {
-    console.error(`[DB_ERROR] SQL: ${sql} | Error: ${err.message}`);
-    throw err; // Propagate to server.js for structured response
+// FIX [1]: Pool reconnect resilience
+export async function query(sql, params = []) {
+  let retries = 1;
+  while (retries >= 0) {
+    try {
+      const [results] = await pool.execute(sql, params);
+      return results;
+    } catch (err) {
+      if ((err.code === 'ECONNRESET' || err.code === 'PROTOCOL_CONNECTION_LOST') && retries > 0) {
+        console.warn(`[DB] Connection lost. Retrying query: ${sql}`);
+        retries--;
+        // Wait briefly before retry
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } else {
+        console.error(`[DB_ERROR] SQL: ${sql} | Error: ${err.message}`);
+        throw err; // Propagate to server.js for structured response
+      }
+    }
   }
-};
+}
 
 /**
  * Fetch a single row.

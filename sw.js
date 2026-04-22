@@ -1,7 +1,7 @@
 // sw.js — Final Production Service Worker (v17)
 // Fixes: Bug #8 — Network-first for API routes
 
-const CACHE_NAME = 'urbanest-v17.2';
+const CACHE_NAME = 'urbanest-v18.0'; // DEV NOTE: Bump this version whenever any static file changes!
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -15,7 +15,8 @@ const STATIC_ASSETS = [
   '/ff-owner.js',
   '/ff-admin.js',
   '/app.js',
-  '/landing.js'
+  '/landing.js',
+  '/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
@@ -52,12 +53,12 @@ self.addEventListener('fetch', (event) => {
           }
           return r;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request).then(r => r || new Response('You are offline. Please reconnect.', { status: 200, headers: { 'Content-Type': 'text/html' } })))
     );
   } else {
     // Cache-first for static assets
     event.respondWith(
-      caches.match(event.request).then((r) => r || fetch(event.request))
+      caches.match(event.request).then((r) => r || fetch(event.request).catch(() => new Response('You are offline. Please reconnect.', { status: 200, headers: { 'Content-Type': 'text/html' } })))
     );
   }
 });

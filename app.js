@@ -51,10 +51,12 @@ const App = {
       }
     } catch (err) {
       // FIX [3]: Replace backend logger with console.error
-      console.error('Routing failed:', err.message);
+      console.error('Routing failed:', err.stack || err.message);
+      if (typeof showToast !== 'undefined') showToast('Navigation error. Try again.', 'danger');
     }
   }
 };
 
 // Start the System
+document.documentElement.setAttribute('data-theme', localStorage.getItem('ff_theme') || 'light');
 App.init();

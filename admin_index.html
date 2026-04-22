@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <!-- FIX [18]: Added web app manifest link -->
     <link rel="manifest" href="/manifest.json">
+    <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('ff_theme') || 'light');</script>
 </head>
 <body>
     <nav id="app-nav"></nav><main id="app-root"></main><div id="app-toast"></div>
@@ -16,7 +17,10 @@
             <h1>{{title}}</h1><p class="text-muted">{{sub}}</p>
             <form id="auth-form" class="mt-lg">
                 <input class="input mt-sm" type="email" name="email" placeholder="Admin Email" required style="width:100%">
-                <input class="input mt-sm" type="password" name="password" placeholder="Passcode" required style="width:100%">
+                <div style="position:relative" class="mt-sm">
+                    <input class="input" type="password" name="password" placeholder="Passcode" required style="width:100%; padding-right:40px">
+                    <button class="toggle-password" tabindex="-1" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer">👁️</button>
+                </div>
                 <button type="submit" class="btn btn--primary btn--full mt-lg">Initialize Terminal</button>
             </form>
             <!-- FIX [9]: Removed admin signup link -->

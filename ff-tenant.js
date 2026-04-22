@@ -83,8 +83,9 @@ const Tenant = {
     if (flats.length === 0) {
       return `
         <div class="empty-state">
-          <h3>No Properties Found</h3>
+          <h3>No Properties Match Your Filters</h3>
           <p class="text-muted mt-sm">Try adjusting your filters to see more results.</p>
+          <button class="btn btn--secondary mt-sm btn-clear-filters">Clear Filters</button>
         </div>
       `;
     }
@@ -92,6 +93,7 @@ const Tenant = {
       <div class="flat-grid">
         ${flats.map(f => `
           <div class="card flat-card" data-id="${escHtml(String(f.id))}">
+            ${f.images ? `<img src="${escHtml(f.images)}" class="flat-gallery__img" alt="${escHtml(f.title)}" loading="lazy" onerror="this.style.display='none'">` : `<div class="flat-gallery__img" style="display:flex;align-items:center;justify-content:center;background:var(--border);color:var(--text-muted);font-size:2rem">🏢</div>`}
             <div class="flat-body">
               <div class="flex-between">
                 <h3 class="mt-sm">${escHtml(f.title)}</h3>
@@ -116,22 +118,26 @@ const Tenant = {
     const { signal } = appState.activeController;
 
     // Filters
+    let filterTimeout;
     const applyFilters = () => {
-      const city = document.getElementById('filter-city')?.value.toLowerCase() || '';
-      const type = document.getElementById('filter-type')?.value.toLowerCase() || '';
-      const rent = parseFloat(document.getElementById('filter-rent')?.value) || Infinity;
-      
-      const filtered = appState.flats.filter(f => 
-        (city === '' || f.city.toLowerCase().includes(city)) &&
-        (type === '' || f.type.toLowerCase().includes(type)) &&
-        f.rent <= rent
-      );
-      
-      const container = document.getElementById('flat-grid-container');
-      if (container) {
-        container.innerHTML = this.renderFlatGrid(filtered);
-        this.bindDynamicEvents(signal); // rebind buttons in the new HTML
-      }
+      clearTimeout(filterTimeout);
+      filterTimeout = setTimeout(() => {
+        const city = document.getElementById('filter-city')?.value.toLowerCase() || '';
+        const type = document.getElementById('filter-type')?.value.toLowerCase() || '';
+        const rent = parseFloat(document.getElementById('filter-rent')?.value) || Infinity;
+        
+        const filtered = appState.flats.filter(f => 
+          (city === '' || f.city.toLowerCase().includes(city)) &&
+          (type === '' || f.type.toLowerCase().includes(type)) &&
+          f.rent <= rent
+        );
+        
+        const container = document.getElementById('flat-grid-container');
+        if (container) {
+          container.innerHTML = this.renderFlatGrid(filtered);
+          this.bindDynamicEvents(signal); // rebind buttons in the new HTML
+        }
+      }, 300);
     };
 
     document.getElementById('filter-city')?.addEventListener('change', applyFilters, { signal });
@@ -169,7 +175,17 @@ const Tenant = {
         const checkIn = card.querySelector('.input-in').value;
         const checkOut = card.querySelector('.input-out').value;
         
-        if (new Date(checkOut) <= new Date(checkIn)) {
+        const dateIn = new Date(checkIn);
+        const dateOut = new Date(checkOut);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        if (dateIn < today) {
+          showToast('Check-in cannot be in the past', 'warning');
+          return;
+        }
+        
+        if (dateOut <= dateIn) {
           showToast('Check-out must be after check-in', 'warning');
           return;
         }
@@ -188,6 +204,19 @@ const Tenant = {
           }
         } finally {
           hideLoading(btn);
+        }
+      }, { signal });
+    });
+
+    document.querySelectorAll('.btn-clear-filters').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c = document.getElementById('filter-city'); if (c) c.value = '';
+        const t = document.getElementById('filter-type'); if (t) t.value = '';
+        const r = document.getElementById('filter-rent'); if (r) r.value = '';
+        const container = document.getElementById('flat-grid-container');
+        if (container) {
+          container.innerHTML = this.renderFlatGrid(appState.flats);
+          this.bindDynamicEvents(signal);
         }
       }, { signal });
     });

@@ -23,6 +23,20 @@ const Owner = {
           <div class="stat-card"><p class="stat-card__label">Listings</p><p class="stat-card__value">${flats.length}</p></div>
           <div class="stat-card"><p class="stat-card__label">Bookings</p><p class="stat-card__value">${bookings.length}</p></div>
         </div>
+        <h2 class="mt-lg">Manage Listings</h2>
+        ${flats.length === 0 ? `<p class="text-muted mt-sm">No listings yet.</p>` : `
+          <div class="grid mt-sm mb-lg">
+            ${flats.map(f => `
+              <div class="card" data-id="${escHtml(String(f.id))}">
+                <div class="flex-between">
+                  <h3 class="stat-card__label">${escHtml(f.title)}</h3>
+                  <button class="badge badge--${f.available ? 'success' : 'neutral'} btn-toggle" style="cursor:pointer; border:none">${f.available ? 'Available' : 'Hidden'}</button>
+                </div>
+                <p class="text-muted mt-sm">${formatCurrency(f.rent)}/mo</p>
+              </div>
+            `).join('')}
+          </div>
+        `}
         <h2 class="mt-lg">Manage Bookings</h2>
         ${bookings.length === 0 ? `
           <div class="empty-state mt-sm">
@@ -39,8 +53,8 @@ const Owner = {
                   <span class="badge badge--${b.status === 'confirmed' ? 'success' : b.status === 'cancelled' ? 'danger' : 'warning'}">${escHtml(String(b.status))}</span>
                 </div>
                 <!-- FIX [12]: Added check-in, check-out, and tenant id to owner bookings -->
-                <p class="text-muted mt-sm">Tenant ID: ${escHtml(String(b.tenant_id))}</p>
-                <p class="text-muted mt-sm">Check-in: ${formatDate(b.check_in)}</p>
+                <p class="text-muted mt-sm">Tenant: ${escHtml(b.tenant_name || String(b.tenant_id))}</p>
+                <p class="text-muted mt-sm">Check-in: ${formatDate(b.check_in)}</p>>
                 <p class="text-muted mt-sm">Check-out: ${formatDate(b.check_out)}</p>
                 ${b.status === 'pending' ? `
                   <div class="mt-lg flex-between">
@@ -75,6 +89,11 @@ const Owner = {
               </select>
             </div>
             <div class="field mt-sm"><label class="label">RENT (₹)</label><input class="input" type="number" name="rent" required></div>
+            <div class="field mt-sm">
+              <label class="label">PROPERTY IMAGE</label>
+              <input class="input" type="file" name="image" accept="image/*" id="flat-image-input">
+              <div id="img-preview" style="display:none;margin-top:0.5rem"><img id="img-preview-src" style="max-height:150px;border-radius:8px;border:1px solid var(--border)"></div>
+            </div>
             <button type="submit" class="btn btn--primary btn--full mt-lg">Publish Listing</button>
           </form>
         </div>
@@ -87,21 +106,68 @@ const Owner = {
     // FIX [5], [20]: Extract signal AFTER await render completes
     const { signal } = appState.activeController;
 
+    const imgInput = document.getElementById('flat-image-input');
+    if (imgInput) {
+      imgInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            document.getElementById('img-preview').style.display = 'block';
+            document.getElementById('img-preview-src').src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
     // Property Creation
     document.getElementById('add-flat-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = e.target.querySelector('button[type="submit"]');
       showLoading(btn);
       try {
-        const data = Object.fromEntries(new FormData(e.target));
+        const formData = new FormData(e.target);
+        const imageFile = formData.get('image');
+        formData.delete('image');
+        
+        const data = Object.fromEntries(formData);
         data.rent = parseFloat(data.rent);
+        
         const res = await apiFetch('/api/flats', { method: 'POST', body: data });
+        
+        if (res.success && imageFile && imageFile.size > 0) {
+          const imgData = new FormData();
+          imgData.append('image', imageFile);
+          const token = localStorage.getItem('ff_token');
+          await fetch(`/api/flats/${res.data.id}/image`, {
+            method: 'POST',
+            body: imgData,
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+        }
+        
         if (res.success) { showToast('Listed!', 'success'); window.location.hash = '#/dashboard'; }
         else showToast(res.message, 'danger');
       } finally {
         hideLoading(btn);
       }
     }, { signal });
+
+    document.querySelectorAll('.btn-toggle').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.closest('.card').dataset.id;
+        const currentAvail = e.target.textContent === 'Available';
+        showLoading(btn);
+        try {
+          const res = await apiFetch(`/api/flats/${id}`, { method: 'PATCH', body: { available: !currentAvail } });
+          if (res.success) { showToast('Status updated', 'success'); await this.viewDashboard(); }
+          else showToast(res.message, 'danger');
+        } finally {
+          hideLoading(btn);
+        }
+      }, { signal });
+    });
 
     // Booking Confirmation/Cancellation
     if (!document.getElementById('add-flat-form')) {

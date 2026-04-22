@@ -31,7 +31,7 @@ const Admin = {
                     <td><b>${escHtml(f.title)}</b></td>
                     <td>${escHtml(f.city)}</td>
                     <!-- FIX [24]: Sanitized fields -->
-                    <td><span class="badge ${f.available ? 'badge--success' : 'badge--danger'}">${f.available ? 'Live' : 'Hidden'}</span></td>
+                    <td><span class="badge ${f.available ? 'badge--success' : 'badge--danger'} btn-toggle-flat" style="cursor:pointer" data-avail="${f.available ? '1' : '0'}">${f.available ? 'Live' : 'Hidden'}</span></td>
                     <td><button class="btn btn--danger btn--sm btn-del">Delete</button></td>
                   </tr>
                 `).join('')}
@@ -49,7 +49,10 @@ const Admin = {
     const users = res.success ? res.data : [];
     await render(`
       <div class="container">
-        <div class="page-header"><h1 class="page-title">User Management</h1></div>
+        <div class="flex-between page-header">
+          <h1 class="page-title">User Management</h1>
+          <a href="#/dashboard" class="btn btn--secondary btn--sm">← Back</a>
+        </div>
         <div class="table-wrap mt-lg">
           ${users.length === 0 ? `
             <div class="empty-state">
@@ -99,6 +102,19 @@ const Admin = {
         } finally {
           hideLoading(btn);
         }
+      }, { signal });
+    });
+
+    // Toggle Flat
+    document.querySelectorAll('.btn-toggle-flat').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.closest('tr').dataset.id;
+        const currentAvail = e.target.dataset.avail === '1';
+        try {
+          const res = await apiFetch(`/api/flats/${id}`, { method: 'PATCH', body: { available: !currentAvail } });
+          if (res.success) { showToast('Status updated'); await this.viewDashboard(); }
+          else showToast(res.message, 'danger');
+        } catch(err) {}
       }, { signal });
     });
 

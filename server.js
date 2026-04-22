@@ -13,14 +13,18 @@ import path         from 'path';
 import compression  from 'compression';
 import rateLimit    from 'express-rate-limit';
 import { fileURLToPath } from 'url';
+import multer       from 'multer';
 import logger       from './utils/logger.js';
 import { signupSchema, loginSchema, addFlatSchema, bookingSchema, userUpdateSchema } from './utils/validators.js';
 import { pool, query, queryOne, validateConnection } from './db.js';
+import { migrate }  from './utils/migrate.js';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 const app     = express();
 // FIX [11]: Mandatory trust proxy for dual-platform deployment behind load balancers
@@ -96,6 +100,10 @@ const authenticate = (req, res, next) => {
   }
 };
 
+// ── STATIC ASSETS ──
+// FIX [1]: Move static assets BEFORE route definitions to prevent wildcard misses
+app.use(express.static(__dirname, { maxAge: '1h' }));
+
 // ── API ROUTES ──
 
 app.get('/api/ping', (req, res) => res.json({ ok: true }));
@@ -167,7 +175,7 @@ app.patch('/api/me', authenticate, async (req, res) => {
 app.get('/api/users', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Forbidden' });
-    const data = await query('SELECT id, name, email, role, created_at FROM users');
+    const data = await query('SELECT id, name, email, role, status, created_at FROM users');
     res.json({ success: true, data });
   } catch (err) {
     logger.error('Fetch users error', err.message);
@@ -196,6 +204,50 @@ app.post('/api/flats', authenticate, async (req, res) => {
     await query('INSERT INTO flats (id, owner_id, title, city, rent, type) VALUES (?, ?, ?, ?, ?, ?)', [id, req.user.id, v.title, v.city, v.rent, v.type]);
     res.json({ success: true, message: 'Flat listed', data: { id } });
   } catch (err) { logger.error('Add flat error', err.message); res.status(400).json({ success: false, message: err.message }); }
+});
+
+app.post('/api/flats/:id/image', authenticate, upload.single('image'), async (req, res) => {
+  try {
+    if (req.user.role !== 'owner') return res.status(403).json({ success: false, message: 'Forbidden' });
+    if (!req.file) return res.status(400).json({ success: false, message: 'No image uploaded' });
+    
+    const flat = await queryOne('SELECT owner_id FROM flats WHERE id = ?', [req.params.id]);
+    if (!flat || flat.owner_id !== req.user.id) return res.status(403).json({ success: false, message: 'Forbidden' });
+
+    const b64 = req.file.buffer.toString('base64');
+    const dataUrl = `data:${req.file.mimetype};base64,${b64}`;
+    await query('UPDATE flats SET images = ? WHERE id = ?', [dataUrl, req.params.id]);
+    res.json({ success: true, data: { imageUrl: dataUrl } });
+  } catch (err) {
+    logger.error('Image upload error', err.message);
+    res.status(500).json({ success: false, message: 'Upload failed' });
+  }
+});
+
+app.patch('/api/flats/:id', authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== 'owner' && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    
+    if (req.user.role === 'owner') {
+      const flat = await queryOne('SELECT owner_id FROM flats WHERE id = ?', [req.params.id]);
+      if (!flat || flat.owner_id !== req.user.id) return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    
+    const { available, title, rent } = req.body;
+    let updates = [];
+    let params = [];
+    if (available !== undefined) { updates.push('available = ?'); params.push(available ? 1 : 0); }
+    if (title) { updates.push('title = ?'); params.push(title); }
+    if (rent) { updates.push('rent = ?'); params.push(rent); }
+    
+    if (updates.length > 0) {
+      params.push(req.params.id);
+      await query(`UPDATE flats SET ${updates.join(', ')} WHERE id = ?`, params);
+    }
+    res.json({ success: true, message: 'Flat updated' });
+  } catch (err) { res.status(500).json({ success: false, message: 'Update failed' }); }
 });
 
 app.get('/api/flats', authenticate, async (req, res) => {
@@ -244,7 +296,12 @@ app.post('/api/bookings', authenticate, async (req, res) => {
     const v = bookingSchema.parse(req.body);
     const flat = await queryOne('SELECT available FROM flats WHERE id = ?', [v.flat_id]);
     if (!flat || !flat.available) return res.status(400).json({ success: false, message: 'Flat not available' });
-    const conflict = await queryOne('SELECT id FROM bookings WHERE flat_id = ? AND status != "cancelled" AND check_in < ? AND check_out > ?', [v.flat_id, v.check_out, v.check_in]);
+    
+    const dateIn = new Date(v.check_in);
+    const dateOut = new Date(v.check_out);
+    if (isNaN(dateIn) || isNaN(dateOut)) return res.status(400).json({ success: false, message: 'Invalid dates' });
+
+    const conflict = await queryOne('SELECT id FROM bookings WHERE flat_id = ? AND status != "cancelled" AND check_in < ? AND check_out > ?', [v.flat_id, dateOut, dateIn]);
     if (conflict) return res.status(409).json({ success: false, message: 'Dates already booked' });
     
     const bId = crypto.randomUUID();
@@ -255,7 +312,7 @@ app.post('/api/bookings', authenticate, async (req, res) => {
 
 app.get('/api/bookings', authenticate, async (req, res) => {
   try {
-    let sql = 'SELECT b.*, f.title as flat_title FROM bookings b JOIN flats f ON b.flat_id = f.id ';
+    let sql = 'SELECT b.*, f.title as flat_title, u.name as tenant_name FROM bookings b JOIN flats f ON b.flat_id = f.id JOIN users u ON b.tenant_id = u.id ';
     let params = [];
     if (req.user.role === 'tenant') { sql += 'WHERE b.tenant_id = ?'; params = [req.user.id]; }
     else if (req.user.role === 'owner') { sql += 'WHERE f.owner_id = ?'; params = [req.user.id]; }
@@ -286,7 +343,7 @@ app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'API route not found' });
 });
 
-// FIX [25]: Guarantee JSON error responses instead of HTML stack traces for CORS and middleware errors
+// ── GLOBAL ERROR HANDLER ──
 app.use((err, req, res, next) => {
   logger.error('Global Error', err.message);
   if (req.path.startsWith('/api/')) {
@@ -295,8 +352,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Internal Server Error');
 });
 
-// FIX [1]: Added express.static(__dirname) to serve static assets BEFORE wildcard routes
-app.use(express.static(__dirname, { maxAge: '1h' }));
+// ── PORTAL ROUTES ──
 
 app.use('/tenant', (req, res) => res.sendFile(path.join(__dirname, 'tenant_index.html')));
 app.use('/owner',  (req, res) => res.sendFile(path.join(__dirname, 'owner_index.html')));
@@ -311,6 +367,12 @@ app.use((req, res, next) => {
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const server = app.listen(PORT, '0.0.0.0', async () => {
+  try {
+    await migrate();
+  } catch (e) {
+    logger.error('Migration failed on startup. Exiting.');
+    process.exit(1);
+  }
   await validateConnection();
   logger.info(`🚀 [Production v17.2] Online at ${PORT}`);
 });

@@ -13,6 +13,11 @@ const appState = {
   activeController: new AbortController()
 };
 
+window.onerror = function(msg, url, line, col, err) {
+  showToast('Application error. Please refresh.', 'danger');
+  logger.error('Global JS Error:', msg);
+};
+
 /**
  * Fixes: Bug #1 — apiFetch stringifies body
  */
@@ -32,6 +37,16 @@ async function apiFetch(url, opts = {}) {
 
   try {
     const res = await fetch(url, { ...opts, body, headers, credentials: 'include' });
+    
+    if (res.status === 401) {
+      localStorage.removeItem('ff_token');
+      appState.currentUser = null;
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
+      return { success: false, message: 'Session expired' };
+    }
+
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
     return data;
@@ -106,8 +121,10 @@ function hideLoading(btn) {
 }
 
 function formatDate(str) {
-  if (!str) return '';
-  return new Date(str).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  if (!str) return '—';
+  const d = new Date(str);
+  if (isNaN(d)) return '—';
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatCurrency(n) {
@@ -133,7 +150,9 @@ function renderNavBar() {
     </div>
   `;
 
-  document.getElementById('btn-logout')?.addEventListener('click', () => Auth.logout(), { signal: appState.activeController.signal });
+  document.getElementById('btn-logout')?.addEventListener('click', () => {
+    if (typeof Auth !== 'undefined') Auth.logout();
+  }, { signal: appState.activeController.signal });
   
   document.getElementById('btn-theme')?.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme');
