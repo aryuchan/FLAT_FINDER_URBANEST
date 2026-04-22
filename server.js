@@ -1,4 +1,4 @@
-// server.js — Production Hardened Engine (v18.0)
+// server.js — Production Hardened Engine (v19.2)
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { z } from 'zod';
 
@@ -20,20 +21,22 @@ import logger from './utils/logger.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Cloudinary Injection (from Backup Reference)
-const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
-const UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET || '';
+// Hardcoded Cloudinary Config (as requested for total stability)
+const CLOUD_NAME = 'dwgyilvip';
+const UPLOAD_PRESET = 'ffwpreset';
+
 
 async function serveInjectedHtml(file, req, res) {
   const filePath = path.join(__dirname, file);
   try {
-    const data = await fs.promises.readFile(filePath, 'utf8');
+    const data = await fs.readFile(filePath, 'utf8');
     const injected = data
       .replace(/{{CLOUDINARY_CLOUD_NAME}}/g, CLOUD_NAME)
       .replace(/{{CLOUDINARY_UPLOAD_PRESET}}/g, UPLOAD_PRESET);
     res.setHeader('Content-Type', 'text/html');
     res.send(injected);
   } catch (err) {
+    logger.error(`[FS_ERROR] Failed to serve ${file}: ${err.message}`);
     res.status(404).send('Page not found');
   }
 }
@@ -44,15 +47,10 @@ app.get('/owner', (req, res) => serveInjectedHtml('owner_index.html', req, res))
 app.get('/admin', (req, res) => serveInjectedHtml('admin_index.html', req, res));
 
 const PORT = process.env.PORT || 3000;
-const SECRET = process.env.JWT_SECRET;
-const IS_PROD = process.env.NODE_ENV === 'production';
+const SECRET = 'FlatFinder_Industry_Secure_99_@Aryu'; // Hardcoded for stability
+const IS_PROD = true; // Forcing production mode behaviors
 
-if (!SECRET && IS_PROD) {
-  console.error('[CRITICAL] JWT_SECRET missing in production!');
-  process.exit(1);
-}
-
-const JWT_KEY = SECRET || 'dev_secret_keys_123456';
+const JWT_KEY = SECRET;
 
 // ── SECURITY & MIDDLEWARE ──
 app.set('trust proxy', 1);
@@ -66,12 +64,16 @@ app.use(helmet({
   },
 }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || true,
+  origin: ['https://flat-finder-urbanest.onrender.com', 'https://urbanest.onrender.com', true],
   credentials: true
 }));
+
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
+
+// Serve Static Assets
+app.use(express.static(__dirname));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rate Limiting
@@ -244,12 +246,28 @@ app.post('/api/flats/:id/image', auth(['owner']), upload.single('image'), async 
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No image' });
     const imageUrl = `/uploads/${req.file.filename}`;
-    await query('UPDATE flats SET images = ? WHERE id = ? AND owner_id = ?', [imageUrl, req.params.id, req.user.id]);
-    res.json({ success: true, data: { image_url: imageUrl } });
+    
+    // Fetch current images
+    const flat = await queryOne('SELECT images FROM flats WHERE id = ? AND owner_id = ?', [req.params.id, req.user.id]);
+    if (!flat) return res.status(404).json({ success: false, message: 'Flat not found' });
+    
+    let images = [];
+    try {
+      images = JSON.parse(flat.images || '[]');
+    } catch (e) {
+      images = [];
+    }
+    
+    images.push(imageUrl);
+    
+    await query('UPDATE flats SET images = ? WHERE id = ? AND owner_id = ?', [JSON.stringify(images), req.params.id, req.user.id]);
+    res.json({ success: true, data: { image_url: imageUrl, images } });
   } catch (err) {
+    logger.error(`[IMAGE_UPLOAD_FAIL] ${err.message}`);
     res.status(500).json({ success: false, message: 'Upload failed' });
   }
 });
+
 
 app.patch('/api/flats/:id', auth(['owner', 'admin']), async (req, res) => {
   const { available } = req.body;
@@ -309,7 +327,7 @@ app.patch('/api/users/:id', auth(['admin']), async (req, res) => {
   if (connected) {
     try {
       await migrate();
-      app.listen(PORT, () => logger.info(`Urbanest Engine v19.1 Online @ Port ${PORT}`));
+      app.listen(PORT, () => logger.info(`Urbanest Engine v19.2 Online @ Port ${PORT}`));
     } catch (err) {
       logger.error(`Startup migration failed: ${err.message}`);
       process.exit(1);
@@ -319,5 +337,3 @@ app.patch('/api/users/:id', auth(['admin']), async (req, res) => {
     process.exit(1);
   }
 })();
-
-
