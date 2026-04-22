@@ -9,19 +9,18 @@ let dbConfig;
 const dbUrl = process.env.DATABASE_URL;
 
 if (dbUrl) {
-  // Use connection string directly (most robust for Render/Railway)
   dbConfig = {
     uri: dbUrl,
     ssl: { rejectUnauthorized: false }
   };
 } else {
-  // Local Development
   dbConfig = {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'urbanest',
     port: parseInt(process.env.DB_PORT || '3306', 10),
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
   };
 }
 
@@ -30,9 +29,11 @@ export const pool = mysql.createPool({
   ...dbConfig,
   waitForConnections: true,
   connectionLimit: 10,
+  maxIdle: 10, // max idle connections, the default value is the same as `connectionLimit`
+  idleTimeout: 60000, // idle connections timeout, in milliseconds, the default value 60000
   queueLimit: 0,
   enableKeepAlive: true,
-  keepAliveInitialDelay: 10000,
+  keepAliveInitialDelay: 0,
 });
 
 /**

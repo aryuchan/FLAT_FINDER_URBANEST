@@ -222,11 +222,20 @@ app.patch('/api/users/:id', auth(['admin']), async (req, res) => {
 
 // ── STARTUP ──
 (async () => {
-  const ok = await validateConnection();
-  if (ok) {
-    await migrate();
-    app.listen(PORT, () => logger.info(`Urbanest Engine v18 Online @ Port ${PORT}`));
-  } else {
-    process.exit(1);
+  let connected = false;
+  while (!connected) {
+    connected = await validateConnection();
+    if (connected) {
+      try {
+        await migrate();
+        app.listen(PORT, () => logger.info(`Urbanest Engine v18 Online @ Port ${PORT}`));
+      } catch (err) {
+        logger.error('Startup migration failed:', err.message);
+        process.exit(1);
+      }
+    } else {
+      logger.warn('Database unavailable. Retrying in 5s...');
+      await new Promise(r => setTimeout(r, 5000));
+    }
   }
 })();
