@@ -17,6 +17,7 @@ const Owner = {
   viewDashboard() {
     const u = appState.currentUser || {};
     const flats = appState.listings || [];
+    const bookings = appState.bookings || [];
     
     const rows = flats.length
       ? flats

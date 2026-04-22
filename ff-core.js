@@ -129,17 +129,36 @@ function renderNavBar() {
         `<a class="nav__link" href="#${l.route}" data-route="${l.route}">${l.label}</a>`,
     )
     .join("");
-
   nav.innerHTML = `
-    <div class="nav__inner container">
-      <a class="nav__brand" href="#" data-route="/">🏠 FlatFinder</a>
-      <div class="nav__links">${links}</div>
-      <div class="nav__user">
-        <span class="nav__name">${escHtml(u.name)}</span>
-        <span class="badge ${badgeClass[u.role] || "badge--neutral"}">${u.role}</span>
-        <button class="btn btn--secondary btn--sm" id="logout-btn">Logout</button>
+    <div class="container nav__container">
+      <a class="nav__logo" href="#" data-route="/">🏠 FlatFinder</a>
+      <div class="nav__links">
+        ${links}
+        <span class="badge ${badgeClass[u.role]}">${u.role}</span>
+        <button class="btn btn--sm btn--outline" id="logout-btn">Logout</button>
       </div>
     </div>`;
+}
+
+// ── NAVIGATION HELPERS ───────────────────────────────────────────
+function defaultRoute() {
+  const u = appState.currentUser;
+  if (!u) return "#/login";
+  if (u.role === "admin") return "#/admin/dashboard";
+  if (u.role === "owner") return "#/owner/dashboard";
+  return "#/tenant/dashboard";
+}
+
+function bindEvents() {
+  const root = document.getElementById("app-root");
+  if (!root) return;
+  const path = window.location.hash.slice(1) || "/";
+  const u = appState.currentUser;
+
+  if (path.includes("login") || path.includes("signup")) Auth.bindEvents(root);
+  if (path.startsWith("/tenant")) Tenant.bindEvents(root);
+  if (path.startsWith("/owner")) Owner.bindEvents(root);
+  if (path.startsWith("/admin")) Admin.bindEvents(root);
 }
 
 // ── UI UTILITIES ──────────────────────────────────────────────────

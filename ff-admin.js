@@ -5,7 +5,10 @@
 
 const Admin = {
   viewDashboard() {
-    const { users, flats, bookings, listings } = appState;
+    const users = appState.users || [];
+    const flats = appState.flats || [];
+    const bookings = appState.bookings || [];
+    const listings = appState.listings || [];
     const pending = listings.filter((l) => l.status === "pending").length;
     const stats = [
       { label: "Total Users", value: users.length, icon: "👥" },

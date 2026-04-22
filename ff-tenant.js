@@ -5,8 +5,9 @@
 
 const Tenant = {
   viewDashboard() {
-    const rows = appState.bookings.length
-      ? appState.bookings
+    const bookings = appState.bookings || [];
+    const rows = bookings.length
+      ? bookings
           .map(
             (b) => `
         <tr>

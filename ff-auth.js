@@ -100,7 +100,7 @@ const Auth = {
       }
 
       btn.disabled = true;
-      btn.textContent = "Please wait…";
+      btn.textContent = "Verifying...";
 
       const payload =
         mode === "signup"
@@ -116,7 +116,9 @@ const Auth = {
         appState.currentUser = r.data.user;
         renderNavBar();
         window.location.hash = defaultRoute();
-        showToast(r.message || "Welcome!", "success");
+        
+        const roleName = r.data.user.role.charAt(0).toUpperCase() + r.data.user.role.slice(1);
+        showToast(`Welcome back, ${r.data.user.name}! Logged in as ${roleName}.`, "success");
       } else {
         const msg = r.message || "Something went wrong.";
         if (errEl) { errEl.textContent = msg; errEl.classList.remove("hidden"); }
