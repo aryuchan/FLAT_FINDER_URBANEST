@@ -129,15 +129,34 @@ window.renderNavBar = function () {
         `<a class="nav__link" href="#${l.route}" data-route="${l.route}">${l.label}</a>`,
     )
     .join("");
+  const theme = localStorage.getItem("ff_theme") || "light";
+  document.documentElement.setAttribute("data-theme", theme);
+
   nav.innerHTML = `
     <div class="container nav__container">
       <a class="nav__logo" href="#" data-route="/">🏠 FlatFinder</a>
       <div class="nav__links">
         ${links}
         <span class="badge ${badgeClass[u.role]}">${u.role}</span>
-        <button class="btn btn--sm btn--outline" id="logout-btn">Logout</button>
+        <button class="nav__icon-btn" id="btn-theme" title="Toggle Theme">${theme === "dark" ? "☀️" : "🌙"}</button>
+        <button class="btn btn--sm btn--outline" id="btn-logout">Logout</button>
       </div>
     </div>`;
+
+  nav.querySelector("#btn-theme").onclick = () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("ff_theme", next);
+    renderNavBar();
+  };
+
+  nav.querySelector("#btn-logout").onclick = () => {
+    appState.currentUser = null;
+    Token.clear();
+    renderNavBar();
+    window.location.hash = "#/login";
+  };
 }
 
 // ── NAVIGATION HELPERS ───────────────────────────────────────────

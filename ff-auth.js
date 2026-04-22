@@ -40,6 +40,7 @@ window.Auth = {
                   autocomplete="${isLogin ? "current-password" : "new-password"}" required minlength="6" />
                 <button type="button" class="input-eye" id="toggle-password" aria-label="Toggle password visibility">👁</button>
               </div>
+              ${isLogin ? `<div style="text-align:right; margin-top:4px"><a href="#" id="forgot-password" class="text-sm text-muted">Forgot Password?</a></div>` : ""}
             </div>
 
             ${
@@ -124,6 +125,13 @@ window.Auth = {
         const msg = r.message || "Something went wrong.";
         if (errEl) { errEl.textContent = msg; errEl.classList.remove("hidden"); }
         showToast(msg, "error");
+      }
+      const forgotBtn = root.querySelector("#forgot-password");
+      if (forgotBtn) {
+        forgotBtn.onclick = (e) => {
+          e.preventDefault();
+          showToast("Please contact support at support@urbanest.com to reset your password.", "info");
+        };
       }
     });
   },
