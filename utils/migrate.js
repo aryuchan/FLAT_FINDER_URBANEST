@@ -25,6 +25,22 @@ export async function migrate() {
     for (const stmt of statements) {
       await connection.query(stmt);
     }
+
+    // Dynamic Column Sync (Ensure v19.2 columns exist)
+    const addCols = [
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(20)",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram VARCHAR(50)",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS address TEXT",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS description TEXT",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS furnished TINYINT(1) DEFAULT 0",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS images LONGTEXT",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS amenities LONGTEXT",
+      "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS total_rent DECIMAL(12,2) DEFAULT 0"
+    ];
+    for (const stmt of addCols) {
+      try { await connection.query(stmt); } catch (e) { /* ignore */ }
+    }
+
     await connection.commit();
 
     logger.info("Database schema migration completed successfully.");
