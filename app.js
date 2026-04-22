@@ -22,11 +22,15 @@ window.App = {
 
   async checkAuth() {
     if (!Token.get()) return;
-    const r = await apiFetch("/api/me");
-    if (r.success) {
-      appState.currentUser = r.data;
-      renderNavBar();
-    } else {
+    try {
+      const r = await apiFetch("/api/me");
+      if (r.success) {
+        appState.currentUser = r.data;
+        renderNavBar();
+      } else {
+        Token.clear();
+      }
+    } catch (e) {
       Token.clear();
     }
   },
@@ -38,17 +42,11 @@ window.App = {
       const route = link.getAttribute("data-route");
       window.location.hash = `#${route}`;
     }
-    if (e.target.id === "logout-btn") {
-      Token.clear();
-      appState.currentUser = null;
-      window.location.hash = "#/login";
-      renderNavBar();
-      showToast("Logged out successfully.", "info");
-    }
   },
 
   async router() {
     try {
+      window.scrollTo(0, 0); // Professional UX
       const hash = window.location.hash || "#/";
       const path = hash.slice(1) || "/";
       const u = appState.currentUser;

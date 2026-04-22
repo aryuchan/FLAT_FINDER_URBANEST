@@ -4,7 +4,10 @@
 // ─────────────────────────────────────────────────────────────────
 
 // ── CONFIG ──────────────────────────────────────────────────────
-const API = "";
+window.API = (() => {
+  if (location.hostname === "localhost" || location.hostname === "127.0.0.1") return "";
+  return ""; // Same host in prod (Render/Railway)
+})();
 
 // ── TOKEN ────────────────────────────────────────────────────────
 window.Token = {
@@ -56,11 +59,12 @@ window.apiFetch = async function (path, options = {}) {
       return {
         success: false,
         data: null,
-        message: `Server error ${res.status}. Is 'node server.js' running?`,
+        message: `Server error ${res.status}.`,
       };
     }
 
     const json = await res.json();
+    // Professional Auto-Save Token
     if (json?.data?.token) Token.save(json.data.token);
     return json;
   } catch (err) {
@@ -68,7 +72,7 @@ window.apiFetch = async function (path, options = {}) {
     return {
       success: false,
       data: null,
-      message: `Cannot reach server. Run start.bat or "node server.js" first.`,
+      message: "Network error. Please check your connection.",
     };
   }
 }

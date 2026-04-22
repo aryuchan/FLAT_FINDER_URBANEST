@@ -276,14 +276,6 @@ window.Owner = {
             </div>
 
             <!-- ── Section 5: Photos (Cloudinary) ── -->
-        </div>
-            <div class="form-group">
-              <label class="form-label">Amenities <span class="text-muted">(comma-separated)</span></label>
-              <input class="form-input" name="amenities" type="text"
-                placeholder="WiFi, AC, Parking, Geyser, Lift, Gym, CCTV…" />
-            </div>
-
-            <!-- ── Section 5: Photos (Cloudinary) ── -->
             <h4 class="form-section-title">📸 Property Photos</h4>
             <div class="form-group">
               <label class="form-label">Upload Images <span class="text-muted">(Direct Cloudinary Upload)</span></label>

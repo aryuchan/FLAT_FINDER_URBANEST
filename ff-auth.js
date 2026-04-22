@@ -51,7 +51,7 @@ window.Auth = {
               <div class="role-pills">
                 <label class="role-pill"><input type="radio" name="role" value="tenant" checked /> 🏠 Tenant</label>
                 <label class="role-pill"><input type="radio" name="role" value="owner" /> 🔑 Owner</label>
-                <label class="role-pill"><input type="radio" name="role" value="admin" /> 👑 Admin</label>
+                <label class="role-pill"><input type="radio" name="role" value="admin" /> ⚙️ Admin</label>
               </div>
             </div>`
                 : ""
@@ -93,20 +93,12 @@ window.Auth = {
 
       if (errEl) { errEl.textContent = ""; errEl.classList.add("hidden"); }
 
-      const email = fd.get("email")?.trim();
-      const password = fd.get("password");
-      if (!email || !password) {
-        if (errEl) { errEl.textContent = "Please fill in all required fields."; errEl.classList.remove("hidden"); }
-        return;
-      }
+      const payload = mode === "signup"
+          ? { name: fd.get("name")?.trim(), email: fd.get("email")?.trim(), password: fd.get("password"), role: fd.get("role") || "tenant" }
+          : { email: fd.get("email")?.trim(), password: fd.get("password") };
 
       btn.disabled = true;
-      btn.textContent = "Verifying...";
-
-      const payload =
-        mode === "signup"
-          ? { name: fd.get("name")?.trim(), email, password, role: fd.get("role") || "tenant" }
-          : { email, password };
+      btn.textContent = "Please wait…";
 
       const r = await apiFetch(`/api/${mode}`, { method: "POST", body: payload });
 
@@ -115,12 +107,9 @@ window.Auth = {
 
       if (r.success) {
         appState.currentUser = r.data.user;
-        Token.save(r.data.token);
         renderNavBar();
         window.location.hash = defaultRoute();
-        
-        const roleName = r.data.user.role.charAt(0).toUpperCase() + r.data.user.role.slice(1);
-        showToast(`Welcome back, ${r.data.user.name}! Logged in as ${roleName}.`, "success");
+        showToast(`Welcome back, ${r.data.user.name}!`, "success");
       } else {
         const msg = r.message || "Something went wrong.";
         if (errEl) { errEl.textContent = msg; errEl.classList.remove("hidden"); }
