@@ -89,18 +89,22 @@ const Auth = {
       }, { signal: appState.activeController.signal });
     }
 
-    document.querySelectorAll('.toggle-password').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation(); // Prevent event bubbling to form
-        const targetBtn = e.currentTarget;
-        const input = targetBtn.parentElement.querySelector('input');
-        if (input) {
-          const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-          input.setAttribute('type', type);
-          targetBtn.textContent = type === 'password' ? '👁️' : '🙈';
-        }
-      }, { signal: appState.activeController.signal });
-    });
+    // Global Event Delegation for Password Toggle (Fixes "Not working" & "Clicking randomly" bugs)
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.toggle-password');
+      if (!btn) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const container = btn.closest('div');
+      const input = container?.querySelector('input');
+      if (input) {
+        const isPassword = input.getAttribute('type') === 'password';
+        input.setAttribute('type', isPassword ? 'text' : 'password');
+        btn.textContent = isPassword ? '🙈' : '👁️';
+        console.log('[Auth] Password visibility toggled');
+      }
+    }, { signal: appState.activeController.signal });
   }
 };
