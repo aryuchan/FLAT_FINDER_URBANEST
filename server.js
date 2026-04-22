@@ -271,9 +271,16 @@ app.patch("/api/me", auth(), async (req, res) => {
 
 // Flats
 app.get("/api/flats", async (req, res) => {
-  const { city, type, minRent, maxRent } = req.query;
-  let sql = "SELECT * FROM flats WHERE available = 1";
+  const { city, type, minRent, maxRent, ownerId, all } = req.query;
+  let sql = "SELECT * FROM flats WHERE 1=1";
   const params = [];
+
+  if (ownerId) {
+    sql += " AND owner_id = ?";
+    params.push(ownerId);
+  } else if (all !== "1") {
+    sql += " AND available = 1";
+  }
 
   if (city) {
     sql += " AND city LIKE ?";
@@ -295,6 +302,20 @@ app.get("/api/flats", async (req, res) => {
   sql += " ORDER BY created_at DESC";
   const flats = await query(sql, params);
   res.json({ success: true, data: flats });
+});
+
+app.get("/api/flats/:id", async (req, res) => {
+  try {
+    const flat = await queryOne(
+      "SELECT f.*, u.name as owner_name, u.phone as owner_phone, u.email as owner_email, u.bio as owner_bio FROM flats f JOIN users u ON f.owner_id = u.id WHERE f.id = ?",
+      [req.params.id],
+    );
+    if (!flat)
+      return res.status(404).json({ success: false, message: "Flat not found" });
+    res.json({ success: true, data: flat });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 });
 
 app.post("/api/flats", auth(["owner"]), async (req, res) => {

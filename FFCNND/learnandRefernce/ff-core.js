@@ -86,14 +86,6 @@ function escHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-function parseJson(str, def = []) {
-  try {
-    return JSON.parse(str || (Array.isArray(def) ? "[]" : "{}")) || def;
-  } catch (e) {
-    return def;
-  }
-}
-
 // ── RENDER ───────────────────────────────────────────────────────
 function render(html) {
   const root = document.getElementById("app-root");
@@ -119,11 +111,13 @@ function renderNavBar() {
     ],
     owner: [
       { label: "🏠 Dashboard", route: "/owner/dashboard" },
+      { label: "📋 Listings", route: "/owner/listings" },
       { label: "➕ Add Flat", route: "/owner/add-flat" },
       { label: "👤 My Profile", route: "/owner/profile" },
     ],
     admin: [
       { label: "🏠 Dashboard", route: "/admin/dashboard" },
+      { label: "✅ Approvals", route: "/admin/approvals" },
       { label: "👥 Users", route: "/admin/users" },
     ],
   };

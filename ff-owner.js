@@ -1,321 +1,443 @@
-// ff-owner.js — Ultimate Property Management Hub (Cloudinary + Advanced Data)
+// ff-owner.js — Ultimate Property Management Hub (Cloudinary + Advanced UI)
 const Owner = {
   _uploadedImages: [],
 
   _cloudConfig() {
     return {
-      cloudName:
-        document.querySelector('meta[name="cloudinary-cloud-name"]')?.content ||
-        "",
-      preset:
-        document.querySelector('meta[name="cloudinary-upload-preset"]')
-          ?.content || "",
+      cloudName: "dwgyilvip",
+      preset: "ffwpreset",
     };
   },
 
-  async init() {
-    await this.route();
-  },
+  viewDashboard() {
+    const flats = appState.listings || [];
+    const u = appState.currentUser || {};
+    
+    const rows = flats.length
+      ? flats
+          .map(
+            (l) => `
+        <tr data-id="${escHtml(l.id)}">
+          <td>
+            <strong>${escHtml(l.title)}</strong>
+            <br><small class="text-muted">📍 ${escHtml(l.city)} · ${escHtml(l.type)}</small>
+          </td>
+          <td>₹${Number(l.rent).toLocaleString("en-IN")}</td>
+          <td>
+            <button class="badge badge--${l.available ? "success" : "neutral"} btn-toggle-flat" style="cursor:pointer; border:none" data-avail="${l.available ? "1" : "0"}">
+              ${l.available ? "Available" : "Hidden"}
+            </button>
+          </td>
+          <td>${l.created_at?.slice(0, 10) || "—"}</td>
+          <td><button class="btn btn--danger btn--sm btn-del-flat">Delete</button></td>
+        </tr>`,
+          )
+          .join("")
+      : `<tr><td colspan="5" class="empty-cell">
+          No listings yet. <a href="#/owner/add-flat" data-route="/owner/add-flat">Add your first flat →</a>
+         </td></tr>`;
 
-  async route() {
-    const hash = window.location.hash || "#/dashboard";
-    if (hash === "#/add-flat") await render(this.viewAddFlat());
-    else await render(this.viewDashboard());
-    this.bindEvents();
-  },
-
-  async viewDashboard() {
-    const [fRes, bRes] = await Promise.all([
-      apiFetch("/api/flats"),
-      apiFetch("/api/bookings"),
-    ]);
-    const flats = fRes.success ? fRes.data : [];
-    const bookings = bRes.success ? bRes.data : [];
+    // Quick contact completeness nudge
+    const hasContact = u.phone || u.whatsapp || u.telegram;
+    const contactNudge = !hasContact
+      ? `<div class="nudge-banner">
+           <span>💡 Add your contact details so tenants can reach you directly.</span>
+           <a class="btn btn--sm btn--secondary" href="#/owner/profile" data-route="/owner/profile">Update Profile →</a>
+         </div>`
+      : "";
 
     return `
       <div class="container page-content">
+        ${contactNudge}
         <div class="page-header">
-          <h2>Management Hub</h2>
-          <a class="btn btn--primary" href="#/add-flat" data-route="/add-flat">➕ List Property</a>
+          <h2>Owner Dashboard</h2>
+          <a class="btn btn--primary" href="#/owner/add-flat" data-route="/owner/add-flat">+ Add Flat</a>
         </div>
 
-        <div class="stat-grid mt-lg">
+        <!-- Quick stats -->
+        <div class="stat-grid stat-grid--sm">
           <div class="stat-card card">
-            <p class="stat-card__label">Active Listings</p>
+            <p style="font-size:1.25rem">🏠</p>
+            <p class="stat-card__label">Total Listings</p>
             <p class="stat-card__value">${flats.length}</p>
           </div>
           <div class="stat-card card">
-            <p class="stat-card__label">Tenant Inquiries</p>
-            <p class="stat-card__value">${bookings.length}</p>
+            <p style="font-size:1.25rem">✅</p>
+            <p class="stat-card__label">Active</p>
+            <p class="stat-card__value">${flats.filter((l) => l.available).length}</p>
+          </div>
+          <div class="stat-card card">
+            <p style="font-size:1.25rem">⏸️</p>
+            <p class="stat-card__label">Hidden</p>
+            <p class="stat-card__value">${flats.filter((l) => !l.available).length}</p>
           </div>
         </div>
 
-        <h3 class="mt-xl">My Properties</h3>
-        <div class="grid mt-sm mb-lg">
-          ${
-            flats.length
-              ? flats
-                  .map(
-                    (f) => `
-            <div class="card" data-id="${escHtml(f.id)}">
-              <div class="flex-between">
-                <h4 style="font-size:1.1rem">${escHtml(f.title)}</h4>
-                <button class="badge badge--${f.available ? "success" : "neutral"} btn-toggle" style="cursor:pointer; border:none" data-avail="${f.available ? "1" : "0"}">
-                  ${f.available ? "Available" : "Hidden"}
-                </button>
-              </div>
-              <p class="text-muted mt-sm">${formatCurrency(f.rent)}/mo — ${escHtml(f.city)}</p>
-              <p class="text-muted" style="font-size:0.85rem">📍 ${escHtml(f.address || "No address set")}</p>
-            </div>
-          `,
-                  )
-                  .join("")
-              : '<p class="text-muted">No properties listed yet.</p>'
-          }
+        <div class="card">
+          <h3 class="card-title">My Listings</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Flat</th><th>Rent</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
         </div>
-
-        <h3 class="mt-xl">Booking Requests</h3>
-        <div class="grid mt-sm">
-          ${
-            bookings.length
-              ? bookings
-                  .map(
-                    (b) => `
-            <div class="card" data-id="${escHtml(b.id)}">
-              <div class="flex-between">
-                <h4 class="stat-card__label">${escHtml(b.flat_title)}</h4>
-                <span class="badge badge--${b.status === "confirmed" ? "success" : b.status === "cancelled" ? "danger" : "warning"}">${escHtml(b.status)}</span>
-              </div>
-              <p class="text-muted mt-sm">Tenant: <b>${escHtml(b.tenant_name)}</b></p>
-              <p class="text-muted mt-sm">${formatDate(b.check_in)} — ${formatDate(b.check_out)}</p>
-              ${
-                b.status === "pending"
-                  ? `
-                <div class="mt-lg flex-between" style="gap:1rem">
-                  <button class="btn btn--primary btn--sm btn-confirm" style="flex:1">Accept</button>
-                  <button class="btn btn--danger btn--sm btn-cancel" style="flex:1">Decline</button>
-                </div>
-              `
-                  : ""
-              }
-            </div>
-          `,
-                  )
-                  .join("")
-              : '<p class="text-muted">No booking requests found.</p>'
-          }
-        </div>
-      </div>
-    `;
+      </div>`;
   },
 
   viewAddFlat() {
     this._uploadedImages = [];
     return `
       <div class="container page-content">
-        <a href="#/dashboard" class="back-link">← Back to Hub</a>
-        <div class="card form-card" style="max-width:800px; margin-top:1rem">
-          <h2>List a New Property</h2>
-          <p class="text-muted mb-lg">Complete the details below to list your property for verified tenants.</p>
-          
-          <form id="add-flat-form">
+        <a class="back-link" href="#/owner/dashboard" data-route="/owner/dashboard">← Dashboard</a>
+        <div class="card form-card" style="max-width:760px">
+          <h2>List a New Flat</h2>
+          <p class="form-card__sub">Fill in the details to publish your property instantly.</p>
+
+          <form id="add-flat-form" novalidate>
+
+            <!-- ── Section 1: Basic Details ── -->
+            <h4 class="form-section-title">📋 Basic Details</h4>
             <div class="grid-2">
               <div class="form-group">
-                <label class="form-label">Property Title <span class="text-danger">*</span></label>
-                <input class="form-input" name="title" placeholder="e.g. Modern 2BHK in Downtown" required minlength="5" />
+                <label class="form-label">Title *</label>
+                <input class="form-input" name="title" type="text" placeholder="2BHK in Koregaon Park" required />
               </div>
               <div class="form-group">
-                <label class="form-label">City <span class="text-danger">*</span></label>
-                <input class="form-input" name="city" placeholder="e.g. Mumbai" required />
+                <label class="form-label">City *</label>
+                <input class="form-input" name="city" type="text" placeholder="Pune" required />
               </div>
               <div class="form-group">
-                <label class="form-label">Monthly Rent (₹) <span class="text-danger">*</span></label>
-                <input class="form-input" name="rent" type="number" placeholder="25000" required min="1" />
+                <label class="form-label">Monthly Rent (₹) *</label>
+                <input class="form-input" name="rent" type="number" min="1" step="100" placeholder="20000" required />
               </div>
               <div class="form-group">
-                <label class="form-label">Security Deposit (₹)</label>
-                <input class="form-input" name="deposit" type="number" placeholder="50000" min="0" />
+                <label class="form-label">Deposit (₹)</label>
+                <input class="form-input" name="deposit" type="number" min="0" step="100" placeholder="e.g. 40000" />
               </div>
               <div class="form-group">
-                <label class="form-label">Type <span class="text-danger">*</span></label>
+                <label class="form-label">Type *</label>
                 <select class="form-select" name="type" required>
-                  <option value="1BHK">1BHK</option>
-                  <option value="2BHK" selected>2BHK</option>
-                  <option value="3BHK">3BHK</option>
-                  <option value="Studio">Studio</option>
-                  <option value="Penthouse">Penthouse</option>
+                  <option value="">Select type…</option>
+                  <option>1BHK</option><option>2BHK</option><option>3BHK</option>
+                  <option>Studio</option><option>4BHK+</option>
                 </select>
               </div>
               <div class="form-group">
-                <label class="form-label">Parking Availability</label>
+                <label class="form-label">Furnished</label>
+                <select class="form-select" name="furnished">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Full Address *</label>
+              <textarea class="form-textarea" name="address" rows="2" placeholder="Street, Area, Landmark" required></textarea>
+            </div>
+
+            <!-- ── Section 2: Property Details ── -->
+            <h4 class="form-section-title">🏗️ Property Details</h4>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Floor Number</label>
+                <input class="form-input" name="floor" type="number" min="0" placeholder="e.g. 3" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Total Floors in Building</label>
+                <input class="form-input" name="total_floors" type="number" min="1" placeholder="e.g. 10" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Area (sq. ft.)</label>
+                <input class="form-input" name="area_sqft" type="number" min="0" placeholder="e.g. 850" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Parking</label>
                 <select class="form-select" name="parking">
-                  <option value="none">No Parking</option>
-                  <option value="bike">Two Wheeler</option>
-                  <option value="car">Four Wheeler</option>
-                  <option value="both">Both (Car + Bike)</option>
+                  <option value="none">None</option>
+                  <option value="bike">Bike</option>
+                  <option value="car">Car</option>
+                  <option value="both">Bike + Car</option>
                 </select>
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Full Address <span class="text-danger">*</span></label>
-              <textarea class="form-textarea" name="address" rows="2" placeholder="Street name, Area, Landmarks, Pincode" required></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Description / Amenities</label>
-              <textarea class="form-textarea" name="description" rows="3" placeholder="Tell tenants about the flat, society, furniture, and house rules..."></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Upload Property Photos</label>
-              <div class="image-upload-zone" id="upload-zone" style="border: 2px dashed var(--border); padding: 3rem; text-align: center; border-radius: 0.75rem; background: rgba(0,0,0,0.02);">
-                <span style="font-size:2rem">📷</span>
-                <p class="mt-sm">Direct Cloud Upload Enabled</p>
-                <input type="file" id="image-input" accept="image/*" multiple style="display:none" />
-                <button type="button" class="btn btn--secondary btn--sm mt-sm" onclick="document.getElementById('image-input').click()">Select Images</button>
-                <div id="image-preview-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:1rem; margin-top:2rem;"></div>
+            <!-- ── Section 3: Preferences / Rules ── -->
+            <h4 class="form-section-title">📜 Preferences & Rules</h4>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Preferred Tenants</label>
+                <select class="form-select" name="preferred_tenants">
+                  <option value="any">Any</option>
+                  <option value="family">Family</option>
+                  <option value="bachelors">Bachelors</option>
+                  <option value="working_women">Working Women</option>
+                  <option value="students">Students</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Food Preference</label>
+                <select class="form-select" name="food_preference">
+                  <option value="any">Any</option>
+                  <option value="veg">Vegetarian Only</option>
+                  <option value="nonveg">Non-Veg OK</option>
+                </select>
               </div>
             </div>
 
-            <button class="btn btn--primary btn--full mt-xl" type="submit" id="btn-submit-flat">🚀 Publish Listing</button>
+            <!-- ── Section 4: Description & Amenities ── -->
+            <h4 class="form-section-title">📝 Description</h4>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <textarea class="form-textarea" name="description" rows="3"
+                placeholder="Describe the flat — location highlights, nearby facilities, house rules…"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Amenities <span class="text-muted">(comma-separated)</span></label>
+              <input class="form-input" name="amenities" type="text"
+                placeholder="WiFi, AC, Parking, Geyser, Lift, Gym, CCTV…" />
+            </div>
+
+            <!-- ── Section 5: Photos (Cloudinary) ── -->
+            <h4 class="form-section-title">📸 Property Photos</h4>
+            <div class="form-group">
+              <label class="form-label">Upload Images <span class="text-muted">(Direct Cloudinary Upload)</span></label>
+              <div class="image-upload-zone" id="image-upload-zone">
+                <input type="file" id="image-input" accept="image/*" multiple style="display:none" />
+                <div class="image-upload-zone__inner" id="img-drop-area" onclick="document.getElementById('image-input').click()">
+                  <span style="font-size:2rem">📷</span>
+                  <p>Click here to browse photos</p>
+                </div>
+                <div id="image-preview-grid" class="img-preview-grid"></div>
+              </div>
+            </div>
+
+            <div id="add-flat-error" class="form-error hidden mt-lg"></div>
+            <button class="btn btn--primary mt-lg" type="submit" id="add-flat-submit" style="width: 100%;">🚀 Publish Listing</button>
           </form>
         </div>
-      </div>
-    `;
+      </div>`;
   },
 
-  bindEvents() {
-    const { signal } = appState.activeController;
-    const form = document.getElementById("add-flat-form");
+  viewProfile() {
+    const u = appState.currentUser || {};
+    return `
+      <div class="container page-content">
+        <div class="page-header">
+          <h2>My Profile</h2>
+          <a class="btn btn--secondary" href="#/owner/dashboard" data-route="/owner/dashboard">← Dashboard</a>
+        </div>
+        <div class="card form-card" style="max-width:640px">
+          <h3 class="card-title">👤 Personal Information</h3>
+          <form id="profile-form" novalidate>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input class="form-input" name="name" type="text"
+                  value="${escHtml(u.name || "")}" required />
+              </div>
+            </div>
 
-    if (form) {
-      form.addEventListener(
-        "submit",
-        async (e) => {
-          e.preventDefault();
-          const btn = document.getElementById("btn-submit-flat");
-          showLoading(btn);
+            <h4 class="form-section-title" style="margin-top:var(--space-md)">📞 Contact Details</h4>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input class="form-input" name="phone" type="tel"
+                  placeholder="+91 XXXXX XXXXX"
+                  value="${escHtml(u.phone || "")}" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">About You <span class="text-muted">(shown to tenants)</span></label>
+              <textarea class="form-textarea" name="bio" rows="3"
+                placeholder="A short bio — experience as a landlord, response time, etc.">${escHtml(u.bio || "")}</textarea>
+            </div>
 
-          const fd = new FormData(form);
-          const data = Object.fromEntries(fd);
-          data.images = this._uploadedImages;
+            <h4 class="form-section-title" style="margin-top:var(--space-md)">🔒 Change Password</h4>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input class="form-input" name="new_password" type="password"
+                  placeholder="Leave blank to keep current" minlength="8" autocomplete="new-password" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <input class="form-input" name="confirm_password" type="password"
+                  placeholder="Repeat new password" autocomplete="new-password" />
+              </div>
+            </div>
 
-          const res = await apiFetch("/api/flats", {
-            method: "POST",
-            body: data,
-          });
-          hideLoading(btn);
-          if (res.success) {
-            showToast("Listing published successfully!", "success");
-            window.location.hash = "#/dashboard";
-          } else {
-            showToast(res.message, "danger");
-          }
-        },
-        { signal },
-      );
+            <div id="profile-error" class="form-error hidden"></div>
+            <button class="btn btn--primary mt-lg" type="submit" id="profile-submit">Save Changes</button>
+          </form>
+        </div>
+      </div>`;
+  },
 
-      // Cloudinary Logic
-      const imgInput = document.getElementById("image-input");
-      const grid = document.getElementById("image-preview-grid");
+  bindEvents(root) {
+    const profileForm = root.querySelector("#profile-form");
+    if (profileForm) {
+      profileForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(profileForm);
+        const newPass = fd.get("new_password");
+        const confirmPass = fd.get("confirm_password");
+        const errEl = root.querySelector("#profile-error");
 
-      imgInput?.addEventListener(
-        "change",
-        async () => {
-          const files = Array.from(imgInput.files);
-          const config = this._cloudConfig();
+        if (newPass && newPass !== confirmPass) {
+          if (errEl) { errEl.textContent = "Passwords do not match."; errEl.classList.remove("hidden"); }
+          return;
+        }
+        if (errEl) errEl.classList.add("hidden");
 
-          if (!config.cloudName || !config.preset) {
-            return showToast(
-              "Cloudinary config missing. Check environment variables.",
-              "warning",
-            );
-          }
+        const payload = {
+          name: fd.get("name")?.trim(),
+          phone: fd.get("phone")?.trim() || "",
+          bio: fd.get("bio")?.trim() || "",
+          ...(newPass ? { password: newPass } : {}),
+        };
 
-          for (const file of files) {
-            const item = document.createElement("div");
-            item.className = "img-preview-item";
-            item.innerHTML = '<div class="spinner spinner--sm"></div>';
-            grid.appendChild(item);
+        const btn = root.querySelector("#profile-submit");
+        btn.disabled = true;
+        btn.textContent = "Saving…";
+        const r = await apiFetch("/api/me", { method: "PATCH", body: payload });
+        btn.disabled = false;
+        btn.textContent = "Save Changes";
 
-            const fd = new FormData();
-            fd.append("file", file);
-            fd.append("upload_preset", config.preset);
-
-            try {
-              const res = await fetch(
-                `https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`,
-                {
-                  method: "POST",
-                  body: fd,
-                },
-              );
-              const json = await res.json();
-              if (json.secure_url) {
-                this._uploadedImages.push(json.secure_url);
-                item.innerHTML = `<img src="${json.secure_url}" style="width:100%; height:100px; object-fit:cover; border-radius:0.5rem; border:1px solid var(--border)">`;
-              } else {
-                item.remove();
-                showToast("Upload failed", "danger");
-              }
-            } catch (err) {
-              item.remove();
-              showToast("Network error during upload", "danger");
-            }
-          }
-        },
-        { signal },
-      );
+        if (r.success) {
+          Object.assign(appState.currentUser, payload);
+          renderNavBar();
+          showToast("Profile updated successfully!", "success");
+        } else {
+          showToast(r.message || "Update failed.", "error");
+        }
+      });
     }
 
-    // Dashboard Actions (Toggle, Confirm, Cancel)
-    document.querySelectorAll(".btn-toggle").forEach((btn) => {
-      btn.addEventListener(
-        "click",
-        async (e) => {
-          const id = e.target.closest(".card").dataset.id;
-          const isAvail = e.target.dataset.avail === "1";
-          showLoading(btn);
-          const res = await apiFetch(`/api/flats/${id}`, {
-            method: "PATCH",
-            body: { available: !isAvail },
-          });
-          if (res.success) {
-            showToast("Visibility toggled");
-            await this.route();
-          } else {
-            showToast(res.message, "danger");
-            hideLoading(btn);
-          }
-        },
-        { signal },
-      );
-    });
+    const addFlatForm = root.querySelector("#add-flat-form");
+    if (addFlatForm) {
+      addFlatForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = root.querySelector("#add-flat-submit");
+        const errEl = root.querySelector("#add-flat-error");
+        
+        const fd = new FormData(addFlatForm);
+        const data = Object.fromEntries(fd);
+        
+        // Validation
+        if (!data.title || !data.city || !data.rent || !data.type || !data.address) {
+          if (errEl) { errEl.textContent = "Please fill in all required fields (*)."; errEl.classList.remove("hidden"); }
+          showToast("Please fill in all required fields.", "error");
+          return;
+        }
+        if (errEl) errEl.classList.add("hidden");
 
-    document.querySelectorAll(".btn-confirm, .btn-cancel").forEach((btn) => {
-      btn.addEventListener(
-        "click",
-        async (e) => {
-          const id = e.target.closest(".card").dataset.id;
-          const status = e.target.classList.contains("btn-confirm")
-            ? "confirmed"
-            : "cancelled";
-          showLoading(btn);
-          const res = await apiFetch(`/api/bookings/${id}`, {
-            method: "PATCH",
-            body: { status },
-          });
-          if (res.success) {
-            showToast(`Inquiry ${status}`);
-            await this.route();
-          } else {
-            showToast(res.message, "danger");
-            hideLoading(btn);
+        btn.disabled = true;
+        btn.textContent = "Submitting...";
+
+        data.amenities = (data.amenities || "").split(",").map(s => s.trim()).filter(Boolean);
+        data.images = this._uploadedImages;
+
+        const res = await apiFetch("/api/flats", {
+          method: "POST",
+          body: data,
+        });
+
+        btn.disabled = false;
+        btn.textContent = "🚀 Publish Listing";
+
+        if (res.success) {
+          showToast("Listing published successfully!", "success");
+          window.location.hash = "#/owner/dashboard";
+        } else {
+          showToast(res.message, "error");
+        }
+      });
+
+      // Cloudinary Logic
+      const imgInput = root.querySelector("#image-input");
+      const grid = root.querySelector("#image-preview-grid");
+
+      imgInput?.addEventListener("change", async () => {
+        const files = Array.from(imgInput.files);
+        const config = this._cloudConfig();
+
+        if (!config.cloudName || !config.preset) {
+          return showToast("Cloudinary config missing. Check environment variables.", "warning");
+        }
+
+        for (const file of files) {
+          const item = document.createElement("div");
+          item.className = "img-preview-item";
+          item.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:0.8rem;color:#64748b">Uploading...</div>';
+          grid.appendChild(item);
+
+          const fd = new FormData();
+          fd.append("file", file);
+          fd.append("upload_preset", config.preset);
+
+          try {
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`, {
+              method: "POST",
+              body: fd,
+            });
+            const json = await res.json();
+            if (json.secure_url) {
+              this._uploadedImages.push(json.secure_url);
+              item.innerHTML = \`<img src="\${json.secure_url}" />\`;
+            } else {
+              item.remove();
+              showToast("Upload failed", "error");
+            }
+          } catch (err) {
+            item.remove();
+            showToast("Network error during upload", "error");
           }
-        },
-        { signal },
-      );
+        }
+      });
+    }
+
+    // Dashboard Actions (Toggle, Delete)
+    root.addEventListener("click", async (e) => {
+      const btnToggle = e.target.closest(".btn-toggle-flat");
+      if (btnToggle) {
+        const id = e.target.closest("tr").dataset.id;
+        const isAvail = btnToggle.dataset.avail === "1";
+        btnToggle.disabled = true;
+        const res = await apiFetch(\`/api/flats/\${id}\`, {
+          method: "PATCH",
+          body: { available: !isAvail },
+        });
+        btnToggle.disabled = false;
+        if (res.success) {
+          showToast("Visibility toggled", "success");
+          const r = await apiFetch("/api/flats");
+          if (r.success) appState.listings = r.data;
+          render(Owner.viewDashboard());
+        } else {
+          showToast(res.message, "error");
+        }
+        return;
+      }
+
+      const btnDel = e.target.closest(".btn-del-flat");
+      if (btnDel) {
+        if (!confirm("Delete this listing permanently?")) return;
+        const id = e.target.closest("tr").dataset.id;
+        btnDel.disabled = true;
+        const res = await apiFetch(\`/api/flats/\${id}\`, { method: "DELETE" });
+        if (res.success) {
+          showToast("Listing deleted", "success");
+          const r = await apiFetch("/api/flats");
+          if (r.success) appState.listings = r.data;
+          render(Owner.viewDashboard());
+        } else {
+          showToast(res.message, "error");
+          btnDel.disabled = false;
+        }
+        return;
+      }
     });
   },
 };

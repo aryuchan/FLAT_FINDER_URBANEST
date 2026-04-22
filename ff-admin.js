@@ -1,25 +1,13 @@
-// ff-admin.js — Ultimate Global Control Terminal (v18.0)
+// ff-admin.js — Ultimate Global Control Terminal (v18.0) - Upgraded UI
 const Admin = {
-  async init() {
-    await this.route();
-  },
+  viewDashboard() {
+    const flats = appState.flats || [];
 
-  async route() {
-    const hash = window.location.hash || "#/dashboard";
-    if (hash === "#/users") await this.viewUsers();
-    else await this.viewDashboard();
-    this.bindEvents();
-  },
-
-  async viewDashboard() {
-    const res = await apiFetch("/api/flats");
-    const flats = res.success ? res.data : [];
-
-    await render(`
+    return `
       <div class="container page-content">
         <div class="page-header">
           <h2>Global Inventory</h2>
-          <a class="btn btn--secondary btn--sm" href="#/users" data-route="/users">👥 System Users</a>
+          <a class="btn btn--secondary btn--sm" href="#/admin/users" data-route="/admin/users">👥 System Users</a>
         </div>
 
         <div class="stat-grid mt-lg">
@@ -27,11 +15,11 @@ const Admin = {
             <p class="stat-card__label">Total Properties</p>
             <p class="stat-card__value">${flats.length}</p>
           </div>
-          <div class="stat-card card" style="border-top: 4px solid var(--success)">
+          <div class="stat-card card" style="border-top: 4px solid var(--color-success)">
             <p class="stat-card__label">Active Listings</p>
             <p class="stat-card__value">${flats.filter((f) => f.available).length}</p>
           </div>
-          <div class="stat-card card" style="border-top: 4px solid var(--danger)">
+          <div class="stat-card card" style="border-top: 4px solid var(--color-danger)">
             <p class="stat-card__label">Hidden/Pending</p>
             <p class="stat-card__value">${flats.filter((f) => !f.available).length}</p>
           </div>
@@ -71,18 +59,21 @@ const Admin = {
           </div>
         </div>
       </div>
-    `);
+    `;
   },
 
-  async viewUsers() {
-    const res = await apiFetch("/api/users");
-    const users = res.success ? res.data : [];
+  viewApprovals() {
+    return this.viewDashboard();
+  },
 
-    await render(`
+  viewUsers() {
+    const users = appState.users || [];
+
+    return `
       <div class="container page-content">
         <div class="page-header">
           <h2>User Management</h2>
-          <a class="btn btn--secondary btn--sm" href="#/dashboard" data-route="/dashboard">← Back to Terminal</a>
+          <a class="btn btn--secondary btn--sm" href="#/admin/dashboard" data-route="/admin/dashboard">← Back to Terminal</a>
         </div>
 
         <div class="card mt-lg">
@@ -120,85 +111,75 @@ const Admin = {
           </div>
         </div>
       </div>
-    `);
+    `;
   },
 
-  bindEvents() {
-    const { signal } = appState.activeController;
-
+  bindEvents(root) {
     // Hardened Global Click Handlers
-    document.querySelectorAll(".btn-del").forEach((btn) => {
-      btn.addEventListener(
-        "click",
-        async (e) => {
-          if (
-            !confirm(
-              "This will permanently delete the listing and all associated images/bookings. Proceed?",
-            )
-          )
-            return;
-          const id = e.target.closest("tr").dataset.id;
-          showLoading(btn);
-          const res = await apiFetch(`/api/flats/${id}`, { method: "DELETE" });
-          if (res.success) {
-            showToast("Property purged");
-            await this.route();
-          } else {
-            showToast(res.message, "danger");
-            hideLoading(btn);
-          }
-        },
-        { signal },
-      );
-    });
+    root.addEventListener("click", async (e) => {
+      const btnDel = e.target.closest(".btn-del");
+      if (btnDel) {
+        if (!confirm("This will permanently delete the listing and all associated images/bookings. Proceed?")) return;
+        const id = e.target.closest("tr").dataset.id;
+        btnDel.disabled = true;
+        btnDel.textContent = "Deleting...";
+        const res = await apiFetch(`/api/flats/${id}`, { method: "DELETE" });
+        btnDel.disabled = false;
+        if (res.success) {
+          showToast("Property purged", "success");
+          const r = await apiFetch("/api/flats");
+          if (r.success) appState.flats = r.data;
+          render(Admin.viewDashboard());
+        } else {
+          showToast(res.message, "error");
+        }
+        return;
+      }
 
-    document.querySelectorAll(".btn-toggle-flat").forEach((btn) => {
-      btn.addEventListener(
-        "click",
-        async (e) => {
-          const id = e.target.closest("tr").dataset.id;
-          const isAvail = e.target.dataset.avail === "1";
-          showLoading(btn);
-          const res = await apiFetch(`/api/flats/${id}`, {
-            method: "PATCH",
-            body: { available: !isAvail },
-          });
-          if (res.success) {
-            showToast("Visibility updated");
-            await this.route();
-          } else {
-            showToast(res.message, "danger");
-            hideLoading(btn);
-          }
-        },
-        { signal },
-      );
-    });
+      const btnToggle = e.target.closest(".btn-toggle-flat");
+      if (btnToggle) {
+        const id = e.target.closest("tr").dataset.id;
+        const isAvail = btnToggle.dataset.avail === "1";
+        btnToggle.style.opacity = 0.5;
+        const res = await apiFetch(`/api/flats/${id}`, {
+          method: "PATCH",
+          body: { available: !isAvail },
+        });
+        btnToggle.style.opacity = 1;
+        if (res.success) {
+          showToast("Visibility updated", "success");
+          const r = await apiFetch("/api/flats");
+          if (r.success) appState.flats = r.data;
+          render(Admin.viewDashboard());
+        } else {
+          showToast(res.message, "error");
+        }
+        return;
+      }
 
-    document.querySelectorAll(".btn-suspend").forEach((btn) => {
-      btn.addEventListener(
-        "click",
-        async (e) => {
-          const id = e.target.closest("tr").dataset.id;
-          const action = e.target.textContent;
-          const newStatus = action === "Suspend" ? "suspended" : "active";
-          if (!confirm(`Mark this user as ${newStatus}?`)) return;
+      const btnSuspend = e.target.closest(".btn-suspend");
+      if (btnSuspend) {
+        const id = e.target.closest("tr").dataset.id;
+        const action = e.target.textContent;
+        const newStatus = action === "Suspend" ? "suspended" : "active";
+        if (!confirm(`Mark this user as ${newStatus}?`)) return;
 
-          showLoading(btn);
-          const res = await apiFetch(`/api/users/${id}`, {
-            method: "PATCH",
-            body: { status: newStatus },
-          });
-          if (res.success) {
-            showToast(`User account ${newStatus}`);
-            await this.route();
-          } else {
-            showToast(res.message, "danger");
-            hideLoading(btn);
-          }
-        },
-        { signal },
-      );
+        btnSuspend.disabled = true;
+        const res = await apiFetch(`/api/users/${id}`, {
+          method: "PATCH",
+          body: { status: newStatus },
+        });
+        if (res.success) {
+          showToast(`User account ${newStatus}`, "success");
+          const r = await apiFetch("/api/users");
+          if (r.success) appState.users = r.data;
+          render(Admin.viewUsers());
+        } else {
+          btnSuspend.disabled = false;
+          showToast(res.message, "error");
+        }
+        return;
+      }
     });
   },
 };

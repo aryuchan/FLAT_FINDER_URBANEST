@@ -15,6 +15,7 @@ const Tenant = {
             <br><small class="text-muted">📍 ${escHtml(b.city)}</small>
           </td>
           <td>${b.check_in} → ${b.check_out}</td>
+          <td>₹${Number(b.total_rent).toLocaleString("en-IN")}</td>
           <td>
             <span class="badge badge--${b.status === "confirmed" ? "success" : b.status === "cancelled" ? "danger" : "warning"}">
               ${b.status}
@@ -30,7 +31,7 @@ const Tenant = {
         </tr>`,
           )
           .join("")
-      : `<tr><td colspan="4" class="empty-cell">
+      : `<tr><td colspan="5" class="empty-cell">
           No bookings yet. <a href="#/tenant/search" data-route="/tenant/search">Search flats →</a>
          </td></tr>`;
 
@@ -44,7 +45,7 @@ const Tenant = {
           <h3 class="card-title">My Bookings</h3>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>Flat</th><th>Dates</th><th>Status</th><th>Action</th></tr></thead>
+              <thead><tr><th>Flat</th><th>Dates</th><th>Total Rent</th><th>Status</th><th>Action</th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
           </div>
@@ -67,14 +68,11 @@ const Tenant = {
             }
           </div>
           ${
-            (() => {
-              const imgs = parseJson(f.images);
-              return imgs.length 
-                ? `<div class="flat-card__img-wrap">
-                    <img class="flat-card__img" src="${escHtml(imgs[0])}" alt="${escHtml(f.title || f.flat_title || '')}" loading="lazy" onerror="this.style.display='none'" />
-                   </div>`
-                : "";
-            })()
+            f.images && f.images.length
+              ? `<div class="flat-card__img-wrap">
+                   <img class="flat-card__img" src="${escHtml(f.images[0])}" alt="${escHtml(f.title || f.flat_title || '')}" loading="lazy" onerror="this.style.display='none'" />
+                 </div>`
+              : ""
           }
           <h3 class="flat-card__title">${escHtml(f.title || f.flat_title || '')}</h3>
           <p class="flat-card__city">📍 ${escHtml(f.city)}</p>
@@ -102,6 +100,11 @@ const Tenant = {
             <option>1BHK</option><option>2BHK</option><option>3BHK</option>
             <option>Studio</option><option>4BHK+</option>
           </select>
+          <select class="form-select" name="furnished">
+            <option value="">Furnished?</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
           <input class="form-input" name="min_rent" type="number" min="0" placeholder="Min ₹" />
           <input class="form-input" name="max_rent" type="number" min="0" placeholder="Max ₹" />
           <button class="btn btn--primary" type="submit">Filter</button>
@@ -123,14 +126,19 @@ const Tenant = {
         </div>
       </div>`;
 
-    const amenities = parseJson(flat.amenities);
-    const images = parseJson(flat.images);
+    const amenities = Array.isArray(flat.amenities) ? flat.amenities : [];
+    const images = Array.isArray(flat.images) ? flat.images : [];
 
     // Owner contact card
     const ownerContact = `
       <div class="owner-contact-card">
         <h4 class="owner-contact-card__title">🔑 About the Owner</h4>
         <p class="owner-contact-card__name">${escHtml(flat.owner_name || "Property Owner")}</p>
+        ${flat.owner_phone ? `<a class="owner-contact-card__item" href="tel:${escHtml(flat.owner_phone)}">📞 ${escHtml(flat.owner_phone)}</a>` : ""}
+        ${flat.owner_email ? `<a class="owner-contact-card__item" href="mailto:${escHtml(flat.owner_email)}">✉️ ${escHtml(flat.owner_email)}</a>` : ""}
+        ${flat.owner_whatsapp ? `<a class="owner-contact-card__item owner-contact-card__item--whatsapp" href="https://wa.me/${flat.owner_whatsapp.replace(/\D/g,"")}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ""}
+        ${flat.owner_telegram ? `<a class="owner-contact-card__item owner-contact-card__item--telegram" href="https://t.me/${flat.owner_telegram}" target="_blank" rel="noopener">✈️ Telegram</a>` : ""}
+        ${flat.owner_bio ? `<p class="owner-contact-card__bio">${escHtml(flat.owner_bio)}</p>` : ""}
       </div>`;
 
     // Image gallery

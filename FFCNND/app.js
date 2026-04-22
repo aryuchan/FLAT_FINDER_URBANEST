@@ -69,7 +69,7 @@ async function loadRouteData(base, param) {
     }
   }
   if (base === "/owner/dashboard" || base === "/owner/listings") {
-    const r = await apiFetch(`/api/flats?ownerId=${u.id}`); // Filter by ownerId
+    const r = await apiFetch("/api/listings");
     if (r.success) appState.listings = r.data;
   }
   if (base === "/owner/profile") {
@@ -78,9 +78,9 @@ async function loadRouteData(base, param) {
   if (base === "/admin/dashboard") {
     const [ur, fr, br, lr] = await Promise.all([
       apiFetch("/api/users"),
-      apiFetch("/api/flats?all=1"),
+      apiFetch("/api/flats"),
       apiFetch("/api/bookings"),
-      apiFetch("/api/flats?all=1"), 
+      apiFetch("/api/listings"),
     ]);
     if (ur.success) appState.users    = ur.data;
     if (fr.success) appState.flats    = fr.data;
@@ -88,7 +88,7 @@ async function loadRouteData(base, param) {
     if (lr.success) appState.listings = lr.data;
   }
   if (base === "/admin/approvals") {
-    const r = await apiFetch("/api/flats"); // Modified from /api/listings to /api/flats
+    const r = await apiFetch("/api/listings");
     if (r.success) appState.listings = r.data;
   }
   if (base === "/admin/users") {
@@ -188,10 +188,10 @@ window.addEventListener("hashchange", () => navigate(window.location.hash));
 window.addEventListener("load", async () => {
   // Ping server
   try {
-    await fetch(`${API}/api/flats`, { signal: AbortSignal.timeout(3000) });
+    await fetch(`${API}/api/ping`, { signal: AbortSignal.timeout(3000) });
   } catch (_) {
     document.getElementById("app-nav").innerHTML = "";
-    document.getElementById("app-root").innerHTML = \`
+    document.getElementById("app-root").innerHTML = `
       <div class="auth-wrapper">
         <div class="auth-card" style="text-align:center">
           <div style="font-size:3rem;margin-bottom:.75rem">⚠️</div>
@@ -210,7 +210,7 @@ window.addEventListener("load", async () => {
             🔄 Retry Connection
           </button>
         </div>
-      </div>\`;
+      </div>`;
     return;
   }
 
