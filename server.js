@@ -271,37 +271,67 @@ app.patch("/api/me", auth(), async (req, res) => {
 
 // Flats
 app.get("/api/flats", async (req, res) => {
-  const { city, type, minRent, maxRent, ownerId, all } = req.query;
-  let sql = "SELECT * FROM flats WHERE 1=1";
-  const params = [];
+  const { city, type, min_rent: minRent, max_rent: maxRent, owner_id: ownerId, all } = req.query;
+  let sql = "SELECT f.*, u.name as owner_name FROM flats f JOIN users u ON f.owner_id = u.id WHERE 1=1";
+  let params = [];
 
   if (ownerId) {
-    sql += " AND owner_id = ?";
+    sql += " AND f.owner_id = ?";
     params.push(ownerId);
   } else if (all !== "1") {
-    sql += " AND available = 1";
+    sql += " AND f.available = 1";
   }
 
   if (city) {
-    sql += " AND city LIKE ?";
+    sql += " AND f.city LIKE ?";
     params.push(`%${city}%`);
   }
   if (type) {
-    sql += " AND type = ?";
+    sql += " AND f.type = ?";
     params.push(type);
   }
   if (minRent) {
-    sql += " AND rent >= ?";
+    sql += " AND f.rent >= ?";
     params.push(minRent);
   }
   if (maxRent) {
-    sql += " AND rent <= ?";
+    sql += " AND f.rent <= ?";
     params.push(maxRent);
   }
 
-  sql += " ORDER BY created_at DESC";
+  sql += " ORDER BY f.created_at DESC";
   const flats = await query(sql, params);
   res.json({ success: true, data: flats });
+});
+
+// User Management (Admin)
+app.get("/api/users", auth(["admin"]), async (req, res) => {
+  try {
+    const users = await query("SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC");
+    res.json({ success: true, data: users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch users" });
+  }
+});
+
+app.patch("/api/users/:id", auth(["admin"]), async (req, res) => {
+  try {
+    const { status } = req.body;
+    await query("UPDATE users SET status = ? WHERE id = ?", [status, req.params.id]);
+    res.json({ success: true, message: `User status updated to ${status}` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to update user" });
+  }
+});
+
+app.delete("/api/users/:id", auth(["admin"]), async (req, res) => {
+  try {
+    if (req.params.id === req.user.id) return res.status(400).json({ success: false, message: "Cannot delete yourself" });
+    await query("DELETE FROM users WHERE id = ?", [req.params.id]);
+    res.json({ success: true, message: "User deleted" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to delete user" });
+  }
 });
 
 app.get("/api/flats/:id", async (req, res) => {
@@ -321,58 +351,89 @@ app.get("/api/flats/:id", async (req, res) => {
 app.post("/api/flats", auth(["owner"]), async (req, res) => {
   try {
     const {
-      title,
-      city,
-      type,
-      rent,
-      address,
-      description,
-      deposit,
-      floor,
-      total_floors,
-      area_sqft,
-      parking,
-      preferred_tenants,
-      food_preference,
-      images,
-      amenities,
+      title, city, type, rent, address, description,
+      deposit, floor, total_floors, area_sqft,
+      parking, preferred_tenants, food_preference,
+      images, amenities,
     } = req.body;
 
-    const id = crypto.randomUUID();
+    const flatId = crypto.randomUUID();
+    const listingId = crypto.randomUUID();
+
     await query(
-      `
-      INSERT INTO flats (
+      `INSERT INTO flats (
         id, owner_id, title, city, type, rent, address, description, 
         deposit, floor, total_floors, area_sqft, 
         parking, preferred_tenants, food_preference,
-        images, amenities
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        images, amenities, available
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
       [
-        id,
-        req.user.id,
-        title,
-        city,
-        type,
-        rent,
-        address || "",
-        description || "",
-        deposit || 0,
-        floor || 0,
-        total_floors || 0,
-        area_sqft || 0,
-        parking || "none",
-        preferred_tenants || "any",
-        food_preference || "any",
-        JSON.stringify(images || []),
-        JSON.stringify(amenities || []),
+        flatId, req.user.id, title, city, type, rent, address || "", description || "",
+        deposit || 0, floor || 0, total_floors || 0, area_sqft || 0,
+        parking || "none", preferred_tenants || "any", food_preference || "any",
+        JSON.stringify(images || []), JSON.stringify(amenities || []),
       ],
     );
-    res.json({ success: true, data: { id } });
+
+    await query(
+      "INSERT INTO listings (id, flat_id, owner_id, status) VALUES (?,?,?,?)",
+      [listingId, flatId, req.user.id, "pending"]
+    );
+
+    res.json({ success: true, data: { id: flatId }, message: "Flat submitted for review." });
   } catch (err) {
     logger.error("Flat creation failed:", err.message);
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to create listing" });
+    res.status(500).json({ success: false, message: "Failed to create listing" });
+  }
+});
+
+// Admin/Owner Listings
+app.get("/api/listings", auth(["owner", "admin"]), async (req, res) => {
+  try {
+    const { status } = req.query;
+    let sql = `
+      SELECT l.*, f.title AS flat_title, f.city, f.rent, f.type, u.name AS owner_name, r.name AS reviewer_name
+      FROM listings l
+      JOIN flats f ON l.flat_id = f.id
+      JOIN users u ON l.owner_id = u.id
+      LEFT JOIN users r ON l.reviewed_by = r.id
+      WHERE 1=1`;
+    let params = [];
+    if (req.user.role === "owner") {
+      sql += " AND l.owner_id = ?";
+      params.push(req.user.id);
+    }
+    if (status) {
+      sql += " AND l.status = ?";
+      params.push(status);
+    }
+    sql += " ORDER BY l.submitted_at DESC";
+    const rows = await query(sql, params);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch listings" });
+  }
+});
+
+app.patch("/api/listings/:id", auth(["admin"]), async (req, res) => {
+  try {
+    const { status } = req.body;
+    const [listing] = await query("SELECT * FROM listings WHERE id = ?", [req.params.id]);
+    if (!listing) return res.status(404).json({ success: false, message: "Listing not found" });
+
+    await query(
+      "UPDATE listings SET status = ?, reviewed_at = NOW(), reviewed_by = ? WHERE id = ?",
+      [status, req.user.id, req.params.id]
+    );
+
+    if (status === "approved") {
+      await query("UPDATE flats SET available = 1 WHERE id = ?", [listing.flat_id]);
+    } else {
+      await query("UPDATE flats SET available = 0 WHERE id = ?", [listing.flat_id]);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to update listing" });
   }
 });
 
@@ -434,52 +495,55 @@ app.delete("/api/flats/:id", auth(["admin"]), async (req, res) => {
 
 // Bookings
 app.get("/api/bookings", auth(["tenant", "owner"]), async (req, res) => {
-  let sql =
-    "SELECT b.*, f.title as flat_title, u.name as tenant_name FROM bookings b JOIN flats f ON b.flat_id = f.id JOIN users u ON b.tenant_id = u.id";
-  let params = [];
-  if (req.user.role === "tenant") {
-    sql += " WHERE b.tenant_id = ?";
-    params.push(req.user.id);
-  } else {
-    sql += " WHERE f.owner_id = ?";
-    params.push(req.user.id);
+  try {
+    let sql = `
+      SELECT b.*, f.title as flat_title, f.city, u.name as tenant_name 
+      FROM bookings b 
+      JOIN flats f ON b.flat_id = f.id 
+      JOIN users u ON b.tenant_id = u.id`;
+    let params = [];
+    if (req.user.role === "tenant") {
+      sql += " WHERE b.tenant_id = ?";
+      params.push(req.user.id);
+    } else {
+      sql += " WHERE f.owner_id = ?";
+      params.push(req.user.id);
+    }
+    const rows = await query(sql, params);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch bookings" });
   }
-  const rows = await query(sql, params);
-  res.json({ success: true, data: rows });
 });
 
 app.post("/api/bookings", auth(["tenant"]), async (req, res) => {
-  const { flat_id, check_in, check_out } = req.body;
-  const id = crypto.randomUUID();
-  await query(
-    "INSERT INTO bookings (id, flat_id, tenant_id, check_in, check_out) VALUES (?,?,?,?,?)",
-    [id, flat_id, req.user.id, check_in, check_out],
-  );
-  res.json({ success: true });
+  try {
+    const { flat_id, check_in, check_out } = req.body;
+    const flat = await queryOne("SELECT rent FROM flats WHERE id = ?", [flat_id]);
+    if (!flat) return res.status(404).json({ success: false, message: "Flat not found" });
+
+    const days = Math.ceil((new Date(check_out) - new Date(check_in)) / 86400000);
+    const total_rent = ((parseFloat(flat.rent) / 30) * (days > 0 ? days : 1)).toFixed(2);
+
+    const id = crypto.randomUUID();
+    await query(
+      "INSERT INTO bookings (id, flat_id, tenant_id, check_in, check_out, total_rent) VALUES (?,?,?,?,?,?)",
+      [id, flat_id, req.user.id, check_in, check_out, total_rent],
+    );
+    res.json({ success: true, message: "Booking created successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Booking failed" });
+  }
 });
 
 app.patch("/api/bookings/:id", auth(["owner", "tenant"]), async (req, res) => {
-  const { status } = req.body;
-  await query("UPDATE bookings SET status = ? WHERE id = ?", [
-    status,
-    req.params.id,
-  ]);
-  res.json({ success: true });
-});
-
-// Admin: Users
-app.get("/api/users", auth(["admin"]), async (req, res) => {
-  const rows = await query("SELECT id, name, email, role, status FROM users");
-  res.json({ success: true, data: rows });
-});
-
-app.patch("/api/users/:id", auth(["admin"]), async (req, res) => {
-  const { status } = req.body;
-  await query("UPDATE users SET status = ? WHERE id = ?", [
-    status,
-    req.params.id,
-  ]);
-  res.json({ success: true });
+  try {
+    const { status } = req.body;
+    await query("UPDATE bookings SET status = ? WHERE id = ?", [status, req.params.id]);
+    res.json({ success: true, message: `Booking ${status}` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Update failed" });
+  }
 });
 
 // ── STARTUP ──

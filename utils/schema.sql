@@ -65,3 +65,17 @@ CREATE TABLE IF NOT EXISTS bookings (
   INDEX idx_booking_flat (flat_id),
   INDEX idx_booking_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. LISTINGS Table (Approvals)
+CREATE TABLE IF NOT EXISTS listings (
+  id CHAR(36) PRIMARY KEY,
+  flat_id CHAR(36) NOT NULL UNIQUE,
+  owner_id CHAR(36) NOT NULL,
+  status ENUM('pending','approved','rejected') DEFAULT 'pending',
+  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  reviewed_at TIMESTAMP NULL,
+  reviewed_by CHAR(36) NULL,
+  CONSTRAINT fk_listing_flat FOREIGN KEY (flat_id) REFERENCES flats(id) ON DELETE CASCADE,
+  CONSTRAINT fk_listing_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_listing_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

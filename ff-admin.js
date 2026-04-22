@@ -1,185 +1,232 @@
-// ff-admin.js — Ultimate Global Control Terminal (v18.0) - Upgraded UI
+// ff-admin.js — FlatFinder Admin Module
+// Views: Dashboard · Approvals · User Management
+// Depends on: ff-core.js
+// ─────────────────────────────────────────────────────────────────
+
 const Admin = {
   viewDashboard() {
-    const flats = appState.flats || [];
-
+    const { users, flats, bookings, listings } = appState;
+    const pending = listings.filter((l) => l.status === "pending").length;
+    const stats = [
+      { label: "Total Users", value: users.length, icon: "👥" },
+      { label: "Total Flats", value: flats.length, icon: "🏠" },
+      { label: "Bookings", value: bookings.length, icon: "📋" },
+      { label: "Pending Reviews", value: pending, icon: "⏳" },
+    ];
     return `
       <div class="container page-content">
-        <div class="page-header">
-          <h2>Global Inventory</h2>
-          <a class="btn btn--secondary btn--sm" href="#/admin/users" data-route="/admin/users">👥 System Users</a>
-        </div>
-
-        <div class="stat-grid mt-lg">
+        <div class="page-header"><h2>Admin Dashboard</h2></div>
+        <div class="stat-grid">
+          ${stats
+            .map(
+              (s) => `
           <div class="stat-card card">
-            <p class="stat-card__label">Total Properties</p>
-            <p class="stat-card__value">${flats.length}</p>
-          </div>
-          <div class="stat-card card" style="border-top: 4px solid var(--color-success)">
-            <p class="stat-card__label">Active Listings</p>
-            <p class="stat-card__value">${flats.filter((f) => f.available).length}</p>
-          </div>
-          <div class="stat-card card" style="border-top: 4px solid var(--color-danger)">
-            <p class="stat-card__label">Hidden/Pending</p>
-            <p class="stat-card__value">${flats.filter((f) => !f.available).length}</p>
-          </div>
+            <p style="font-size:1.5rem;margin-bottom:var(--space-xs)">${s.icon}</p>
+            <p class="stat-card__label">${s.label}</p>
+            <p class="stat-card__value">${s.value}</p>
+          </div>`,
+            )
+            .join("")}
         </div>
+        <div class="flex-between mt-lg">
+          <a class="btn btn--primary" href="#/admin/approvals" data-route="/admin/approvals">
+            ✅ Review Listings ${pending > 0 ? `<span class="badge badge--danger" style="margin-left:4px">${pending}</span>` : ""}
+          </a>
+          <a class="btn btn--secondary" href="#/admin/users" data-route="/admin/users">👥 Manage Users</a>
+        </div>
+      </div>`;
+  },
 
-        <div class="card mt-xl">
-          <h3 class="card-title">Property Audit Log</h3>
-          <div class="table-wrap" id="admin-table-container">
+  viewApprovals(listings = appState.listings) {
+    const rows = listings.length
+      ? listings
+          .map(
+            (l) => `
+        <tr>
+          <td>
+            <strong>${escHtml(l.flat_title)}</strong>
+            <br><small class="text-muted">📍 ${escHtml(l.city)} · ${escHtml(l.type)} · ₹${Number(l.rent).toLocaleString("en-IN")}</small>
+          </td>
+          <td>${escHtml(l.owner_name)}</td>
+          <td>${l.submitted_at?.slice(0, 10) || "—"}</td>
+          <td>
+            <span class="badge badge--${l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning"}">
+              ${l.status}
+            </span>
+          </td>
+          <td>
             ${
-              flats.length
-                ? `
-              <table class="table">
-                <thead><tr><th>Property</th><th>Location</th><th>Visibility</th><th>Owner</th><th>Actions</th></tr></thead>
-                <tbody>
-                  ${flats
-                    .map(
-                      (f) => `
-                    <tr data-id="${escHtml(f.id)}">
-                      <td><b>${escHtml(f.title)}</b><br><small class="text-muted">${escHtml(f.type)}</small></td>
-                      <td>${escHtml(f.city)}</td>
-                      <td>
-                        <span class="badge ${f.available ? "badge--success" : "badge--neutral"} btn-toggle-flat" style="cursor:pointer" data-avail="${f.available ? "1" : "0"}">
-                          ${f.available ? "Public" : "Hidden"}
-                        </span>
-                      </td>
-                      <td><small>${escHtml(f.owner_id.slice(0, 8))}...</small></td>
-                      <td><button class="btn btn--danger btn--sm btn-del">Delete</button></td>
-                    </tr>
-                  `,
-                    )
-                    .join("")}
-                </tbody>
-              </table>
-            `
-                : '<div class="empty-state"><h3>Inventory Empty</h3><p class="text-muted">No properties have been listed yet.</p></div>'
+              l.status === "pending"
+                ? `<button class="btn btn--primary btn--sm" data-action="approve" data-id="${l.id}">✅ Approve</button>
+                 <button class="btn btn--danger  btn--sm" data-action="reject"  data-id="${l.id}">❌ Reject</button>`
+                : l.reviewer_name
+                  ? `<small class="text-muted">by ${escHtml(l.reviewer_name)}</small>`
+                  : "—"
             }
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  viewApprovals() {
-    return this.viewDashboard();
-  },
-
-  viewUsers() {
-    const users = appState.users || [];
+          </td>
+        </tr>`,
+          )
+          .join("")
+      : `<tr><td colspan="5" class="empty-cell">No listings found.</td></tr>`;
 
     return `
       <div class="container page-content">
         <div class="page-header">
-          <h2>User Management</h2>
-          <a class="btn btn--secondary btn--sm" href="#/admin/dashboard" data-route="/admin/dashboard">← Back to Terminal</a>
+          <h2>Listing Approvals</h2>
+          <select class="form-select" id="approval-status-filter" style="width:auto;min-width:150px">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
         </div>
-
-        <div class="card mt-lg">
-          <h3 class="card-title">System Participants</h3>
-          <div class="table-wrap" id="admin-user-container">
-            ${
-              users.length
-                ? `
-              <table class="table">
-                <thead><tr><th>Identity</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody>
-                  ${users
-                    .map(
-                      (u) => `
-                    <tr data-id="${escHtml(u.id)}">
-                      <td><b>${escHtml(u.name)}</b><br><small class="text-muted">${escHtml(u.email)}</small></td>
-                      <td><span class="badge badge--neutral">${escHtml(u.role)}</span></td>
-                      <td><span class="badge badge--${u.status === "suspended" ? "danger" : "success"}">${escHtml(u.status || "active")}</span></td>
-                      <td>
-                        ${
-                          u.role !== "admin"
-                            ? `<button class="btn btn--${u.status === "suspended" ? "success" : "danger"} btn--sm btn-suspend">${u.status === "suspended" ? "Restore" : "Suspend"}</button>`
-                            : '<small class="text-muted">Immutable</small>'
-                        }
-                      </td>
-                    </tr>
-                  `,
-                    )
-                    .join("")}
-                </tbody>
-              </table>
-            `
-                : '<p class="text-muted">No users found in database.</p>'
-            }
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Flat</th><th>Owner</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
+  },
+
+  viewUsers(users = appState.users) {
+    const rows = users.length
+      ? users
+          .map(
+            (u) => `
+        <tr>
+          <td>
+            <strong>${escHtml(u.name)}</strong>
+            <br><small class="text-muted">${escHtml(u.email)}</small>
+          </td>
+          <td><span class="badge badge--neutral">${u.role}</span></td>
+          <td><span class="badge badge--${u.status === "active" ? "success" : "danger"}">${u.status}</span></td>
+          <td>${u.created_at?.slice(0, 10) || "—"}</td>
+          <td>
+            ${
+              u.id !== appState.currentUser.id
+                ? `<button class="btn btn--sm btn--secondary" data-action="${u.status === "active" ? "suspend" : "activate"}" data-user-id="${u.id}">
+                   ${u.status === "active" ? "🚫 Suspend" : "✅ Activate"}
+                 </button>
+                 <button class="btn btn--sm btn--danger" data-action="delete" data-user-id="${u.id}">🗑 Delete</button>`
+                : '<span class="text-muted">(you)</span>'
+            }
+          </td>
+        </tr>`,
+          )
+          .join("")
+      : `<tr><td colspan="5" class="empty-cell">No users found.</td></tr>`;
+
+    return `
+      <div class="container page-content">
+        <div class="page-header"><h2>User Management</h2></div>
+        <div class="card">
+          <div class="filter-bar filter-bar--inline">
+            <input class="form-input" id="user-search-input" placeholder="Search by name or email…" />
+            <select class="form-select" id="user-role-filter">
+              <option value="">All Roles</option>
+              <option value="tenant">Tenant</option>
+              <option value="owner">Owner</option>
+              <option value="admin">Admin</option>
+            </select>
+            <select class="form-select" id="user-status-filter">
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+              <tbody id="users-tbody">${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
   },
 
   bindEvents(root) {
-    // Hardened Global Click Handlers
+    // Approve / reject / suspend / activate / delete
     root.addEventListener("click", async (e) => {
-      const btnDel = e.target.closest(".btn-del");
-      if (btnDel) {
-        if (!confirm("This will permanently delete the listing and all associated images/bookings. Proceed?")) return;
-        const id = e.target.closest("tr").dataset.id;
-        btnDel.disabled = true;
-        btnDel.textContent = "Deleting...";
-        const res = await apiFetch(`/api/flats/${id}`, { method: "DELETE" });
-        btnDel.disabled = false;
-        if (res.success) {
-          showToast("Property purged", "success");
-          const r = await apiFetch("/api/flats");
-          if (r.success) appState.flats = r.data;
-          render(Admin.viewDashboard());
-        } else {
-          showToast(res.message, "error");
-        }
-        return;
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      const userId = btn.dataset.userId;
+
+      if ((action === "approve" || action === "reject") && id) {
+        btn.disabled = true;
+        const status = action === "approve" ? "approved" : "rejected";
+        const r = await apiFetch(`/api/listings/${id}`, { method: "PATCH", body: { status } });
+        btn.disabled = false;
+        if (r.success) {
+          showToast(r.message, action === "approve" ? "success" : "warning");
+          const lr = await apiFetch("/api/listings");
+          if (lr.success) appState.listings = lr.data;
+          render(Admin.viewApprovals());
+        } else showToast(r.message, "error");
       }
 
-      const btnToggle = e.target.closest(".btn-toggle-flat");
-      if (btnToggle) {
-        const id = e.target.closest("tr").dataset.id;
-        const isAvail = btnToggle.dataset.avail === "1";
-        btnToggle.style.opacity = 0.5;
-        const res = await apiFetch(`/api/flats/${id}`, {
-          method: "PATCH",
-          body: { available: !isAvail },
-        });
-        btnToggle.style.opacity = 1;
-        if (res.success) {
-          showToast("Visibility updated", "success");
-          const r = await apiFetch("/api/flats");
-          if (r.success) appState.flats = r.data;
-          render(Admin.viewDashboard());
-        } else {
-          showToast(res.message, "error");
-        }
-        return;
-      }
-
-      const btnSuspend = e.target.closest(".btn-suspend");
-      if (btnSuspend) {
-        const id = e.target.closest("tr").dataset.id;
-        const action = e.target.textContent;
-        const newStatus = action === "Suspend" ? "suspended" : "active";
-        if (!confirm(`Mark this user as ${newStatus}?`)) return;
-
-        btnSuspend.disabled = true;
-        const res = await apiFetch(`/api/users/${id}`, {
-          method: "PATCH",
-          body: { status: newStatus },
-        });
-        if (res.success) {
-          showToast(`User account ${newStatus}`, "success");
-          const r = await apiFetch("/api/users");
-          if (r.success) appState.users = r.data;
+      if ((action === "suspend" || action === "activate") && userId) {
+        btn.disabled = true;
+        const status = action === "suspend" ? "suspended" : "active";
+        const r = await apiFetch(`/api/users/${userId}`, { method: "PATCH", body: { status } });
+        btn.disabled = false;
+        if (r.success) {
+          showToast(r.message, action === "suspend" ? "warning" : "success");
+          const ur = await apiFetch("/api/users");
+          if (ur.success) appState.users = ur.data;
           render(Admin.viewUsers());
-        } else {
-          btnSuspend.disabled = false;
-          showToast(res.message, "error");
-        }
-        return;
+        } else showToast(r.message, "error");
       }
+
+      if (action === "delete" && userId) {
+        if (!confirm("Permanently delete this user and all their data?")) return;
+        btn.disabled = true;
+        const r = await apiFetch(`/api/users/${userId}`, { method: "DELETE" });
+        btn.disabled = false;
+        if (r.success) {
+          showToast("User deleted.", "info");
+          const ur = await apiFetch("/api/users");
+          if (ur.success) appState.users = ur.data;
+          render(Admin.viewUsers());
+        } else showToast(r.message, "error");
+      }
+    });
+
+    // User search / filter
+    const userSearch = root.querySelector("#user-search-input");
+    if (userSearch) {
+      const doFilter = () => {
+        const q = (root.querySelector("#user-search-input")?.value || "").toLowerCase();
+        const role = root.querySelector("#user-role-filter")?.value || "";
+        const status = root.querySelector("#user-status-filter")?.value || "";
+        let filtered = [...appState.users];
+        if (q) filtered = filtered.filter((u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+        if (role) filtered = filtered.filter((u) => u.role === role);
+        if (status) filtered = filtered.filter((u) => u.status === status);
+        const tbody = root.querySelector("#users-tbody");
+        const tmp = document.createElement("div");
+        tmp.innerHTML = Admin.viewUsers(filtered);
+        const newTbody = tmp.querySelector("#users-tbody");
+        if (tbody && newTbody) tbody.innerHTML = newTbody.innerHTML;
+      };
+      root.querySelector("#user-search-input")?.addEventListener("input", doFilter);
+      root.querySelector("#user-role-filter")?.addEventListener("change", doFilter);
+      root.querySelector("#user-status-filter")?.addEventListener("change", doFilter);
+    }
+
+    // Approval status filter
+    root.querySelector("#approval-status-filter")?.addEventListener("change", (e) => {
+      const val = e.target.value;
+      const filtered = val ? appState.listings.filter((l) => l.status === val) : appState.listings;
+      const tbody = root.querySelector("tbody");
+      const tmp = document.createElement("div");
+      tmp.innerHTML = Admin.viewApprovals(filtered);
+      const newTbody = tmp.querySelector("tbody");
+      if (tbody && newTbody) tbody.innerHTML = newTbody.innerHTML;
     });
   },
 };

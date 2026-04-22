@@ -1,6 +1,10 @@
-// ff-owner.js — Ultimate Property Management Hub (Cloudinary + Advanced UI)
+// ff-owner.js — FlatFinder Owner Module (Mature UI + Cloudinary)
+// Views: Dashboard · Add Flat (with Cloudinary) · Profile / Contact Details
+// Depends on: ff-core.js
+// ─────────────────────────────────────────────────────────────────
+
 const Owner = {
-  _uploadedImages: [],
+  _uploadedImages: [], // holds Cloudinary secure_urls
 
   _cloudConfig() {
     return {
@@ -9,9 +13,10 @@ const Owner = {
     };
   },
 
+  // ── DASHBOARD ─────────────────────────────────────────────────
   viewDashboard() {
-    const flats = appState.listings || [];
     const u = appState.currentUser || {};
+    const flats = appState.listings || [];
     
     const rows = flats.length
       ? flats
@@ -29,7 +34,9 @@ const Owner = {
             </button>
           </td>
           <td>${l.created_at?.slice(0, 10) || "—"}</td>
-          <td><button class="btn btn--danger btn--sm btn-del-flat">Delete</button></td>
+          <td>
+            <button class="btn btn--danger btn--sm btn-del-flat">Delete</button>
+          </td>
         </tr>`,
           )
           .join("")
@@ -85,6 +92,7 @@ const Owner = {
       </div>`;
   },
 
+  // ── ADD FLAT (with Cloudinary) ──────────────────────────────
   viewAddFlat() {
     this._uploadedImages = [];
     return `
@@ -237,6 +245,11 @@ const Owner = {
                 <input class="form-input" name="name" type="text"
                   value="${escHtml(u.name || "")}" required />
               </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-input" name="email" type="email"
+                  value="${escHtml(u.email || "")}" required />
+              </div>
             </div>
 
             <h4 class="form-section-title" style="margin-top:var(--space-md)">📞 Contact Details</h4>
@@ -246,6 +259,21 @@ const Owner = {
                 <input class="form-input" name="phone" type="tel"
                   placeholder="+91 XXXXX XXXXX"
                   value="${escHtml(u.phone || "")}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">WhatsApp</label>
+                <input class="form-input" name="whatsapp" type="tel"
+                  placeholder="+91 XXXXX XXXXX"
+                  value="${escHtml(u.whatsapp || "")}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Telegram Username <span class="text-muted">(optional)</span></label>
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix">@</span>
+                  <input class="form-input input-with-prefix" name="telegram" type="text"
+                    placeholder="yourusername"
+                    value="${escHtml(u.telegram || '')}" />
+                </div>
               </div>
             </div>
             <div class="form-group">
@@ -276,136 +304,156 @@ const Owner = {
   },
 
   bindEvents(root) {
+    this._bindProfileForm(root);
+    this._bindAddFlatForm(root);
+    this._bindDashboardActions(root);
+  },
+
+  _bindProfileForm(root) {
     const profileForm = root.querySelector("#profile-form");
-    if (profileForm) {
-      profileForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const fd = new FormData(profileForm);
-        const newPass = fd.get("new_password");
-        const confirmPass = fd.get("confirm_password");
-        const errEl = root.querySelector("#profile-error");
+    if (!profileForm) return;
 
-        if (newPass && newPass !== confirmPass) {
-          if (errEl) { errEl.textContent = "Passwords do not match."; errEl.classList.remove("hidden"); }
-          return;
-        }
-        if (errEl) errEl.classList.add("hidden");
+    profileForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(profileForm);
+      const newPass = fd.get("new_password");
+      const confirmPass = fd.get("confirm_password");
+      const errEl = root.querySelector("#profile-error");
 
-        const payload = {
-          name: fd.get("name")?.trim(),
-          phone: fd.get("phone")?.trim() || "",
-          bio: fd.get("bio")?.trim() || "",
-          ...(newPass ? { password: newPass } : {}),
-        };
+      if (newPass && newPass !== confirmPass) {
+        if (errEl) { errEl.textContent = "Passwords do not match."; errEl.classList.remove("hidden"); }
+        return;
+      }
+      if (errEl) errEl.classList.add("hidden");
 
-        const btn = root.querySelector("#profile-submit");
-        btn.disabled = true;
-        btn.textContent = "Saving…";
-        const r = await apiFetch("/api/me", { method: "PATCH", body: payload });
-        btn.disabled = false;
-        btn.textContent = "Save Changes";
+      const payload = {
+        name: fd.get("name")?.trim(),
+        email: fd.get("email")?.trim(),
+        phone: fd.get("phone")?.trim() || "",
+        whatsapp: fd.get("whatsapp")?.trim() || "",
+        telegram: fd.get("telegram")?.trim().replace(/^@/, "") || "",
+        bio: fd.get("bio")?.trim() || "",
+        ...(newPass ? { password: newPass } : {}),
+      };
 
-        if (r.success) {
-          Object.assign(appState.currentUser, payload);
-          renderNavBar();
-          showToast("Profile updated successfully!", "success");
-        } else {
-          showToast(r.message || "Update failed.", "error");
-        }
-      });
-    }
+      const btn = root.querySelector("#profile-submit");
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+      const r = await apiFetch("/api/me", { method: "PATCH", body: payload });
+      btn.disabled = false;
+      btn.textContent = "Save Changes";
 
+      if (r.success) {
+        Object.assign(appState.currentUser, payload);
+        renderNavBar();
+        showToast("Profile updated successfully!", "success");
+      } else {
+        showToast(r.message || "Update failed.", "error");
+      }
+    });
+  },
+
+  _bindAddFlatForm(root) {
     const addFlatForm = root.querySelector("#add-flat-form");
-    if (addFlatForm) {
-      addFlatForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const btn = root.querySelector("#add-flat-submit");
-        const errEl = root.querySelector("#add-flat-error");
-        
-        const fd = new FormData(addFlatForm);
-        const data = Object.fromEntries(fd);
-        
-        // Validation
-        if (!data.title || !data.city || !data.rent || !data.type || !data.address) {
-          if (errEl) { errEl.textContent = "Please fill in all required fields (*)."; errEl.classList.remove("hidden"); }
-          showToast("Please fill in all required fields.", "error");
-          return;
-        }
-        if (errEl) errEl.classList.add("hidden");
+    if (!addFlatForm) return;
 
-        btn.disabled = true;
-        btn.textContent = "Submitting...";
+    // Cloudinary logic integration
+    const imgInput = root.querySelector("#image-input");
+    const grid = root.querySelector("#image-preview-grid");
 
-        data.amenities = (data.amenities || "").split(",").map(s => s.trim()).filter(Boolean);
-        data.images = this._uploadedImages;
+    imgInput?.addEventListener("change", async () => {
+      const files = Array.from(imgInput.files);
+      const config = this._cloudConfig();
 
-        const res = await apiFetch("/api/flats", {
-          method: "POST",
-          body: data,
-        });
+      if (!config.cloudName || !config.preset) {
+        return showToast("Cloudinary config missing.", "warning");
+      }
 
-        btn.disabled = false;
-        btn.textContent = "🚀 Publish Listing";
+      for (const file of files) {
+        const item = document.createElement("div");
+        item.className = "img-preview-item";
+        item.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:0.8rem;color:#64748b">Uploading...</div>';
+        grid.appendChild(item);
 
-        if (res.success) {
-          showToast("Listing published successfully!", "success");
-          window.location.hash = "#/owner/dashboard";
-        } else {
-          showToast(res.message, "error");
-        }
-      });
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("upload_preset", config.preset);
 
-      // Cloudinary Logic
-      const imgInput = root.querySelector("#image-input");
-      const grid = root.querySelector("#image-preview-grid");
-
-      imgInput?.addEventListener("change", async () => {
-        const files = Array.from(imgInput.files);
-        const config = this._cloudConfig();
-
-        if (!config.cloudName || !config.preset) {
-          return showToast("Cloudinary config missing. Check environment variables.", "warning");
-        }
-
-        for (const file of files) {
-          const item = document.createElement("div");
-          item.className = "img-preview-item";
-          item.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:0.8rem;color:#64748b">Uploading...</div>';
-          grid.appendChild(item);
-
-          const fd = new FormData();
-          fd.append("file", file);
-          fd.append("upload_preset", config.preset);
-
-          try {
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`, {
-              method: "POST",
-              body: fd,
-            });
-            const json = await res.json();
-            if (json.secure_url) {
-              this._uploadedImages.push(json.secure_url);
-              item.innerHTML = \`<img src="\${json.secure_url}" />\`;
-            } else {
-              item.remove();
-              showToast("Upload failed", "error");
-            }
-          } catch (err) {
+        try {
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`, {
+            method: "POST",
+            body: fd,
+          });
+          const json = await res.json();
+          if (json.secure_url) {
+            this._uploadedImages.push(json.secure_url);
+            item.innerHTML = `<img src="${json.secure_url}" /><button type="button" class="img-preview-item__remove" data-url="${json.secure_url}">×</button>`;
+          } else {
             item.remove();
-            showToast("Network error during upload", "error");
+            showToast("Upload failed", "error");
           }
+        } catch (err) {
+          item.remove();
+          showToast("Network error during upload", "error");
         }
-      });
-    }
+      }
+    });
 
-    // Dashboard Actions (Toggle, Delete)
+    // Remove image handler
+    grid?.addEventListener("click", (e) => {
+      const btn = e.target.closest(".img-preview-item__remove");
+      if (!btn) return;
+      const url = btn.dataset.url;
+      this._uploadedImages = this._uploadedImages.filter(u => u !== url);
+      btn.parentElement.remove();
+    });
+
+    addFlatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = root.querySelector("#add-flat-submit");
+      const errEl = root.querySelector("#add-flat-error");
+      
+      const fd = new FormData(addFlatForm);
+      const data = Object.fromEntries(fd);
+      
+      if (!data.title || !data.city || !data.rent || !data.type || !data.address) {
+        if (errEl) { errEl.textContent = "Please fill in all required fields (*)."; errEl.classList.remove("hidden"); }
+        showToast("Please fill in all required fields.", "error");
+        return;
+      }
+      if (errEl) errEl.classList.add("hidden");
+
+      btn.disabled = true;
+      btn.textContent = "Publishing...";
+
+      data.amenities = (data.amenities || "").split(",").map(s => s.trim()).filter(Boolean);
+      data.images = this._uploadedImages;
+
+      const res = await apiFetch("/api/flats", {
+        method: "POST",
+        body: data,
+      });
+
+      btn.disabled = false;
+      btn.textContent = "🚀 Publish Listing";
+
+      if (res.success) {
+        showToast("Listing published successfully!", "success");
+        window.location.hash = "#/owner/dashboard";
+      } else {
+        showToast(res.message, "error");
+      }
+    });
+  },
+
+  _bindDashboardActions(root) {
     root.addEventListener("click", async (e) => {
       const btnToggle = e.target.closest(".btn-toggle-flat");
       if (btnToggle) {
         const id = e.target.closest("tr").dataset.id;
         const isAvail = btnToggle.dataset.avail === "1";
         btnToggle.disabled = true;
-        const res = await apiFetch(\`/api/flats/\${id}\`, {
+        const res = await apiFetch(`/api/flats/${id}`, {
           method: "PATCH",
           body: { available: !isAvail },
         });
@@ -426,7 +474,7 @@ const Owner = {
         if (!confirm("Delete this listing permanently?")) return;
         const id = e.target.closest("tr").dataset.id;
         btnDel.disabled = true;
-        const res = await apiFetch(\`/api/flats/\${id}\`, { method: "DELETE" });
+        const res = await apiFetch(`/api/flats/${id}`, { method: "DELETE" });
         if (res.success) {
           showToast("Listing deleted", "success");
           const r = await apiFetch("/api/flats");
@@ -439,5 +487,5 @@ const Owner = {
         return;
       }
     });
-  },
+  }
 };
