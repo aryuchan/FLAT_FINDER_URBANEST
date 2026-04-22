@@ -82,10 +82,10 @@ app.use(cookieParser());
 // FIX [7]: Rate limiting on auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit each IP to 10 requests per windowMs
+  max: 50, // Relaxed from 10 to 50 for initial production verification
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
+  message: { success: false, message: 'Too many requests, please try again after 15 minutes' }
 });
 
 // ── AUTH MIDDLEWARE ──
@@ -111,32 +111,37 @@ app.get('/api/ping', (req, res) => res.json({ ok: true }));
 app.post('/api/login', authLimiter, async (req, res) => {
   try {
     const v = loginSchema.parse(req.body);
-    const user = await queryOne('SELECT id, name, email, password, role FROM users WHERE email = ?', [v.email]);
-    if (!user || !(await bcrypt.compare(v.password, user.password))) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    const email = v.email.toLowerCase().trim();
+    const user = await queryOne('SELECT id, name, email, password, role FROM users WHERE email = ?', [email]);
+    if (!user || !(await bcrypt.compare(v.password, user.password))) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
     const token = jwt.sign({ id: user.id, name: user.name, role: user.role }, SECRET, { expiresIn: '7d' });
     res.cookie('ff_token', token, { httpOnly: true, secure: IS_PROD, sameSite: 'strict' });
     res.json({ success: true, data: { user: { id: user.id, name: user.name, role: user.role }, token } });
-  } catch (err) { logger.error('Login error', err.message); res.status(400).json({ success: false, message: err.message }); }
+  } catch (err) { 
+    logger.error('Login error', err.message); 
+    res.status(400).json({ success: false, message: err.errors?.[0]?.message || 'Invalid credentials' }); 
+  }
 });
 
 app.post('/api/signup', authLimiter, async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    if (!name || !email || !password || password.length < 8) return res.status(400).json({ success: false, message: 'Invalid input' });
-    
-    // FIX [4]: Prevent admin self-registration
-    if (role === 'admin') return res.status(403).json({ success: false, message: 'Cannot self-register as admin' });
+    const v = signupSchema.parse(req.body);
+    const email = v.email.toLowerCase().trim();
     
     const existing = await queryOne('SELECT id FROM users WHERE email = ?', [email]);
     if (existing) return res.status(409).json({ success: false, message: 'Email already exists' });
     
-    const hashed = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(v.password, 10);
     const id = crypto.randomUUID();
-    const userRole = ['tenant', 'owner'].includes(role) ? role : 'tenant';
     
-    await query('INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)', [id, name, email, hashed, userRole]);
-    res.json({ success: true, message: 'Account created' });
-  } catch (err) { logger.error('Signup error', err.message); res.status(500).json({ success: false, message: 'Server error' }); }
+    await query('INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)', [id, v.name, email, hashed, v.role]);
+    res.json({ success: true, message: 'Account created successfully' });
+  } catch (err) { 
+    logger.error('Signup error', err.message); 
+    res.status(400).json({ success: false, message: err.errors?.[0]?.message || 'Signup failed' }); 
+  }
 });
 
 app.post('/api/logout', (req, res) => {

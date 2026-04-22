@@ -5,13 +5,15 @@ const Auth = {
   async login(data, btn) {
     showLoading(btn);
     try {
+      console.log('[Login] Submitting:', { ...data, password: '***' });
       const res = await apiFetch('/api/login', { method: 'POST', body: data });
+      console.log('[Login] Response:', res);
       if (res.success) {
         localStorage.setItem('ff_token', res.data.token);
         appState.currentUser = res.data.user;
         this.redirectToPortal(res.data.user.role);
       } else {
-        showToast(res.message, 'danger');
+        showToast(res.message || 'Login failed', 'danger');
       }
     } finally {
       hideLoading(btn);
@@ -54,12 +56,14 @@ const Auth = {
     
     showLoading(btn);
     try {
+      console.log('[Signup] Submitting:', { ...data, password: '***' });
       const res = await apiFetch('/api/signup', { method: 'POST', body: data });
+      console.log('[Signup] Response:', res);
       if (res.success) {
         showToast('Account created. Please login.', 'success');
         window.location.hash = '#/login';
       } else {
-        showToast(res.message, 'danger');
+        showToast(res.message || 'Signup failed', 'danger');
       }
     } finally {
       hideLoading(btn);
