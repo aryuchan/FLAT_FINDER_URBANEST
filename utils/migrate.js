@@ -28,10 +28,16 @@ export async function migrate() {
 
     // Dynamic Column Sync (Ensure v19.2 columns exist)
     const addCols = [
-      "ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(20)",
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram VARCHAR(50)",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS address TEXT",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS description TEXT",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS deposit DECIMAL(10,2) DEFAULT 0",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS floor INT DEFAULT 0",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS total_floors INT DEFAULT 0",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS area_sqft INT DEFAULT 0",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS parking ENUM('none', 'bike', 'car', 'both') DEFAULT 'none'",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS preferred_tenants ENUM('any', 'family', 'bachelors', 'working_women', 'students') DEFAULT 'any'",
+      "ALTER TABLE flats ADD COLUMN IF NOT EXISTS food_preference ENUM('any', 'veg', 'nonveg') DEFAULT 'any'",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS furnished TINYINT(1) DEFAULT 0",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS bathrooms VARCHAR(10) DEFAULT ''",
       "ALTER TABLE flats ADD COLUMN IF NOT EXISTS facing VARCHAR(50) DEFAULT ''",
