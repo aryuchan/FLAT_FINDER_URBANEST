@@ -4,15 +4,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 // ── CONFIG ──────────────────────────────────────────────────────
-const API = (() => {
-  if (
-    location.protocol === "http:" &&
-    (location.hostname === "localhost" || location.hostname === "127.0.0.1") &&
-    location.port === "3000"
-  )
-    return "";
-  return "http://localhost:3000";
-})();
+const API = "";
 
 // ── TOKEN ────────────────────────────────────────────────────────
 const Token = {
