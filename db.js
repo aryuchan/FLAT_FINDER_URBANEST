@@ -9,15 +9,10 @@ let dbConfig;
 const dbUrl = process.env.DATABASE_URL;
 
 if (dbUrl) {
-  // Production (Railway/Render)
-  const url = new URL(dbUrl);
+  // Use connection string directly (most robust for Render/Railway)
   dbConfig = {
-    host: url.hostname,
-    user: url.username,
-    password: url.password,
-    database: url.pathname.slice(1),
-    port: parseInt(url.port || '3306', 10),
-    ssl: { rejectUnauthorized: false }, // Critical for cloud providers
+    uri: dbUrl,
+    ssl: { rejectUnauthorized: false }
   };
 } else {
   // Local Development
@@ -75,7 +70,7 @@ export async function validateConnection() {
     logger.info('Database connection verified.');
     return true;
   } catch (err) {
-    logger.error('Database connection failed:', err.message);
+    logger.error('Database connection failed:', err.message || err);
     return false;
   }
 }
