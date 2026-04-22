@@ -304,31 +304,20 @@ app.patch('/api/users/:id', auth(['admin']), async (req, res) => {
 
 // ── STARTUP ──
 (async () => {
-  const MAX_RETRIES = 10;
-  let attempts = 0;
-  let connected = false;
-
-  while (!connected && attempts < MAX_RETRIES) {
-    attempts++;
-    connected = await validateConnection();
-    
-    if (connected) {
-      try {
-        await migrate();
-        app.listen(PORT, () => logger.info(`Urbanest Engine v19 Online @ Port ${PORT}`));
-      } catch (err) {
-        logger.error(`Startup migration failed: ${err.message}`);
-        process.exit(1);
-      }
-    } else {
-      if (attempts < MAX_RETRIES) {
-        logger.warn(`Database unavailable (Attempt ${attempts}/${MAX_RETRIES}). Retrying in 5s...`);
-        await new Promise(r => setTimeout(r, 5000));
-      } else {
-        logger.error(`[CRITICAL] Database unreachable after ${MAX_RETRIES} attempts. Failing fast.`);
-        process.exit(1);
-      }
+  const connected = await validateConnection();
+  
+  if (connected) {
+    try {
+      await migrate();
+      app.listen(PORT, () => logger.info(`Urbanest Engine v19.1 Online @ Port ${PORT}`));
+    } catch (err) {
+      logger.error(`Startup migration failed: ${err.message}`);
+      process.exit(1);
     }
+  } else {
+    logger.error('[CRITICAL] Database unreachable. Terminating process to expose failure.');
+    process.exit(1);
   }
 })();
+
 
