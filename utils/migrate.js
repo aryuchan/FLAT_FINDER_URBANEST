@@ -14,7 +14,7 @@ export async function migrate() {
     const statements = sql.split(';').map(s => s.trim()).filter(Boolean);
     
     // In mysql2/promise, pool.getConnection() returns a promise connection
-    const connection = await pool.promise().getConnection();
+    const connection = await pool.getConnection();
     for (const stmt of statements) {
       await connection.query(stmt);
     }

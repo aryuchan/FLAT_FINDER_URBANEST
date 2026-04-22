@@ -16,7 +16,7 @@ async function seedAdmin() {
   }
 
   try {
-    const connection = await pool.promise().getConnection();
+    const connection = await pool.getConnection();
     const [rows] = await connection.query('SELECT id FROM users WHERE email = ?', [email]);
     if (rows.length > 0) {
       logger.info(`Admin user ${email} already exists.`);
