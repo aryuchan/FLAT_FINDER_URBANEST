@@ -321,12 +321,13 @@ app.get("/api/flats", async (req, res) => {
   sql += " ORDER BY f.created_at DESC LIMIT 100";
   const flats = await query(sql, params);
   
-  // Parse JSON fields
-  const parsed = flats.map(f => ({
-    ...f,
-    images: JSON.parse(f.images || "[]"),
-    amenities: JSON.parse(f.amenities || "[]")
-  }));
+  // Parse JSON fields safely
+  const parsed = flats.map(f => {
+    let images = [], amenities = [];
+    try { images = JSON.parse(f.images || "[]"); } catch(e) {}
+    try { amenities = JSON.parse(f.amenities || "[]"); } catch(e) {}
+    return { ...f, images, amenities };
+  });
 
   res.json({ success: true, data: parsed });
 });
@@ -370,9 +371,17 @@ app.get("/api/flats/:id", async (req, res) => {
     if (!flat)
       return res.status(404).json({ success: false, message: "Flat not found" });
     
-    // Parse JSON fields
-    flat.images = JSON.parse(flat.images || "[]");
-    flat.amenities = JSON.parse(flat.amenities || "[]");
+    // Safe Parse JSON fields
+    try {
+      flat.images = JSON.parse(flat.images || "[]");
+    } catch (e) {
+      flat.images = [];
+    }
+    try {
+      flat.amenities = JSON.parse(flat.amenities || "[]");
+    } catch (e) {
+      flat.amenities = [];
+    }
 
     res.json({ success: true, data: flat });
   } catch (err) {

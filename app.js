@@ -86,6 +86,8 @@ const App = {
       if (r.success) {
         appState._selectedFlat = r.data;
         return render(Tenant.viewFlatDetails(r.data));
+      } else {
+        return render(`<div class="container page-content"><div class="empty-state"><p>❌</p><h3>Flat Not Found</h3><p>${r.message || "Could not load flat details."}</p><a class="btn btn--primary mt-md" href="#/tenant/search" data-route="/tenant/search">Back to Search</a></div></div>`);
       }
     }
     if (path.startsWith("/tenant/booking/") && u.role === "tenant") {
@@ -94,6 +96,8 @@ const App = {
       if (r.success) {
         appState._selectedFlat = r.data;
         return render(Tenant.viewBooking(r.data));
+      } else {
+        return render(`<div class="container page-content"><div class="empty-state"><h3>Not Available</h3><p>This flat is no longer available for booking.</p></div></div>`);
       }
     }
 
