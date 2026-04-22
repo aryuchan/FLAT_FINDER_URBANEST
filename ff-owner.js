@@ -527,8 +527,6 @@ window.Owner = {
     });
   },
 
-  },
-
   viewProfile() {
     const u = appState.currentUser || {};
     return `
