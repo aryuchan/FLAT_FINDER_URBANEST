@@ -1,5 +1,5 @@
 // sw.js — Production Service Worker (v18.0)
-const CACHE_NAME = "urbanest-v1";
+const CACHE_NAME = "urbanest-v2";
 const ASSETS = [
   "/",
   "/index.html",
