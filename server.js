@@ -318,7 +318,7 @@ app.get("/api/flats", async (req, res) => {
     params.push(maxRent);
   }
 
-  sql += " ORDER BY f.created_at DESC";
+  sql += " ORDER BY f.created_at DESC LIMIT 100";
   const flats = await query(sql, params);
   res.json({ success: true, data: flats });
 });
@@ -434,7 +434,7 @@ app.get("/api/listings", auth(["owner", "admin"]), async (req, res) => {
       sql += " AND l.status = ?";
       params.push(status);
     }
-    sql += " ORDER BY l.submitted_at DESC";
+    sql += " ORDER BY l.submitted_at DESC LIMIT 100";
     const rows = await query(sql, params);
     res.json({ success: true, data: rows });
   } catch (err) {

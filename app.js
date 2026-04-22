@@ -14,6 +14,10 @@ const App = {
     document.addEventListener("click", (e) => this.handleLinkClick(e));
     await this.checkAuth();
     this.router();
+    
+    // Hide loader
+    const loader = document.querySelector("#app-loader");
+    if (loader) loader.classList.add("hidden-loader");
   },
 
   async checkAuth() {
