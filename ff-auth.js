@@ -92,11 +92,13 @@ const Auth = {
     document.querySelectorAll('.toggle-password').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
-        const input = e.target.parentElement.querySelector('input');
+        e.stopPropagation(); // Prevent event bubbling to form
+        const targetBtn = e.currentTarget;
+        const input = targetBtn.parentElement.querySelector('input');
         if (input) {
           const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
           input.setAttribute('type', type);
-          e.target.textContent = type === 'password' ? '👁️' : '🙈';
+          targetBtn.textContent = type === 'password' ? '👁️' : '🙈';
         }
       }, { signal: appState.activeController.signal });
     });
