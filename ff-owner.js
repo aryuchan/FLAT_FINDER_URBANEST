@@ -103,8 +103,8 @@ const Owner = {
               <thead><tr><th>Flat</th><th>Tenant</th><th>Dates</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>
                 ${
-                  appState.bookings.length
-                    ? appState.bookings
+                  bookings.length
+                    ? bookings
                         .map(
                           (b) => `
                   <tr>
