@@ -170,11 +170,31 @@ const Tenant = {
             <p class="flat-detail__city">📍 ${escHtml(flat.city)}${flat.address ? " — " + escHtml(flat.address) : ""}</p>
             <p class="flat-detail__rent">₹${Number(flat.rent).toLocaleString("en-IN")} <span>/ month</span></p>
             ${flat.description ? `<p class="flat-detail__desc">${escHtml(flat.description)}</p>` : ""}
+            <div class="grid-2 mt-md" style="gap:var(--space-md)">
+              <div class="spec-item"><p class="text-muted small">Type</p><p><strong>${escHtml(flat.type)}</strong></p></div>
+              <div class="spec-item"><p class="text-muted small">Rent</p><p><strong>₹${Number(flat.rent).toLocaleString("en-IN")}</strong></p></div>
+              <div class="spec-item"><p class="text-muted small">Deposit</p><p><strong>₹${Number(flat.deposit || 0).toLocaleString("en-IN")}</strong></p></div>
+              <div class="spec-item"><p class="text-muted small">Area</p><p><strong>${flat.area_sqft || "—"} sq.ft.</strong></p></div>
+              <div class="spec-item"><p class="text-muted small">Bathrooms</p><p><strong>${flat.bathrooms || "—"}</strong></p></div>
+              <div class="spec-item"><p class="text-muted small">Facing</p><p><strong>${flat.facing || "—"}</strong></p></div>
+            </div>
+
+            ${flat.landmarks ? `<div class="mt-md"><p class="form-label small">Nearby Landmarks</p><p>${escHtml(flat.landmarks)}</p></div>` : ""}
+
+            <div class="house-rules mt-md">
+              <p class="form-label small">House Rules</p>
+              <div style="display:flex; gap:var(--space-md); flex-wrap:wrap">
+                <span class="text-${flat.pets_allowed ? "success" : "muted"}">${flat.pets_allowed ? "🐾 Pets OK" : "🚫 No Pets"}</span>
+                <span class="text-${flat.smoking_allowed ? "success" : "muted"}">${flat.smoking_allowed ? "🚬 Smoking OK" : "🚫 No Smoking"}</span>
+                <span class="text-${flat.visitors_allowed ? "success" : "muted"}">${flat.visitors_allowed ? "👥 Visitors OK" : "🚫 No Visitors"}</span>
+              </div>
+            </div>
+
             ${
               amenities.length
                 ? `
-            <div>
-              <p class="form-label" style="margin-bottom:var(--space-xs)">Amenities</p>
+            <div class="mt-md">
+              <p class="form-label small">Amenities</p>
               <div class="amenity-tags">
                 ${amenities.map((a) => `<span class="badge badge--neutral">✓ ${escHtml(a)}</span>`).join("")}
               </div>

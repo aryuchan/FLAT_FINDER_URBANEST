@@ -608,6 +608,20 @@ app.patch("/api/bookings/:id", auth(["owner", "tenant"]), async (req, res) => {
   if (connected) {
     try {
       await migrate();
+
+      // Ensure Default Admin for verification
+      const adminEmail = "admin@flatfinder.com";
+      const existing = await queryOne("SELECT id FROM users WHERE email = ?", [adminEmail]);
+      if (!existing) {
+        const id = crypto.randomUUID();
+        const hashed = await bcrypt.hash("admin123", 12);
+        await query(
+          "INSERT INTO users (id, name, email, password, role, status) VALUES (?,?,?,?,?,?)",
+          [id, "System Admin", adminEmail, hashed, "admin", "active"]
+        );
+        logger.info(`[SEED] Created default admin: ${adminEmail}`);
+      }
+
       app.listen(PORT, () =>
         logger.info(`Urbanest Engine v19.2 Online @ Port ${PORT}`),
       );
