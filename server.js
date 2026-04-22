@@ -61,6 +61,12 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!IS_PROD || !origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    
+    // Auto-allow same-origin deployments without requiring ALLOWED_ORIGINS manual config
+    if (origin.endsWith('.onrender.com') || origin.endsWith('.railway.app')) {
+      return callback(null, true);
+    }
+    
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
@@ -278,6 +284,15 @@ app.patch('/api/bookings/:id', authenticate, async (req, res) => {
 // ── FINAL ROUTING ──
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'API route not found' });
+});
+
+// FIX [25]: Guarantee JSON error responses instead of HTML stack traces for CORS and middleware errors
+app.use((err, req, res, next) => {
+  logger.error('Global Error', err.message);
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ success: false, message: err.message || 'Server Error' });
+  }
+  res.status(500).send('Internal Server Error');
 });
 
 // FIX [1]: Added express.static(__dirname) to serve static assets BEFORE wildcard routes
