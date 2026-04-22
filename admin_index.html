@@ -1,48 +1,131 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Urbanest | Admin Terminal</title>
-    <meta name="cloudinary-cloud-name" content="{{CLOUDINARY_CLOUD_NAME}}">
-    <meta name="cloudinary-upload-preset" content="{{CLOUDINARY_UPLOAD_PRESET}}">
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-</head>
-<body>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="manifest.json" />
+    <style>
+      html {
+        visibility: hidden;
+      }
+      html.ready {
+        visibility: visible;
+      }
+      /* Admin-specific accent overrides */
+      .admin-auth .auth-card {
+        border-top: 3px solid var(--danger) !important;
+      }
+      .admin-auth .auth-card::before {
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(184, 48, 48, 0.6),
+          var(--danger),
+          transparent
+        ) !important;
+      }
+    </style>
+    <script>
+      (function () {
+        var t = localStorage.getItem("ff_theme") || "light";
+        document.documentElement.setAttribute("data-theme", t);
+        document.documentElement.classList.add("ready");
+      })();
+    </script>
+  </head>
+  <body>
     <nav class="nav" id="app-nav"></nav>
     <main id="app-root" class="page-content"></main>
     <div id="app-toast"></div>
+    <div id="app-modal"></div>
 
-    <!-- Templates -->
+    <!-- ── AUTH TEMPLATES ─────────────────────────────────────── -->
     <template id="tmpl-auth">
-        <div class="container" style="max-width:450px; padding-top:10vh">
-            <div class="auth-card" style="border-top: 4px solid var(--danger); font-family: monospace">
-                <h1 class="page-title">{{title}}</h1>
-                <p class="text-muted mt-sm">SECURE ADMINISTRATIVE TERMINAL</p>
-                <form id="auth-form" class="mt-lg">
-                    <div class="field"><label class="label">ROOT EMAIL</label><input class="input" type="email" name="email" required></div>
-                    <div class="field mt-sm">
-                        <label class="label">PASSCODE</label>
-                        <div style="position:relative">
-                            <input class="input" type="password" name="password" required style="padding-right:45px">
-                            <button type="button" class="toggle-password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer">👁️</button>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn--danger btn--full mt-lg">Initialize Access</button>
-                </form>
+      <div
+        class="container admin-auth"
+        style="max-width: 450px; padding-top: 10vh"
+      >
+        <div class="auth-card">
+          <div class="auth-logo">⚙️</div>
+          <h1
+            class="auth-title"
+            style="font-family: monospace; letter-spacing: 0.05em"
+          >
+            {{title}}
+          </h1>
+          <p
+            class="auth-sub"
+            style="
+              font-family: monospace;
+              font-size: 0.78rem;
+              letter-spacing: 0.06em;
+              text-transform: uppercase;
+            "
+          >
+            Secure Administrative Terminal
+          </p>
+          <form id="auth-form" class="auth-form" novalidate>
+            <div class="field">
+              <label class="label" for="auth-email">Root Email</label>
+              <input
+                class="input"
+                type="email"
+                id="auth-email"
+                name="email"
+                placeholder="admin@urbanest.com"
+                required
+                autocomplete="email"
+              />
             </div>
+            <div class="field mt-sm">
+              <label class="label" for="auth-password">Passcode</label>
+              <div style="position: relative">
+                <input
+                  class="input"
+                  type="password"
+                  id="auth-password"
+                  name="password"
+                  required
+                  style="
+                    padding-right: 45px;
+                    font-family: monospace;
+                    letter-spacing: 0.1em;
+                  "
+                  autocomplete="current-password"
+                />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  aria-label="Toggle password"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn--danger btn--full mt-lg">
+              Initialize Access →
+            </button>
+          </form>
         </div>
+      </div>
     </template>
 
     <template id="tmpl-signup">
-        <div class="container" style="max-width:450px; padding-top:10vh">
-            <div class="auth-card" style="text-align:center">
-                <h1 class="page-title">Access Denied</h1>
-                <p class="text-muted mt-sm">Admin self-registration is disabled for security.</p>
-                <a href="#/login" class="btn btn--secondary mt-lg">Return to Terminal</a>
-            </div>
+      <div class="container" style="max-width: 450px; padding-top: 10vh">
+        <div class="auth-card" style="text-align: center">
+          <div class="auth-logo">🚫</div>
+          <h1 class="auth-title">Access Denied</h1>
+          <p class="auth-sub">
+            Admin self-registration is disabled for security.
+          </p>
+          <a href="#/login" class="btn btn--secondary mt-lg"
+            >Return to Terminal</a
+          >
         </div>
+      </div>
     </template>
 
     <script src="ff-core.js"></script>
@@ -50,7 +133,8 @@
     <script src="ff-admin.js"></script>
     <script src="app.js"></script>
     <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+      if ("serviceWorker" in navigator)
+        navigator.serviceWorker.register("/sw.js");
     </script>
-</body>
+  </body>
 </html>

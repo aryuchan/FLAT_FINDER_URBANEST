@@ -1,24 +1,26 @@
 // db.js — Production Database Engine (STRICT HARDCODED CONFIG)
-import mysql from 'mysql2/promise';
-import logger from './utils/logger.js';
+import mysql from "mysql2/promise";
+import logger from "./utils/logger.js";
 
 /**
  * STRICT HARDCODED CONFIGURATION
  * As requested, environment variables are bypassed to ensure stability.
  */
 const dbConfig = {
-  host: 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
+  host: "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
   port: 4000,
-  user: 'FsHZjY2TDG6prHt.root',
-  password: 'gBM9F8OgvVjqzRG2',
-  database: 'flatfinder',
+  user: "FsHZjY2TDG6prHt.root",
+  password: "gBM9F8OgvVjqzRG2",
+  database: "flatfinder",
   ssl: {
     rejectUnauthorized: false,
-    minVersion: 'TLSv1.2'
-  }
+    minVersion: "TLSv1.2",
+  },
 };
 
-logger.info(`[DB_INIT] Using hardcoded configuration for ${dbConfig.host}:${dbConfig.port}`);
+logger.info(
+  `[DB_INIT] Using hardcoded configuration for ${dbConfig.host}:${dbConfig.port}`,
+);
 
 // Connection Pool
 export const pool = mysql.createPool({
@@ -55,16 +57,20 @@ export async function queryOne(sql, params = []) {
  */
 export async function validateConnection() {
   try {
-    logger.info(`Attempting immediate connection to ${dbConfig.host}:${dbConfig.port}...`);
-    
+    logger.info(
+      `Attempting immediate connection to ${dbConfig.host}:${dbConfig.port}...`,
+    );
+
     const conn = await pool.getConnection();
     await conn.ping();
     conn.release();
-    
-    logger.info('✅ Database connection verified successfully.');
+
+    logger.info("✅ Database connection verified successfully.");
     return true;
   } catch (err) {
-    logger.error(`❌ Database connection failed: ${err.message} (Code: ${err.code})`);
+    logger.error(
+      `❌ Database connection failed: ${err.message} (Code: ${err.code})`,
+    );
     return false;
   }
 }

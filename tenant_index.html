@@ -1,62 +1,160 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Urbanest | Tenant Portal</title>
-    <meta name="cloudinary-cloud-name" content="{{CLOUDINARY_CLOUD_NAME}}">
-    <meta name="cloudinary-upload-preset" content="{{CLOUDINARY_UPLOAD_PRESET}}">
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-</head>
-<body>
+    <meta
+      name="description"
+      content="Browse listings, request viewings, and manage your tenancy."
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="manifest.json" />
+    <style>
+      /* Apply saved theme before paint to prevent flash */
+      html {
+        visibility: hidden;
+      }
+      html.ready {
+        visibility: visible;
+      }
+    </style>
+    <script>
+      // Prevent FOUC on theme
+      (function () {
+        var t = localStorage.getItem("ff_theme") || "light";
+        document.documentElement.setAttribute("data-theme", t);
+        document.documentElement.classList.add("ready");
+      })();
+    </script>
+  </head>
+  <body>
     <nav class="nav" id="app-nav"></nav>
     <main id="app-root" class="page-content"></main>
     <div id="app-toast"></div>
+    <div id="app-modal"></div>
 
-    <!-- Templates -->
+    <!-- ── AUTH TEMPLATES ─────────────────────────────────────── -->
     <template id="tmpl-auth">
-        <div class="container" style="max-width:450px; padding-top:10vh">
-            <div class="auth-card">
-                <h1 class="page-title">{{title}}</h1>
-                <p class="text-muted mt-sm">{{sub}}</p>
-                <form id="auth-form" class="mt-lg">
-                    <div class="field"><label class="label">EMAIL</label><input class="input" type="email" name="email" required></div>
-                    <div class="field mt-sm">
-                        <label class="label">PASSWORD</label>
-                        <div style="position:relative">
-                            <input class="input" type="password" name="password" required style="padding-right:45px">
-                            <button type="button" class="toggle-password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer">👁️</button>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn--primary btn--full mt-lg">Continue</button>
-                </form>
-                <p class="mt-lg text-muted" style="text-align:center">New to Urbanest? <a href="#/signup" style="color:var(--primary); font-weight:700">Create Account</a></p>
+      <div class="container" style="max-width: 450px; padding-top: 10vh">
+        <div class="auth-card">
+          <div class="auth-logo">🏠</div>
+          <h1 class="auth-title">{{title}}</h1>
+          <p class="auth-sub">{{sub}}</p>
+          <form id="auth-form" class="auth-form" novalidate>
+            <div class="field">
+              <label class="label" for="auth-email">Email</label>
+              <input
+                class="input"
+                type="email"
+                id="auth-email"
+                name="email"
+                placeholder="you@example.com"
+                required
+                autocomplete="email"
+              />
             </div>
+            <div class="field mt-sm">
+              <label class="label" for="auth-password">Password</label>
+              <div style="position: relative">
+                <input
+                  class="input"
+                  type="password"
+                  id="auth-password"
+                  name="password"
+                  placeholder="Your password"
+                  required
+                  style="padding-right: 45px"
+                  autocomplete="current-password"
+                />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  aria-label="Toggle password"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn--primary btn--full mt-lg">
+              Continue →
+            </button>
+          </form>
+          <p class="auth-switch">
+            New to Urbanest?
+            <a href="#/signup" style="color: var(--primary); font-weight: 700"
+              >Create Account</a
+            >
+          </p>
         </div>
+      </div>
     </template>
 
     <template id="tmpl-signup">
-        <div class="container" style="max-width:450px; padding-top:10vh">
-            <div class="auth-card">
-                <h1 class="page-title">Join Urbanest</h1>
-                <p class="text-muted mt-sm">Start your journey to premium living.</p>
-                <form id="signup-form" class="mt-lg">
-                    <div class="field"><label class="label">FULL NAME</label><input class="input" name="name" required></div>
-                    <div class="field mt-sm"><label class="label">EMAIL</label><input class="input" type="email" name="email" required></div>
-                    <div class="field mt-sm">
-                        <label class="label">PASSWORD</label>
-                        <div style="position:relative">
-                            <input class="input" type="password" name="password" required style="padding-right:45px" placeholder="Min 8 characters">
-                            <button type="button" class="toggle-password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer">👁️</button>
-                        </div>
-                    </div>
-                    <input type="hidden" name="role" value="tenant">
-                    <button type="submit" class="btn btn--primary btn--full mt-lg">Sign Up</button>
-                </form>
-                <p class="mt-lg text-muted" style="text-align:center">Already have an account? <a href="#/login" style="color:var(--primary); font-weight:700">Sign In</a></p>
+      <div class="container" style="max-width: 450px; padding-top: 10vh">
+        <div class="auth-card">
+          <div class="auth-logo">🏠</div>
+          <h1 class="auth-title">Join Urbanest</h1>
+          <p class="auth-sub">Start your journey to premium living.</p>
+          <form id="signup-form" class="auth-form" novalidate>
+            <div class="field">
+              <label class="label" for="signup-name">Full Name</label>
+              <input
+                class="input"
+                name="name"
+                id="signup-name"
+                placeholder="Your full name"
+                required
+                autocomplete="name"
+              />
             </div>
+            <div class="field mt-sm">
+              <label class="label" for="signup-email">Email</label>
+              <input
+                class="input"
+                type="email"
+                name="email"
+                id="signup-email"
+                placeholder="you@example.com"
+                required
+                autocomplete="email"
+              />
+            </div>
+            <div class="field mt-sm">
+              <label class="label" for="signup-password">Password</label>
+              <div style="position: relative">
+                <input
+                  class="input"
+                  type="password"
+                  name="password"
+                  id="signup-password"
+                  placeholder="Min 8 characters"
+                  required
+                  style="padding-right: 45px"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  aria-label="Toggle password"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
+            <input type="hidden" name="role" value="tenant" />
+            <button type="submit" class="btn btn--primary btn--full mt-lg">
+              Create Account →
+            </button>
+          </form>
+          <p class="auth-switch">
+            Already have an account?
+            <a href="#/login" style="color: var(--primary); font-weight: 700"
+              >Sign In</a
+            >
+          </p>
         </div>
+      </div>
     </template>
 
     <script src="ff-core.js"></script>
@@ -64,7 +162,8 @@
     <script src="ff-tenant.js"></script>
     <script src="app.js"></script>
     <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+      if ("serviceWorker" in navigator)
+        navigator.serviceWorker.register("/sw.js");
     </script>
-</body>
+  </body>
 </html>

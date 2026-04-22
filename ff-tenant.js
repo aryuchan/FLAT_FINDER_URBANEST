@@ -5,14 +5,14 @@ const Tenant = {
   },
 
   async route() {
-    const hash = window.location.hash || '#/dashboard';
-    if (hash === '#/search') await this.viewSearch();
+    const hash = window.location.hash || "#/dashboard";
+    if (hash === "#/search") await this.viewSearch();
     else await this.viewDashboard();
     this.bindEvents();
   },
 
   async viewDashboard() {
-    const res = await apiFetch('/api/bookings');
+    const res = await apiFetch("/api/bookings");
     const bookings = res.success ? res.data : [];
 
     await render(`
@@ -24,21 +24,29 @@ const Tenant = {
         
         <h3 class="mt-xl">My Rental Requests</h3>
         <div class="grid mt-sm">
-          ${bookings.length ? bookings.map(b => `
+          ${
+            bookings.length
+              ? bookings
+                  .map(
+                    (b) => `
             <div class="card">
               <div class="flex-between">
                 <h4 style="font-size:1.1rem">${escHtml(b.flat_title)}</h4>
-                <span class="badge badge--${b.status === 'confirmed' ? 'success' : b.status === 'cancelled' ? 'danger' : 'warning'}">${escHtml(b.status)}</span>
+                <span class="badge badge--${b.status === "confirmed" ? "success" : b.status === "cancelled" ? "danger" : "warning"}">${escHtml(b.status)}</span>
               </div>
-              <p class="text-muted mt-sm">📍 ${escHtml(b.city || 'Location unavailable')}</p>
+              <p class="text-muted mt-sm">📍 ${escHtml(b.city || "Location unavailable")}</p>
               <p class="text-muted" style="font-size:0.85rem">📅 Stay: ${formatDate(b.check_in)} to ${formatDate(b.check_out)}</p>
             </div>
-          `).join('') : `
+          `,
+                  )
+                  .join("")
+              : `
             <div class="card" style="grid-column: 1/-1; text-align:center; padding: 4rem;">
               <p class="text-muted">You haven't requested any flats yet.</p>
               <a href="#/search" class="btn btn--secondary btn--sm mt-md">Start Searching</a>
             </div>
-          `}
+          `
+          }
         </div>
       </div>
     `);
@@ -46,7 +54,7 @@ const Tenant = {
 
   async viewSearch() {
     // Initial fetch
-    const res = await apiFetch('/api/flats');
+    const res = await apiFetch("/api/flats");
     const flats = res.success ? res.data : [];
 
     await render(`
@@ -85,13 +93,16 @@ const Tenant = {
   },
 
   _renderFlatGrid(flats) {
-    if (!flats.length) return '<p class="text-muted" style="grid-column:1/-1; text-align:center; padding:3rem">No matching properties found.</p>';
-    
-    return flats.map(f => {
-      const imgs = JSON.parse(f.images || '[]');
-      const cover = imgs[0] || 'https://via.placeholder.com/400x300?text=No+Image';
-      
-      return `
+    if (!flats.length)
+      return '<p class="text-muted" style="grid-column:1/-1; text-align:center; padding:3rem">No matching properties found.</p>';
+
+    return flats
+      .map((f) => {
+        const imgs = JSON.parse(f.images || "[]");
+        const cover =
+          imgs[0] || "https://via.placeholder.com/400x300?text=No+Image";
+
+        return `
         <div class="card flat-card" data-id="${escHtml(f.id)}">
           <img src="${cover}" class="flat-card__img" style="width:100%; height:200px; object-fit:cover; border-radius:0.5rem">
           <div class="mt-md">
@@ -105,51 +116,63 @@ const Tenant = {
           </div>
         </div>
       `;
-    }).join('');
+      })
+      .join("");
   },
 
   bindEvents() {
     const { signal } = appState.activeController;
 
     // Filter Logic
-    document.getElementById('search-filter-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('btn-apply-filters');
-      showLoading(btn);
-      
-      const fd = new FormData(e.target);
-      const params = new URLSearchParams(Object.fromEntries(fd));
-      const res = await apiFetch(`/api/flats?${params.toString()}`);
-      
-      if (res.success) {
-        document.getElementById('search-results').innerHTML = this._renderFlatGrid(res.data);
-      }
-      hideLoading(btn);
-    }, { signal });
+    document.getElementById("search-filter-form")?.addEventListener(
+      "submit",
+      async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("btn-apply-filters");
+        showLoading(btn);
+
+        const fd = new FormData(e.target);
+        const params = new URLSearchParams(Object.fromEntries(fd));
+        const res = await apiFetch(`/api/flats?${params.toString()}`);
+
+        if (res.success) {
+          document.getElementById("search-results").innerHTML =
+            this._renderFlatGrid(res.data);
+        }
+        hideLoading(btn);
+      },
+      { signal },
+    );
 
     // Booking Logic
-    document.querySelectorAll('.btn-book').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const id = e.target.closest('.card').dataset.id;
-        const check_in = new Date().toISOString().split('T')[0];
-        const check_out = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+    document.querySelectorAll(".btn-book").forEach((btn) => {
+      btn.addEventListener(
+        "click",
+        async (e) => {
+          const id = e.target.closest(".card").dataset.id;
+          const check_in = new Date().toISOString().split("T")[0];
+          const check_out = new Date(Date.now() + 7 * 86400000)
+            .toISOString()
+            .split("T")[0];
 
-        if (!confirm(`Request a viewing for this property?`)) return;
-        
-        showLoading(btn);
-        const res = await apiFetch('/api/bookings', {
-          method: 'POST',
-          body: { flat_id: id, check_in, check_out }
-        });
-        
-        if (res.success) {
-          showToast('Inquiry sent to owner!', 'success');
-          window.location.hash = '#/dashboard';
-        } else {
-          showToast(res.message, 'danger');
-          hideLoading(btn);
-        }
-      }, { signal });
+          if (!confirm(`Request a viewing for this property?`)) return;
+
+          showLoading(btn);
+          const res = await apiFetch("/api/bookings", {
+            method: "POST",
+            body: { flat_id: id, check_in, check_out },
+          });
+
+          if (res.success) {
+            showToast("Inquiry sent to owner!", "success");
+            window.location.hash = "#/dashboard";
+          } else {
+            showToast(res.message, "danger");
+            hideLoading(btn);
+          }
+        },
+        { signal },
+      );
     });
-  }
+  },
 };

@@ -4,8 +4,12 @@ const Owner = {
 
   _cloudConfig() {
     return {
-      cloudName: document.querySelector('meta[name="cloudinary-cloud-name"]')?.content || '',
-      preset: document.querySelector('meta[name="cloudinary-upload-preset"]')?.content || ''
+      cloudName:
+        document.querySelector('meta[name="cloudinary-cloud-name"]')?.content ||
+        "",
+      preset:
+        document.querySelector('meta[name="cloudinary-upload-preset"]')
+          ?.content || "",
     };
   },
 
@@ -14,14 +18,17 @@ const Owner = {
   },
 
   async route() {
-    const hash = window.location.hash || '#/dashboard';
-    if (hash === '#/add-flat') await render(this.viewAddFlat());
+    const hash = window.location.hash || "#/dashboard";
+    if (hash === "#/add-flat") await render(this.viewAddFlat());
     else await render(this.viewDashboard());
     this.bindEvents();
   },
 
   async viewDashboard() {
-    const [fRes, bRes] = await Promise.all([apiFetch('/api/flats'), apiFetch('/api/bookings')]);
+    const [fRes, bRes] = await Promise.all([
+      apiFetch("/api/flats"),
+      apiFetch("/api/bookings"),
+    ]);
     const flats = fRes.success ? fRes.data : [];
     const bookings = bRes.success ? bRes.data : [];
 
@@ -45,38 +52,58 @@ const Owner = {
 
         <h3 class="mt-xl">My Properties</h3>
         <div class="grid mt-sm mb-lg">
-          ${flats.length ? flats.map(f => `
+          ${
+            flats.length
+              ? flats
+                  .map(
+                    (f) => `
             <div class="card" data-id="${escHtml(f.id)}">
               <div class="flex-between">
                 <h4 style="font-size:1.1rem">${escHtml(f.title)}</h4>
-                <button class="badge badge--${f.available ? 'success' : 'neutral'} btn-toggle" style="cursor:pointer; border:none" data-avail="${f.available ? '1' : '0'}">
-                  ${f.available ? 'Available' : 'Hidden'}
+                <button class="badge badge--${f.available ? "success" : "neutral"} btn-toggle" style="cursor:pointer; border:none" data-avail="${f.available ? "1" : "0"}">
+                  ${f.available ? "Available" : "Hidden"}
                 </button>
               </div>
               <p class="text-muted mt-sm">${formatCurrency(f.rent)}/mo — ${escHtml(f.city)}</p>
-              <p class="text-muted" style="font-size:0.85rem">📍 ${escHtml(f.address || 'No address set')}</p>
+              <p class="text-muted" style="font-size:0.85rem">📍 ${escHtml(f.address || "No address set")}</p>
             </div>
-          `).join('') : '<p class="text-muted">No properties listed yet.</p>'}
+          `,
+                  )
+                  .join("")
+              : '<p class="text-muted">No properties listed yet.</p>'
+          }
         </div>
 
         <h3 class="mt-xl">Booking Requests</h3>
         <div class="grid mt-sm">
-          ${bookings.length ? bookings.map(b => `
+          ${
+            bookings.length
+              ? bookings
+                  .map(
+                    (b) => `
             <div class="card" data-id="${escHtml(b.id)}">
               <div class="flex-between">
                 <h4 class="stat-card__label">${escHtml(b.flat_title)}</h4>
-                <span class="badge badge--${b.status === 'confirmed' ? 'success' : b.status === 'cancelled' ? 'danger' : 'warning'}">${escHtml(b.status)}</span>
+                <span class="badge badge--${b.status === "confirmed" ? "success" : b.status === "cancelled" ? "danger" : "warning"}">${escHtml(b.status)}</span>
               </div>
               <p class="text-muted mt-sm">Tenant: <b>${escHtml(b.tenant_name)}</b></p>
               <p class="text-muted mt-sm">${formatDate(b.check_in)} — ${formatDate(b.check_out)}</p>
-              ${b.status === 'pending' ? `
+              ${
+                b.status === "pending"
+                  ? `
                 <div class="mt-lg flex-between" style="gap:1rem">
                   <button class="btn btn--primary btn--sm btn-confirm" style="flex:1">Accept</button>
                   <button class="btn btn--danger btn--sm btn-cancel" style="flex:1">Decline</button>
                 </div>
-              ` : ''}
+              `
+                  : ""
+              }
             </div>
-          `).join('') : '<p class="text-muted">No booking requests found.</p>'}
+          `,
+                  )
+                  .join("")
+              : '<p class="text-muted">No booking requests found.</p>'
+          }
         </div>
       </div>
     `;
@@ -160,92 +187,135 @@ const Owner = {
 
   bindEvents() {
     const { signal } = appState.activeController;
-    const form = document.getElementById('add-flat-form');
-    
-    if (form) {
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btn-submit-flat');
-        showLoading(btn);
-        
-        const fd = new FormData(form);
-        const data = Object.fromEntries(fd);
-        data.images = this._uploadedImages;
+    const form = document.getElementById("add-flat-form");
 
-        const res = await apiFetch('/api/flats', { method: 'POST', body: data });
-        hideLoading(btn);
-        if (res.success) {
-          showToast('Listing published successfully!', 'success');
-          window.location.hash = '#/dashboard';
-        } else {
-          showToast(res.message, 'danger');
-        }
-      }, { signal });
+    if (form) {
+      form.addEventListener(
+        "submit",
+        async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("btn-submit-flat");
+          showLoading(btn);
+
+          const fd = new FormData(form);
+          const data = Object.fromEntries(fd);
+          data.images = this._uploadedImages;
+
+          const res = await apiFetch("/api/flats", {
+            method: "POST",
+            body: data,
+          });
+          hideLoading(btn);
+          if (res.success) {
+            showToast("Listing published successfully!", "success");
+            window.location.hash = "#/dashboard";
+          } else {
+            showToast(res.message, "danger");
+          }
+        },
+        { signal },
+      );
 
       // Cloudinary Logic
-      const imgInput = document.getElementById('image-input');
-      const grid = document.getElementById('image-preview-grid');
-      
-      imgInput?.addEventListener('change', async () => {
-        const files = Array.from(imgInput.files);
-        const config = this._cloudConfig();
-        
-        if (!config.cloudName || !config.preset) {
-          return showToast('Cloudinary config missing. Check environment variables.', 'warning');
-        }
+      const imgInput = document.getElementById("image-input");
+      const grid = document.getElementById("image-preview-grid");
 
-        for (const file of files) {
-          const item = document.createElement('div');
-          item.className = 'img-preview-item';
-          item.innerHTML = '<div class="spinner spinner--sm"></div>';
-          grid.appendChild(item);
+      imgInput?.addEventListener(
+        "change",
+        async () => {
+          const files = Array.from(imgInput.files);
+          const config = this._cloudConfig();
 
-          const fd = new FormData();
-          fd.append('file', file);
-          fd.append('upload_preset', config.preset);
-          
-          try {
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`, {
-              method: 'POST',
-              body: fd
-            });
-            const json = await res.json();
-            if (json.secure_url) {
-              this._uploadedImages.push(json.secure_url);
-              item.innerHTML = `<img src="${json.secure_url}" style="width:100%; height:100px; object-fit:cover; border-radius:0.5rem; border:1px solid var(--border)">`;
-            } else {
-              item.remove();
-              showToast('Upload failed', 'danger');
-            }
-          } catch (err) {
-            item.remove();
-            showToast('Network error during upload', 'danger');
+          if (!config.cloudName || !config.preset) {
+            return showToast(
+              "Cloudinary config missing. Check environment variables.",
+              "warning",
+            );
           }
-        }
-      }, { signal });
+
+          for (const file of files) {
+            const item = document.createElement("div");
+            item.className = "img-preview-item";
+            item.innerHTML = '<div class="spinner spinner--sm"></div>';
+            grid.appendChild(item);
+
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("upload_preset", config.preset);
+
+            try {
+              const res = await fetch(
+                `https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`,
+                {
+                  method: "POST",
+                  body: fd,
+                },
+              );
+              const json = await res.json();
+              if (json.secure_url) {
+                this._uploadedImages.push(json.secure_url);
+                item.innerHTML = `<img src="${json.secure_url}" style="width:100%; height:100px; object-fit:cover; border-radius:0.5rem; border:1px solid var(--border)">`;
+              } else {
+                item.remove();
+                showToast("Upload failed", "danger");
+              }
+            } catch (err) {
+              item.remove();
+              showToast("Network error during upload", "danger");
+            }
+          }
+        },
+        { signal },
+      );
     }
 
     // Dashboard Actions (Toggle, Confirm, Cancel)
-    document.querySelectorAll('.btn-toggle').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const id = e.target.closest('.card').dataset.id;
-        const isAvail = e.target.dataset.avail === '1';
-        showLoading(btn);
-        const res = await apiFetch(`/api/flats/${id}`, { method: 'PATCH', body: { available: !isAvail } });
-        if (res.success) { showToast('Visibility toggled'); await this.route(); }
-        else { showToast(res.message, 'danger'); hideLoading(btn); }
-      }, { signal });
+    document.querySelectorAll(".btn-toggle").forEach((btn) => {
+      btn.addEventListener(
+        "click",
+        async (e) => {
+          const id = e.target.closest(".card").dataset.id;
+          const isAvail = e.target.dataset.avail === "1";
+          showLoading(btn);
+          const res = await apiFetch(`/api/flats/${id}`, {
+            method: "PATCH",
+            body: { available: !isAvail },
+          });
+          if (res.success) {
+            showToast("Visibility toggled");
+            await this.route();
+          } else {
+            showToast(res.message, "danger");
+            hideLoading(btn);
+          }
+        },
+        { signal },
+      );
     });
 
-    document.querySelectorAll('.btn-confirm, .btn-cancel').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const id = e.target.closest('.card').dataset.id;
-        const status = e.target.classList.contains('btn-confirm') ? 'confirmed' : 'cancelled';
-        showLoading(btn);
-        const res = await apiFetch(`/api/bookings/${id}`, { method: 'PATCH', body: { status } });
-        if (res.success) { showToast(`Inquiry ${status}`); await this.route(); }
-        else { showToast(res.message, 'danger'); hideLoading(btn); }
-      }, { signal });
+    document.querySelectorAll(".btn-confirm, .btn-cancel").forEach((btn) => {
+      btn.addEventListener(
+        "click",
+        async (e) => {
+          const id = e.target.closest(".card").dataset.id;
+          const status = e.target.classList.contains("btn-confirm")
+            ? "confirmed"
+            : "cancelled";
+          showLoading(btn);
+          const res = await apiFetch(`/api/bookings/${id}`, {
+            method: "PATCH",
+            body: { status },
+          });
+          if (res.success) {
+            showToast(`Inquiry ${status}`);
+            await this.route();
+          } else {
+            showToast(res.message, "danger");
+            hideLoading(btn);
+          }
+        },
+        { signal },
+      );
     });
-  }
+  },
 };
