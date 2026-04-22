@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   phone VARCHAR(20),
+  whatsapp VARCHAR(20),
+  telegram VARCHAR(50),
   bio TEXT,
   INDEX idx_user_email (email),
   INDEX idx_user_role (role)

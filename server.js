@@ -232,7 +232,7 @@ app.post("/api/logout", (req, res) => {
 app.get("/api/me", auth(), async (req, res) => {
   try {
     const user = await queryOne(
-      "SELECT id, name, email, role, status, phone, bio FROM users WHERE id = ?",
+      "SELECT id, name, email, role, status, phone, whatsapp, telegram, bio FROM users WHERE id = ?",
       [req.user.id],
     );
     res.json({ success: true, data: user });
@@ -245,7 +245,7 @@ app.get("/api/me", auth(), async (req, res) => {
 
 app.patch("/api/me", auth(), async (req, res) => {
   try {
-    const { name, password, phone, bio } = req.body;
+    const { name, password, phone, whatsapp, telegram, bio } = req.body;
     const updates = [];
     const params = [];
 
@@ -256,6 +256,14 @@ app.patch("/api/me", auth(), async (req, res) => {
     if (phone) {
       updates.push("phone = ?");
       params.push(phone);
+    }
+    if (whatsapp) {
+      updates.push("whatsapp = ?");
+      params.push(whatsapp);
+    }
+    if (telegram) {
+      updates.push("telegram = ?");
+      params.push(telegram);
     }
     if (bio) {
       updates.push("bio = ?");

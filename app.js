@@ -94,8 +94,9 @@ const App = {
 
     // ── OWNER ROUTES ──
     if (path === "/owner/dashboard" && u.role === "owner") {
-      const r = await apiFetch("/api/listings");
-      if (r.success) appState.listings = r.data;
+      const [lr, br] = await Promise.all([apiFetch("/api/listings"), apiFetch("/api/bookings")]);
+      if (lr.success) appState.listings = lr.data;
+      if (br.success) appState.bookings = br.data;
       return render(Owner.viewDashboard());
     }
     if (path === "/owner/add-flat" && u.role === "owner") {

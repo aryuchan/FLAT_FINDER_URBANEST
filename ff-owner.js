@@ -89,8 +89,42 @@ const Owner = {
           <h3 class="card-title">My Listings</h3>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>Flat</th><th>Rent</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Flat</th><th>Rent</th><th>Status</th><th>Visibility</th><th>Submitted</th><th>Actions</th></tr></thead>
               <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card mt-lg">
+          <h3 class="card-title">Recent Bookings</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Flat</th><th>Tenant</th><th>Dates</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${
+                  appState.bookings.length
+                    ? appState.bookings
+                        .map(
+                          (b) => `
+                  <tr>
+                    <td><strong>${escHtml(b.flat_title)}</strong></td>
+                    <td>${escHtml(b.tenant_name)}</td>
+                    <td><small>${b.check_in} to ${b.check_out}</small></td>
+                    <td><span class="badge badge--${b.status === "confirmed" ? "success" : b.status === "cancelled" ? "danger" : "warning"}">${b.status}</span></td>
+                    <td>
+                      ${
+                        b.status === "pending"
+                          ? `<button class="btn btn--primary btn--sm" data-action="confirm-booking" data-id="${b.id}">Confirm</button>
+                             <button class="btn btn--danger btn--sm" data-action="cancel-booking" data-id="${b.id}">Cancel</button>`
+                          : "—"
+                      }
+                    </td>
+                  </tr>`,
+                        )
+                        .join("")
+                    : `<tr><td colspan="5" class="empty-cell">No bookings yet.</td></tr>`
+                }
+              </tbody>
             </table>
           </div>
         </div>
@@ -489,6 +523,28 @@ const Owner = {
         }
         return;
       }
+
+      // Booking actions
+      const btnAction = e.target.closest("[data-action]");
+      if (!btnAction) return;
+      const action = btnAction.dataset.action;
+      const bId = btnAction.dataset.id;
+
+      if (action === "confirm-booking" || action === "cancel-booking") {
+        btnAction.disabled = true;
+        const status = action === "confirm-booking" ? "confirmed" : "cancelled";
+        const res = await apiFetch(`/api/bookings/${bId}`, { method: "PATCH", body: { status } });
+        if (res.success) {
+          showToast(`Booking ${status}`, "success");
+          const [lr, br] = await Promise.all([apiFetch("/api/listings"), apiFetch("/api/bookings")]);
+          if (lr.success) appState.listings = lr.data;
+          if (br.success) appState.bookings = br.data;
+          render(Owner.viewDashboard());
+        } else {
+          showToast(res.message, "error");
+          btnAction.disabled = false;
+        }
+      }
     });
-  }
+  },
 };
