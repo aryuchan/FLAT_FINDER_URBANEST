@@ -5,57 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Urbanest | Tenant Portal</title>
     <link rel="stylesheet" href="style.css">
-    <!-- FIX [18]: Added web app manifest link -->
-    <link rel="manifest" href="/manifest.json">
-    <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('ff_theme') || 'light');</script>
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
-
-    <nav id="app-nav"></nav>
-    <main id="app-root"></main>
+    <nav class="nav" id="app-nav"></nav>
+    <main id="app-root" class="page-content"></main>
     <div id="app-toast"></div>
 
-    <!-- Master Templates (Architecture: populateTemplate compliant) -->
+    <!-- Templates -->
     <template id="tmpl-auth">
-        <div class="card auth-card" style="max-width: 440px; margin: 80px auto; text-align: center">
-            <h1>{{title}}</h1>
-            <p class="text-muted">{{sub}}</p>
-            <form id="auth-form" class="mt-lg">
-                <input class="input mt-sm" type="email" name="email" placeholder="Email" required style="width:100%">
-                <div style="position:relative" class="mt-sm">
-                    <input class="input" type="password" name="password" placeholder="Password" required style="width:100%; padding-right:40px">
-                    <button type="button" class="toggle-password" tabindex="-1" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer">👁️</button>
-                </div>
-                <button type="submit" class="btn btn--primary btn--full mt-lg">Continue</button>
-            </form>
-            <p class="mt-sm" style="font-size: 0.9rem">Don't have an account? <a href="#/signup" style="color: var(--primary); text-decoration: none; font-weight: bold;">Sign Up</a></p>
+        <div class="container" style="max-width:450px; padding-top:10vh">
+            <div class="auth-card">
+                <h1 class="page-title">{{title}}</h1>
+                <p class="text-muted mt-sm">{{sub}}</p>
+                <form id="auth-form" class="mt-lg">
+                    <div class="field"><label class="label">EMAIL</label><input class="input" type="email" name="email" required></div>
+                    <div class="field mt-sm">
+                        <label class="label">PASSWORD</label>
+                        <div style="position:relative">
+                            <input class="input" type="password" name="password" required style="padding-right:45px">
+                            <button type="button" class="toggle-password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer">👁️</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full mt-lg">Continue</button>
+                </form>
+                <p class="mt-lg text-muted" style="text-align:center">New to Urbanest? <a href="#/signup" style="color:var(--primary); font-weight:700">Create Account</a></p>
+            </div>
         </div>
     </template>
 
     <template id="tmpl-signup">
-        <div class="card auth-card" style="max-width: 440px; margin: 80px auto; text-align: center">
-            <h1>Create Account</h1>
-            <p class="text-muted">Join Urbanest today</p>
-            <form id="signup-form" class="mt-lg">
-                <input class="input mt-sm" type="text" name="name" placeholder="Full Name" required style="width:100%">
-                <input class="input mt-sm" type="email" name="email" placeholder="Email" required style="width:100%">
-                <div style="position:relative" class="mt-sm">
-                    <input class="input" type="password" name="password" placeholder="Password (min 8 chars)" required style="width:100%; padding-right:40px">
-                    <button type="button" class="toggle-password" tabindex="-1" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer">👁️</button>
-                </div>
-                <input type="hidden" name="role" value="tenant">
-                <button type="submit" class="btn btn--primary btn--full mt-lg">Sign Up</button>
-            </form>
-            <p class="mt-sm" style="font-size: 0.9rem">Already have an account? <a href="#/login" style="color: var(--primary); text-decoration: none; font-weight: bold;">Login</a></p>
+        <div class="container" style="max-width:450px; padding-top:10vh">
+            <div class="auth-card">
+                <h1 class="page-title">Join Urbanest</h1>
+                <p class="text-muted mt-sm">Start your journey to premium living.</p>
+                <form id="signup-form" class="mt-lg">
+                    <div class="field"><label class="label">FULL NAME</label><input class="input" name="name" required></div>
+                    <div class="field mt-sm"><label class="label">EMAIL</label><input class="input" type="email" name="email" required></div>
+                    <div class="field mt-sm">
+                        <label class="label">PASSWORD</label>
+                        <div style="position:relative">
+                            <input class="input" type="password" name="password" required style="padding-right:45px" placeholder="Min 8 characters">
+                            <button type="button" class="toggle-password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer">👁️</button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="role" value="tenant">
+                    <button type="submit" class="btn btn--primary btn--full mt-lg">Sign Up</button>
+                </form>
+                <p class="mt-lg text-muted" style="text-align:center">Already have an account? <a href="#/login" style="color:var(--primary); font-weight:700">Sign In</a></p>
+            </div>
         </div>
     </template>
 
-    <!-- Fixes: Bug #3 — All required scripts in correct dependency order -->
     <script src="ff-core.js"></script>
     <script src="ff-auth.js"></script>
     <script src="ff-tenant.js"></script>
     <script src="app.js"></script>
-    <!-- FIX [6]: Added service worker registration -->
-    <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+    <script>
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+    </script>
 </body>
 </html>

@@ -1,89 +1,81 @@
-// db.js — Production-Grade self-healing MySQL Pool
+// db.js — Production Database Engine (v18.0)
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import logger from './utils/logger.js';
+
 dotenv.config();
 
 let dbConfig;
+const dbUrl = process.env.DATABASE_URL;
 
-// Priority 1: DATABASE_URL (Render, PlanetScale, any external MySQL)
-if (process.env.DATABASE_URL) {
-  const url = new URL(process.env.DATABASE_URL);
+if (dbUrl) {
+  // Production (Railway/Render)
+  const url = new URL(dbUrl);
   dbConfig = {
     host: url.hostname,
     user: url.username,
     password: url.password,
     database: url.pathname.slice(1),
     port: parseInt(url.port || '3306', 10),
-  };
-// Priority 2: Railway individual env vars
-} else if (process.env.MYSQLHOST) {
-  dbConfig = {
-    host:     process.env.MYSQLHOST,
-    user:     process.env.MYSQLUSER,
-    password: process.env.MYSQLPASSWORD,
-    database: process.env.MYSQLDATABASE,
-    port:     parseInt(process.env.MYSQLPORT || '3306', 10),
+    ssl: { rejectUnauthorized: false }, // Critical for cloud providers
   };
 } else {
-  console.error('FATAL: No database configuration found. Set DATABASE_URL or MYSQL* vars.');
-  process.exit(1);
+  // Local Development
+  dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'urbanest',
+    port: parseInt(process.env.DB_PORT || '3306', 10),
+  };
 }
 
-const poolConfig = {
+// Hardened Connection Pool
+export const pool = mysql.createPool({
   ...dbConfig,
-  // FIX [2]: SSL conditional (only apply in production)
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   waitForConnections: true,
-  connectionLimit: parseInt(process.env.DB_POOL_SIZE || '5', 10),  // 5 default (Render-safe)
+  connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 10000,
-  connectTimeout: 30000,               // 30s — handles Render cold starts on DB side
-};
+});
 
-export const pool = mysql.createPool(poolConfig);
-
-// FIX [1]: Pool reconnect resilience
-export async function query(sql, params = []) {
-  let retries = 1;
-  while (retries >= 0) {
+/**
+ * Execute a query with automatic retries for ephemeral cloud connections
+ */
+export async function query(sql, params = [], retries = 3) {
+  for (let i = 0; i < retries; i++) {
     try {
       const [results] = await pool.execute(sql, params);
       return results;
     } catch (err) {
-      if ((err.code === 'ECONNRESET' || err.code === 'PROTOCOL_CONNECTION_LOST') && retries > 0) {
-        console.warn(`[DB] Connection lost. Retrying query: ${sql}`);
-        retries--;
-        // Wait briefly before retry
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } else {
-        console.error(`[DB_ERROR] SQL: ${sql} | Error: ${err.message}`);
-        throw err; // Propagate to server.js for structured response
+      if (i === retries - 1) {
+        logger.error(`[DB_CRITICAL] SQL: ${sql} | Error: ${err.message}`);
+        throw err;
       }
+      logger.warn(`[DB_RETRY] ${i + 1}/${retries} - ${err.message}`);
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
     }
   }
 }
 
-/**
- * Fetch a single row.
- */
-export const queryOne = async (sql, params = []) => {
+export async function queryOne(sql, params = []) {
   const rows = await query(sql, params);
   return rows[0] || null;
-};
+}
 
 /**
- * Validate connection on startup.
+ * Health check for startup verification
  */
-export const validateConnection = async () => {
+export async function validateConnection() {
   try {
     const conn = await pool.getConnection();
-    console.log('✅ [db.js] Connection pool initialized.');
+    await conn.ping();
     conn.release();
+    logger.info('Database connection verified.');
     return true;
   } catch (err) {
-    console.error('❌ [db.js] CRITICAL: Database connection failed.');
-    console.error(err.message);
-    process.exit(1);
+    logger.error('Database connection failed:', err.message);
+    return false;
   }
-};
+}

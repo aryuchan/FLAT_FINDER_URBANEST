@@ -1,62 +1,50 @@
-// app.js — Global Bootstrapper (v17)
-// Fixes: Bug #5 — Use addEventListener for hashchange
+// app.js — Hardened Router (v18.0)
 
 const App = {
   async init() {
-    const token = localStorage.getItem('ff_token');
-    if (token) {
-      const res = await apiFetch('/api/me');
-      if (res.success) {
-        appState.currentUser = res.data;
-      } else {
-        localStorage.removeItem('ff_token');
-      }
+    console.log('Urbanest Bootstrapping...');
+    
+    // Fix: Path-based Role Guard
+    const path = window.location.pathname;
+    const res = await apiFetch('/api/me');
+    
+    if (res.success) {
+      appState.currentUser = res.data;
+      // Redirect if on wrong portal
+      if (path === '/tenant' && res.data.role !== 'tenant') return window.location.href = `/${res.data.role}`;
+      if (path === '/owner' && res.data.role !== 'owner') return window.location.href = `/${res.data.role}`;
+      if (path === '/admin' && res.data.role !== 'admin') return window.location.href = `/${res.data.role}`;
+    } else {
+      // Not logged in: allow portal root (for login/signup) but redirect sub-pages if needed
+      // (SPA handles templates, so just ensure state is null)
+      appState.currentUser = null;
     }
 
-    // Fixes: Bug #5 — Prevent overwriting other handlers
     window.addEventListener('hashchange', () => this.route());
     this.route();
   },
 
   async route() {
-    const hash = window.location.hash || '#/dashboard';
-    
-    // Fixes: Architecture — Module Guards
-    const isTenant = typeof Tenant !== 'undefined';
-    const isOwner = typeof Owner !== 'undefined';
-    const isAdmin = typeof Admin !== 'undefined';
+    const hash = window.location.hash || '#/';
+    const path = window.location.pathname;
 
+    // 1. Identify Portal Module
+    let module = null;
+    if (path === '/tenant') module = typeof Tenant !== 'undefined' ? Tenant : null;
+    if (path === '/owner')  module = typeof Owner  !== 'undefined' ? Owner  : null;
+    if (path === '/admin')  module = typeof Admin  !== 'undefined' ? Admin  : null;
+
+    if (!module) return; // Not a portal page (e.g. index.html handled by landing.js)
+
+    // 2. Auth Interception
     if (!appState.currentUser) {
       if (hash === '#/signup') return Auth.renderSignup();
       return Auth.renderLogin();
     }
 
-    // Role-based portal validation
-    const role = appState.currentUser.role;
-    const path = window.location.pathname;
-
-    if (path.includes('/tenant') && !isTenant) return window.location.href = '/tenant';
-    if (path.includes('/owner') && !isOwner) return window.location.href = '/owner';
-    if (path.includes('/admin') && !isAdmin) return window.location.href = '/admin';
-
-    // Route Execution
-    try {
-      if (role === 'tenant' && isTenant) await Tenant.route();
-      else if (role === 'owner' && isOwner) await Owner.route();
-      else if (role === 'admin' && isAdmin) await Admin.route();
-      else {
-        // Fallback to role-specific dashboard
-        const routes = { tenant: '/tenant', owner: '/owner', admin: '/admin' };
-        if (!path.includes(routes[role])) window.location.href = routes[role];
-      }
-    } catch (err) {
-      // FIX [3]: Replace backend logger with console.error
-      console.error('Routing failed:', err.stack || err.message);
-      if (typeof showToast !== 'undefined') showToast('Navigation error. Try again.', 'danger');
-    }
+    // 3. Delegation
+    if (module.route) await module.route();
   }
 };
 
-// Start the System
-document.documentElement.setAttribute('data-theme', localStorage.getItem('ff_theme') || 'light');
-App.init();
+document.addEventListener('DOMContentLoaded', () => App.init());

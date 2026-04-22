@@ -1,13 +1,10 @@
-// ff-auth.js — Hardened Authentication (v17)
-// Fixes: Bug #6 — Removed inline onclick
+// ff-auth.js — Hardened Authentication (v18.0)
 
 const Auth = {
   async login(data, btn) {
     showLoading(btn);
     try {
-      console.log('[Login] Submitting:', { ...data, password: '***' });
       const res = await apiFetch('/api/login', { method: 'POST', body: data });
-      console.log('[Login] Response:', res);
       if (res.success) {
         localStorage.setItem('ff_token', res.data.token);
         appState.currentUser = res.data.user;
@@ -34,10 +31,9 @@ const Auth = {
 
   async renderLogin() {
     if (appState.currentUser) return this.redirectToPortal(appState.currentUser.role);
-    // Fixes: Architecture — await render
     await render(populateTemplate('tmpl-auth', { 
-      title: escHtml('Sign In'), 
-      sub: escHtml('Access your premium account') 
+      title: 'Sign In', 
+      sub: 'Access your premium account' 
     }));
     this.bindEvents();
   },
@@ -49,18 +45,14 @@ const Auth = {
   },
 
   async signup(data, btn) {
-    if (!data.name || data.name.trim().length < 2) return showToast('Name must be at least 2 characters', 'warning');
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!data.email || !emailRegex.test(data.email)) return showToast('Invalid email format', 'warning');
-    if (!data.password || data.password.length < 8) return showToast('Password must be at least 8 characters', 'warning');
+    if (!data.name || data.name.trim().length < 2) return showToast('Name too short', 'warning');
+    if (!data.password || data.password.length < 8) return showToast('Password min 8 chars', 'warning');
     
     showLoading(btn);
     try {
-      console.log('[Signup] Submitting:', { ...data, password: '***' });
       const res = await apiFetch('/api/signup', { method: 'POST', body: data });
-      console.log('[Signup] Response:', res);
       if (res.success) {
-        showToast('Account created. Please login.', 'success');
+        showToast('Account created! Please sign in.', 'success');
         window.location.hash = '#/login';
       } else {
         showToast(res.message || 'Signup failed', 'danger');
@@ -71,13 +63,15 @@ const Auth = {
   },
 
   bindEvents() {
-    const loginForm = document.getElementById('auth-form');
-    if (loginForm) {
-      loginForm.addEventListener('submit', (e) => {
+    const { signal } = appState.activeController;
+
+    const authForm = document.getElementById('auth-form');
+    if (authForm) {
+      authForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const data = Object.fromEntries(new FormData(loginForm));
+        const data = Object.fromEntries(new FormData(authForm));
         this.login(data, e.target.querySelector('button[type="submit"]'));
-      }, { signal: appState.activeController.signal });
+      }, { signal });
     }
 
     const signupForm = document.getElementById('signup-form');
@@ -86,25 +80,21 @@ const Auth = {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(signupForm));
         this.signup(data, e.target.querySelector('button[type="submit"]'));
-      }, { signal: appState.activeController.signal });
+      }, { signal });
     }
 
-    // Global Event Delegation for Password Toggle (Fixes "Not working" & "Clicking randomly" bugs)
+    // Standardized Password Toggle (Delegated)
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.toggle-password');
       if (!btn) return;
-
       e.preventDefault();
       e.stopPropagation();
-
-      const container = btn.closest('div');
-      const input = container?.querySelector('input');
+      const input = btn.parentElement.querySelector('input');
       if (input) {
-        const isPassword = input.getAttribute('type') === 'password';
-        input.setAttribute('type', isPassword ? 'text' : 'password');
-        btn.textContent = isPassword ? '🙈' : '👁️';
-        console.log('[Auth] Password visibility toggled');
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        btn.textContent = isPass ? '🙈' : '👁️';
       }
-    }, { signal: appState.activeController.signal });
+    }, { signal });
   }
 };

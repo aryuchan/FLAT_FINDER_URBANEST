@@ -1,8 +1,8 @@
-// ff-core.js — Master SPA Engine (v17)
-// Fixes: Bug #1 (stringify body) | Architecture: render awaitable, populateTemplate raw
+// ff-core.js — Production SPA Engine (v18.0)
 
 const logger = {
   info:  (...a) => console.log('[INFO]',  ...a),
+  warn:  (...a) => console.warn('[WARN]', ...a),
   error: (...a) => console.error('[ERR]', ...a)
 };
 
@@ -10,40 +10,52 @@ const appState = {
   currentUser: null,
   flats: [],
   bookings: [],
-  activeController: new AbortController()
+  activeController: new AbortController(),
+  lastToast: { msg: '', time: 0 }
 };
 
-window.onerror = function(msg, url, line, col, err) {
-  showToast('Application error. Please refresh.', 'danger');
-  logger.error('Global JS Error:', msg);
+window.onerror = (msg) => {
+  showToast('Interface error. Please refresh.', 'danger');
+  logger.error('Global Error:', msg);
+};
+
+window.onunhandledrejection = (event) => {
+  logger.error('Unhandled Promise Rejection:', event.reason);
 };
 
 /**
- * Fixes: Bug #1 — apiFetch stringifies body
+ * Hardened Fetch with timeout and auto-JSON handling
  */
 async function apiFetch(url, opts = {}) {
+  const timeout = 10000; // 10s
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
 
   const token = localStorage.getItem('ff_token');
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-    ...(opts.headers || {})
-  };
+  const headers = { ...(token && { 'Authorization': `Bearer ${token}` }), ...opts.headers };
 
-  // Fixes: Bug #1 — Stringify body if object
-  const body = opts.body && typeof opts.body === 'object' 
+  // Fix: Don't set Content-Type for FormData (browser does it with boundary)
+  const isFormData = opts.body instanceof FormData;
+  if (!isFormData) headers['Content-Type'] = 'application/json';
+
+  const body = opts.body && !isFormData && typeof opts.body === 'object' 
     ? JSON.stringify(opts.body) 
     : opts.body;
 
   try {
-    const res = await fetch(url, { ...opts, body, headers, credentials: 'include' });
+    const res = await fetch(url, { 
+      ...opts, 
+      body, 
+      headers, 
+      signal: controller.signal,
+      credentials: 'include' 
+    });
     
+    clearTimeout(id);
+
     if (res.status === 401) {
       localStorage.removeItem('ff_token');
-      appState.currentUser = null;
-      if (window.location.pathname !== '/') {
-        window.location.href = '/';
-      }
+      if (window.location.pathname !== '/') window.location.href = '/';
       return { success: false, message: 'Session expired' };
     }
 
@@ -51,14 +63,13 @@ async function apiFetch(url, opts = {}) {
     if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
     return data;
   } catch (err) {
-    logger.error(`API FAIL: ${url}`, err.message);
-    return { success: false, message: err.message };
+    clearTimeout(id);
+    const msg = err.name === 'AbortError' ? 'Request timeout' : err.message;
+    logger.error(`API FAIL [${url}]:`, msg);
+    return { success: false, message: msg };
   }
 }
 
-/**
- * Fixes: Architecture — render() resolves after DOM update
- */
 async function render(html) {
   appState.activeController.abort();
   appState.activeController = new AbortController();
@@ -66,10 +77,8 @@ async function render(html) {
   const root = document.getElementById('app-root');
   if (!root) return;
 
-  // Fixes: Architecture — Ensure assignment is atomic and awaitable
   return new Promise((resolve) => {
     root.innerHTML = html;
-    // FIX [22]: requestAnimationFrame ensures DOM paints before event listeners attach
     requestAnimationFrame(() => {
       renderNavBar();
       resolve();
@@ -77,9 +86,6 @@ async function render(html) {
   });
 }
 
-/**
- * Fixes: Architecture — Raw token replacement (No auto-escHtml)
- */
 function populateTemplate(templateId, vars = {}) {
   const template = document.getElementById(templateId);
   if (!template) return '';
@@ -93,25 +99,33 @@ function populateTemplate(templateId, vars = {}) {
 function escHtml(str) {
   if (!str) return '';
   const div = document.createElement('div');
-  div.textContent = str;
+  div.textContent = String(str);
   return div.innerHTML;
 }
 
 function showToast(msg, type = 'info') {
+  const now = Date.now();
+  if (appState.lastToast.msg === msg && now - appState.lastToast.time < 1500) return;
+  
+  appState.lastToast = { msg, time: now };
   const container = document.getElementById('app-toast');
   if (!container) return;
+
   const toast = document.createElement('div');
   toast.className = `toast toast--${type}`;
   toast.textContent = msg;
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 500);
+  }, 4000);
 }
 
 function showLoading(btn) {
   if (!btn) return;
   btn.dataset.origText = btn.textContent;
   btn.disabled = true;
-  btn.textContent = 'Loading...';
+  btn.innerHTML = '<span class="spinner"></span> Loading...';
 }
 
 function hideLoading(btn) {
@@ -123,8 +137,7 @@ function hideLoading(btn) {
 function formatDate(str) {
   if (!str) return '—';
   const d = new Date(str);
-  if (isNaN(d)) return '—';
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return isNaN(d) ? '—' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatCurrency(n) {
@@ -135,16 +148,15 @@ function renderNavBar() {
   const nav = document.getElementById('app-nav');
   if (!nav || !appState.currentUser) return;
 
-  // Initialize theme from storage
   const savedTheme = localStorage.getItem('ff_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
 
   nav.innerHTML = `
     <div class="nav-inner flex-between">
       <a href="/" class="logo">URBANEST.</a>
-      <div class="nav-user" style="display:flex; gap:1rem; align-items:center;">
-        <span class="nav-name">${escHtml(appState.currentUser.name)}</span>
-        <button class="btn btn--secondary btn--sm" id="btn-theme" title="Toggle Dark Mode">🌙</button>
+      <div class="nav-user" style="display:flex; gap:1.5rem; align-items:center;">
+        <span class="nav-name" style="font-weight:700">Hi, ${escHtml(appState.currentUser.name)}</span>
+        <button class="btn btn--secondary btn--sm" id="btn-theme" title="Toggle Theme" style="min-width:44px">🌙</button>
         <button class="btn btn--primary btn--sm" id="btn-logout">Logout</button>
       </div>
     </div>
@@ -162,7 +174,6 @@ function renderNavBar() {
     document.getElementById('btn-theme').textContent = next === 'dark' ? '☀️' : '🌙';
   }, { signal: appState.activeController.signal });
 
-  // Update initial icon
   const themeBtn = document.getElementById('btn-theme');
   if (themeBtn) themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
 }
