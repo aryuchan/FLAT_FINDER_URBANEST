@@ -5,7 +5,6 @@
 
 window.App = {
   async init() {
-    console.log("🚀 FlatFinder Initializing…");
     window.addEventListener("hashchange", () => this.router());
     window.addEventListener("unhandledrejection", (e) => {
       console.error("Unhandled Error:", e.reason);
@@ -36,11 +35,23 @@ window.App = {
   },
 
   handleLinkClick(e) {
-    const link = e.target.closest("a[data-route]");
-    if (link) {
+    // Preserve native browser behavior for new-tab/window gestures.
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const routeTarget = e.target.closest("[data-route]");
+    if (routeTarget) {
+      if (routeTarget.hasAttribute("disabled") || routeTarget.getAttribute("aria-disabled") === "true") return;
+      const route = routeTarget.getAttribute("data-route");
+      if (!route) return;
       e.preventDefault();
-      const route = link.getAttribute("data-route");
-      window.location.hash = `#${route}`;
+      // Close mobile nav drawer on any in-app navigation
+      document.getElementById("nav-links")?.classList.remove("nav__links--open");
+      document.getElementById("nav-hamburger")?.setAttribute("aria-expanded", "false");
+      const nextHash = `#${route}`;
+      if (window.location.hash === nextHash) {
+        this.router();
+      } else {
+        window.location.hash = nextHash;
+      }
     }
   },
 
@@ -92,7 +103,7 @@ window.App = {
           appState._selectedFlat = r.data;
           return render(Tenant.viewFlatDetails(r.data));
         } else {
-          return render(`<div class="container page-content"><div class="empty-state"><p style="font-size:3rem">🏚️</p><h3>Flat Not Found</h3><p>${r.message || "Could not load flat details."}</p><a class="btn btn--primary mt-md" href="#/tenant/search" data-route="/tenant/search">Back to Search</a></div></div>`);
+          return render(`<div class="container page-content"><div class="empty-state"><p class="empty-state__icon">!</p><h3>Flat Not Found</h3><p>${r.message || "Could not load flat details."}</p><a class="btn btn--primary mt-md" href="#/tenant/search" data-route="/tenant/search">Back to Search</a></div></div>`);
         }
       }
       if (path.startsWith("/tenant/booking/") && u.role === "tenant") {
@@ -151,7 +162,7 @@ window.App = {
       render(`
         <div class="container page-content">
           <div class="empty-state">
-            <p style="font-size:3rem">🔒</p>
+            <p class="empty-state__icon">!</p>
             <h3>Access Denied / Not Found</h3>
             <p class="text-muted">You don't have permission to view this page or it doesn't exist.</p>
             <a class="btn btn--primary" href="#" data-route="/">Go to Dashboard</a>

@@ -6,10 +6,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const dbConfig = {
-  host: process.env.DB_HOST || "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-  port: parseInt(process.env.DB_PORT) || 4000,
-  user: process.env.DB_USER || "FsHZjY2TDG6prHt.root",
-  password: process.env.DB_PASSWORD || "gBM9F8OgvVjqzRG2",
+  host: process.env.DB_HOST || "127.0.0.1",
+  port: parseInt(process.env.DB_PORT, 10) || 3306,
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
   database: process.env.DB_DATABASE || "flatfinder",
   ssl: {
     rejectUnauthorized: false,
@@ -42,12 +42,18 @@ export async function query(sql, params = [], retries = 3) {
       return results;
     } catch (err) {
       attempt++;
-      const isTransient = ["PROTOCOL_CONNECTION_LOST", "ECONNRESET", "ETIMEDOUT"].includes(err.code);
-      
+      const isTransient = [
+        "PROTOCOL_CONNECTION_LOST",
+        "ECONNRESET",
+        "ETIMEDOUT",
+      ].includes(err.code);
+
       if (isTransient && attempt <= retries) {
         const delay = Math.pow(2, attempt) * 100;
-        logger.warn(`[DB_RETRY] Attempt ${attempt}/${retries} failed (${err.code}). Retrying in ${delay}ms...`);
-        await new Promise(r => setTimeout(r, delay));
+        logger.warn(
+          `[DB_RETRY] Attempt ${attempt}/${retries} failed (${err.code}). Retrying in ${delay}ms...`,
+        );
+        await new Promise((r) => setTimeout(r, delay));
         continue;
       }
 
@@ -56,7 +62,7 @@ export async function query(sql, params = [], retries = 3) {
         code: err.code,
         query: sql.substring(0, 500),
         error: err.message,
-        stack: err.stack
+        stack: err.stack,
       });
       throw err;
     }
@@ -79,7 +85,9 @@ export async function validateConnection() {
     logger.info("✅ Database connectivity verified.");
     return true;
   } catch (err) {
-    logger.error(`❌ Database verification failed: ${err.message} (Code: ${err.code})`);
+    logger.error(
+      `❌ Database verification failed: ${err.message} (Code: ${err.code})`,
+    );
     return false;
   }
 }

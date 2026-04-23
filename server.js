@@ -52,8 +52,8 @@ app.get("/admin", (req, res) =>
 );
 
 const PORT = process.env.PORT || 3000;
-const SECRET = "FlatFinder_Industry_Secure_99_@Aryu"; // Hardcoded for stability
-const IS_PROD = true; // Forcing production mode behaviors
+const SECRET = process.env.JWT_SECRET || "FlatFinder_Industry_Secure_99_@Aryu";
+const IS_PROD = process.env.NODE_ENV === "production";
 
 const JWT_KEY = SECRET;
 
@@ -72,18 +72,55 @@ app.use(
 );
 app.use(
   cors({
-    origin: [
-      "https://flat-finder-urbanest.onrender.com",
-      "https://urbanest.onrender.com",
-      true,
-    ],
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        process.env.FRONTEND_URL,
+        "https://flat-finder-urbanest.onrender.com",
+        "https://urbanest.onrender.com",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+      ].filter(Boolean);
+      if (!origin || allowedOrigins.includes(origin))
+        return callback(null, true);
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   }),
 );
 
 app.use(compression());
 app.use(express.json({ limit: "10mb" }));
+await fs
+  .mkdir(path.join(__dirname, "uploads"), { recursive: true })
+  .catch((err) => {
+    logger.warn(
+      `[UPLOAD_DIR] Could not create uploads directory: ${err.message}`,
+    );
+  });
+
 app.use(cookieParser());
+
+// Block direct access to server-side files and configuration
+app.use((req, res, next) => {
+  const forbidden = [
+    "/server.js",
+    "/db.js",
+    "/package.json",
+    "/package-lock.json",
+    "/render.yaml",
+    "/Procfile",
+    "/.env",
+  ];
+  if (
+    forbidden.includes(req.path) ||
+    req.path.startsWith("/utils") ||
+    req.path.startsWith("/node_modules") ||
+    req.path.startsWith("/.git")
+  ) {
+    return res.status(404).end();
+  }
+  next();
+});
 
 // Serve Static Assets
 app.use(express.static(__dirname));
@@ -151,7 +188,7 @@ app.post("/api/signup", authLimiter, async (req, res) => {
         name: z.string().min(2),
         email: z.string().email(),
         password: z.string().min(6),
-        role: z.enum(["tenant", "owner", "admin"]),
+        role: z.enum(["tenant", "owner"]),
       })
       .parse(req.body);
 
@@ -159,7 +196,9 @@ app.post("/api/signup", authLimiter, async (req, res) => {
       email.toLowerCase().trim(),
     ]);
     if (existing)
-      return res.status(409).json({ success: false, message: "Email already registered" });
+      return res
+        .status(409)
+        .json({ success: false, message: "Email already registered" });
 
     const hashed = await bcrypt.hash(password, 12);
     const id = crypto.randomUUID();
@@ -191,7 +230,12 @@ app.post("/api/signup", authLimiter, async (req, res) => {
 
 app.post("/api/login", authLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = z
+      .object({
+        email: z.string().email(),
+        password: z.string().min(1),
+      })
+      .parse(req.body);
     const user = await queryOne("SELECT * FROM users WHERE email = ?", [
       email.toLowerCase().trim(),
     ]);
@@ -220,7 +264,10 @@ app.post("/api/login", authLimiter, async (req, res) => {
       data: { user: { id: user.id, name: user.name, role: user.role }, token },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Login failed" });
+    res.status(err.errors ? 400 : 500).json({
+      success: false,
+      message: err.errors?.[0]?.message || "Login failed",
+    });
   }
 });
 
@@ -245,7 +292,16 @@ app.get("/api/me", auth(), async (req, res) => {
 
 app.patch("/api/me", auth(), async (req, res) => {
   try {
-    const { name, password, phone, whatsapp, telegram, bio, location, languages } = req.body;
+    const {
+      name,
+      password,
+      phone,
+      whatsapp,
+      telegram,
+      bio,
+      location,
+      languages,
+    } = req.body;
     const updates = [];
     const params = [];
 
@@ -290,7 +346,11 @@ app.patch("/api/me", auth(), async (req, res) => {
 
     params.push(req.user.id);
     await query(`UPDATE users SET ${updates.join(", ")} WHERE id = ?`, params);
-    res.json({ success: true, message: "Profile updated" });
+    const user = await queryOne(
+      "SELECT id, name, email, role, status, phone, whatsapp, telegram, bio, location, languages FROM users WHERE id = ?",
+      [req.user.id],
+    );
+    res.json({ success: true, data: user, message: "Profile updated" });
   } catch (err) {
     res.status(500).json({ success: false, message: "Update failed" });
   }
@@ -298,52 +358,74 @@ app.patch("/api/me", auth(), async (req, res) => {
 
 // Flats
 app.get("/api/flats", async (req, res) => {
-  const { city, type, min_rent: minRent, max_rent: maxRent, owner_id: ownerId, all } = req.query;
-  let sql = "SELECT f.*, u.name as owner_name FROM flats f JOIN users u ON f.owner_id = u.id WHERE 1=1";
-  let params = [];
+  try {
+    const {
+      city,
+      type,
+      min_rent: minRent,
+      max_rent: maxRent,
+      owner_id: ownerId,
+      all,
+    } = req.query;
+    let sql =
+      "SELECT f.*, u.name as owner_name FROM flats f JOIN users u ON f.owner_id = u.id WHERE 1=1";
+    const params = [];
 
-  if (ownerId) {
-    sql += " AND f.owner_id = ?";
-    params.push(ownerId);
-  } else if (all !== "1") {
-    sql += " AND f.available = 1";
-  }
+    if (ownerId) {
+      sql += " AND f.owner_id = ?";
+      params.push(ownerId);
+    } else if (all !== "1") {
+      sql += " AND f.available = 1";
+    }
 
-  if (city) {
-    sql += " AND f.city LIKE ?";
-    params.push(`%${city}%`);
-  }
-  if (type) {
-    sql += " AND f.type = ?";
-    params.push(type);
-  }
-  if (minRent) {
-    sql += " AND f.rent >= ?";
-    params.push(minRent);
-  }
-  if (maxRent) {
-    sql += " AND f.rent <= ?";
-    params.push(maxRent);
-  }
+    if (city) {
+      sql += " AND f.city LIKE ?";
+      params.push(`%${city}%`);
+    }
+    if (type) {
+      sql += " AND f.type = ?";
+      params.push(type);
+    }
+    if (minRent) {
+      sql += " AND f.rent >= ?";
+      params.push(minRent);
+    }
+    if (maxRent) {
+      sql += " AND f.rent <= ?";
+      params.push(maxRent);
+    }
+    if (req.query.furnished !== undefined && req.query.furnished !== "") {
+      sql += " AND f.furnished = ?";
+      params.push(parseInt(req.query.furnished, 10));
+    }
 
-  sql += " ORDER BY f.created_at DESC LIMIT 100";
-  const flats = await query(sql, params);
-  
-  // Parse JSON fields safely
-  const parsed = flats.map(f => {
-    let images = [], amenities = [];
-    try { images = JSON.parse(f.images || "[]"); } catch(e) {}
-    try { amenities = JSON.parse(f.amenities || "[]"); } catch(e) {}
-    return { ...f, images, amenities };
-  });
+    sql += " ORDER BY f.created_at DESC LIMIT 100";
+    const flats = await query(sql, params);
 
-  res.json({ success: true, data: parsed });
+    const parsed = flats.map((f) => {
+      let images = [];
+      let amenities = [];
+      try {
+        images = JSON.parse(f.images || "[]");
+      } catch (e) {}
+      try {
+        amenities = JSON.parse(f.amenities || "[]");
+      } catch (e) {}
+      return { ...f, images, amenities };
+    });
+
+    res.json({ success: true, data: parsed });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch flats" });
+  }
 });
 
 // User Management (Admin)
 app.get("/api/users", auth(["admin"]), async (req, res) => {
   try {
-    const users = await query("SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC");
+    const users = await query(
+      "SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC",
+    );
     res.json({ success: true, data: users });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch users" });
@@ -353,7 +435,10 @@ app.get("/api/users", auth(["admin"]), async (req, res) => {
 app.patch("/api/users/:id", auth(["admin"]), async (req, res) => {
   try {
     const { status } = req.body;
-    await query("UPDATE users SET status = ? WHERE id = ?", [status, req.params.id]);
+    await query("UPDATE users SET status = ? WHERE id = ?", [
+      status,
+      req.params.id,
+    ]);
     res.json({ success: true, message: `User status updated to ${status}` });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to update user" });
@@ -363,13 +448,22 @@ app.patch("/api/users/:id", auth(["admin"]), async (req, res) => {
 app.delete("/api/users/:id", auth(["admin"]), async (req, res) => {
   try {
     const targetId = req.params.id;
-    if (targetId === req.user.id) return res.status(400).json({ success: false, message: "Cannot delete yourself" });
+    if (targetId === req.user.id)
+      return res
+        .status(400)
+        .json({ success: false, message: "Cannot delete yourself" });
 
     // 1. Delete Bookings (either as tenant or for owner's flats)
-    await query(`DELETE FROM bookings WHERE tenant_id = ? OR flat_id IN (SELECT id FROM flats WHERE owner_id = ?)`, [targetId, targetId]);
-    
+    await query(
+      `DELETE FROM bookings WHERE tenant_id = ? OR flat_id IN (SELECT id FROM flats WHERE owner_id = ?)`,
+      [targetId, targetId],
+    );
+
     // 2. Delete Listings
-    await query(`DELETE FROM listings WHERE owner_id = ? OR flat_id IN (SELECT id FROM flats WHERE owner_id = ?)`, [targetId, targetId]);
+    await query(
+      `DELETE FROM listings WHERE owner_id = ? OR flat_id IN (SELECT id FROM flats WHERE owner_id = ?)`,
+      [targetId, targetId],
+    );
 
     // 3. Delete Flats
     await query(`DELETE FROM flats WHERE owner_id = ?`, [targetId]);
@@ -377,10 +471,16 @@ app.delete("/api/users/:id", auth(["admin"]), async (req, res) => {
     // 4. Finally delete User
     await query("DELETE FROM users WHERE id = ?", [targetId]);
 
-    res.json({ success: true, message: "User and all associated data deleted" });
+    res.json({
+      success: true,
+      message: "User and all associated data deleted",
+    });
   } catch (err) {
     logger.error(`[USER_DELETE_FAIL] ${err.message}`);
-    res.status(500).json({ success: false, message: "Failed to delete user: " + err.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete user: " + err.message,
+    });
   }
 });
 
@@ -397,8 +497,10 @@ app.get("/api/flats/:id", async (req, res) => {
       [req.params.id],
     );
     if (!flat)
-      return res.status(404).json({ success: false, message: "Flat not found" });
-    
+      return res
+        .status(404)
+        .json({ success: false, message: "Flat not found" });
+
     // Safe Parse JSON fields
     try {
       flat.images = JSON.parse(flat.images || "[]");
@@ -417,27 +519,48 @@ app.get("/api/flats/:id", async (req, res) => {
   }
 });
 
-app.post("/api/flats", auth(["owner"]), async (req, res) => {
+app.post("/api/flats", auth(["owner", "admin"]), async (req, res) => {
   try {
     const {
-      title, city, type, rent, address, description,
-      deposit, floor, total_floors, area_sqft,
-      parking, preferred_tenants, food_preference,
-      furnished, bathrooms, facing, landmarks,
-      pets_allowed, smoking_allowed, visitors_allowed,
-      images, amenities,
+      title,
+      city,
+      type,
+      rent,
+      address,
+      description,
+      deposit,
+      floor,
+      total_floors,
+      area_sqft,
+      parking,
+      preferred_tenants,
+      food_preference,
+      furnished,
+      bathrooms,
+      facing,
+      landmarks,
+      pets_allowed,
+      smoking_allowed,
+      visitors_allowed,
+      images,
+      amenities,
     } = req.body;
+
+    const resolvedFloor = floor ?? req.body.floor_number;
 
     const flatId = crypto.randomUUID();
     const listingId = crypto.randomUUID();
 
-    // Admin can specify owner_id, otherwise use current user
-    const finalOwnerId = (req.user.role === "admin" && req.body.owner_id) ? req.body.owner_id : req.user.id;
+    // Admin may specify an owner_id; otherwise default to the authenticated owner.
+    const finalOwnerId =
+      req.user.role === "admin" && req.body.owner_id
+        ? req.body.owner_id
+        : req.user.id;
 
     // Numeric conversion
     const nRent = parseFloat(rent) || 0;
     const nDeposit = parseFloat(deposit) || 0;
-    const nFloor = parseInt(floor) || 0;
+    const nFloor = parseInt(resolvedFloor) || 0;
     const nTotalFloors = parseInt(total_floors) || 0;
     const nArea = parseInt(area_sqft) || 0;
     const nFurnished = parseInt(furnished) || 0;
@@ -454,23 +577,49 @@ app.post("/api/flats", auth(["owner"]), async (req, res) => {
         images, amenities, available
       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
       [
-        flatId, finalOwnerId, title, city, type, nRent, address || "", description || "",
-        nDeposit, nFloor, nTotalFloors, nArea,
-        parking || "none", preferred_tenants || "any", food_preference || "any", nFurnished,
-        bathrooms || "", facing || "", landmarks || "", nPets, nSmoking, nVisitors,
-        JSON.stringify(images || []), JSON.stringify(amenities || []),
+        flatId,
+        finalOwnerId,
+        title,
+        city,
+        type,
+        nRent,
+        address || "",
+        description || "",
+        nDeposit,
+        nFloor,
+        nTotalFloors,
+        nArea,
+        parking || "none",
+        preferred_tenants || "any",
+        food_preference || "any",
+        nFurnished,
+        bathrooms || "",
+        facing || "",
+        landmarks || "",
+        nPets,
+        nSmoking,
+        nVisitors,
+        JSON.stringify(images || []),
+        JSON.stringify(amenities || []),
       ],
     );
 
     await query(
       "INSERT INTO listings (id, flat_id, owner_id, status) VALUES (?,?,?,?)",
-      [listingId, flatId, finalOwnerId, "pending"]
+      [listingId, flatId, finalOwnerId, "pending"],
     );
 
-    res.json({ success: true, data: { id: flatId }, message: "Flat submitted for review." });
+    res.json({
+      success: true,
+      data: { id: flatId },
+      message: "Flat submitted for review.",
+    });
   } catch (err) {
     logger.error(`[LISTING_FAILED] ${err.message}`);
-    res.status(500).json({ success: false, message: `Failed to create listing: ${err.message}` });
+    res.status(500).json({
+      success: false,
+      message: `Failed to create listing: ${err.message}`,
+    });
   }
 });
 
@@ -479,7 +628,7 @@ app.get("/api/listings", auth(["owner", "admin"]), async (req, res) => {
   try {
     const { status } = req.query;
     let sql = `
-      SELECT l.*, f.title AS flat_title, f.city, f.rent, f.type, u.name AS owner_name, r.name AS reviewer_name
+      SELECT l.*, f.title AS flat_title, f.city, f.rent, f.type, f.available, u.name AS owner_name, r.name AS reviewer_name
       FROM listings l
       JOIN flats f ON l.flat_id = f.id
       JOIN users u ON l.owner_id = u.id
@@ -498,29 +647,42 @@ app.get("/api/listings", auth(["owner", "admin"]), async (req, res) => {
     const rows = await query(sql, params);
     res.json({ success: true, data: rows });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to fetch listings" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch listings" });
   }
 });
 
 app.patch("/api/listings/:id", auth(["admin"]), async (req, res) => {
   try {
     const { status } = req.body;
-    const [listing] = await query("SELECT * FROM listings WHERE id = ?", [req.params.id]);
-    if (!listing) return res.status(404).json({ success: false, message: "Listing not found" });
+    const [listing] = await query("SELECT * FROM listings WHERE id = ?", [
+      req.params.id,
+    ]);
+    if (!listing)
+      return res
+        .status(404)
+        .json({ success: false, message: "Listing not found" });
 
     await query(
       "UPDATE listings SET status = ?, reviewed_at = NOW(), reviewed_by = ? WHERE id = ?",
-      [status, req.user.id, req.params.id]
+      [status, req.user.id, req.params.id],
     );
 
     if (status === "approved") {
-      await query("UPDATE flats SET available = 1 WHERE id = ?", [listing.flat_id]);
+      await query("UPDATE flats SET available = 1 WHERE id = ?", [
+        listing.flat_id,
+      ]);
     } else {
-      await query("UPDATE flats SET available = 0 WHERE id = ?", [listing.flat_id]);
+      await query("UPDATE flats SET available = 0 WHERE id = ?", [
+        listing.flat_id,
+      ]);
     }
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to update listing" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to update listing" });
   }
 });
 
@@ -566,29 +728,48 @@ app.post(
   },
 );
 
-app.post("/api/flats/:id/toggle", auth(["owner", "admin"]), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [flat] = await query("SELECT available, owner_id FROM flats WHERE id = ?", [id]);
-    if (!flat) return res.status(404).json({ success: false, message: "Flat not found" });
+app.post(
+  "/api/flats/:id/toggle",
+  auth(["owner", "admin"]),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [flat] = await query(
+        "SELECT available, owner_id FROM flats WHERE id = ?",
+        [id],
+      );
+      if (!flat)
+        return res
+          .status(404)
+          .json({ success: false, message: "Flat not found" });
 
-    if (req.user.role !== "admin" && flat.owner_id !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Forbidden" });
+      if (req.user.role !== "admin" && flat.owner_id !== req.user.id) {
+        return res.status(403).json({ success: false, message: "Forbidden" });
+      }
+
+      const nextState = flat.available === 1 ? 0 : 1;
+      await query("UPDATE flats SET available = ? WHERE id = ?", [
+        nextState,
+        id,
+      ]);
+      res.json({
+        success: true,
+        message: `Flat is now ${nextState === 1 ? "visible" : "hidden"}`,
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: "Toggle failed" });
     }
-
-    const nextState = flat.available === 1 ? 0 : 1;
-    await query("UPDATE flats SET available = ? WHERE id = ?", [nextState, id]);
-    res.json({ success: true, message: `Flat is now ${nextState === 1 ? "visible" : "hidden"}` });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Toggle failed" });
-  }
-});
+  },
+);
 
 app.delete("/api/flats/:id", auth(["owner", "admin"]), async (req, res) => {
   try {
     const { id } = req.params;
     const [flat] = await query("SELECT owner_id FROM flats WHERE id = ?", [id]);
-    if (!flat) return res.status(404).json({ success: false, message: "Flat not found" });
+    if (!flat)
+      return res
+        .status(404)
+        .json({ success: false, message: "Flat not found" });
 
     if (req.user.role !== "admin" && flat.owner_id !== req.user.id) {
       return res.status(403).json({ success: false, message: "Forbidden" });
@@ -620,18 +801,47 @@ app.get("/api/bookings", auth(["tenant", "owner"]), async (req, res) => {
     const rows = await query(sql, params);
     res.json({ success: true, data: rows });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to fetch bookings" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch bookings" });
   }
 });
 
 app.post("/api/bookings", auth(["tenant"]), async (req, res) => {
   try {
-    const { flat_id, check_in, check_out } = req.body;
-    const flat = await queryOne("SELECT rent FROM flats WHERE id = ?", [flat_id]);
-    if (!flat) return res.status(404).json({ success: false, message: "Flat not found" });
+    const { flat_id, check_in, check_out } = z
+      .object({
+        flat_id: z.string().min(1),
+        check_in: z.string().min(1),
+        check_out: z.string().min(1),
+      })
+      .parse(req.body);
+    const flat = await queryOne(
+      "SELECT rent, available FROM flats WHERE id = ?",
+      [flat_id],
+    );
+    if (!flat)
+      return res
+        .status(404)
+        .json({ success: false, message: "Flat not found" });
+    if (!flat.available) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Flat is not available for booking" });
+    }
 
-    const days = Math.ceil((new Date(check_out) - new Date(check_in)) / 86400000);
-    const total_rent = ((parseFloat(flat.rent) / 30) * (days > 0 ? days : 1)).toFixed(2);
+    const days = Math.ceil(
+      (new Date(check_out) - new Date(check_in)) / 86400000,
+    );
+    if (!Number.isFinite(days) || days <= 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Check-out must be after check-in" });
+    }
+    const total_rent = (
+      (parseFloat(flat.rent) / 30) *
+      (days > 0 ? days : 1)
+    ).toFixed(2);
 
     const id = crypto.randomUUID();
     await query(
@@ -640,17 +850,67 @@ app.post("/api/bookings", auth(["tenant"]), async (req, res) => {
     );
     res.json({ success: true, message: "Booking created successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Booking failed" });
+    res.status(err.errors ? 400 : 500).json({
+      success: false,
+      message: err.errors?.[0]?.message || "Booking failed",
+    });
   }
 });
 
 app.patch("/api/bookings/:id", auth(["owner", "tenant"]), async (req, res) => {
   try {
-    const { status } = req.body;
-    await query("UPDATE bookings SET status = ? WHERE id = ?", [status, req.params.id]);
+    const { status } = z
+      .object({
+        status: z.enum(["confirmed", "cancelled"]),
+      })
+      .parse(req.body);
+
+    const booking = await queryOne(
+      `SELECT b.id, b.status, b.tenant_id, f.owner_id
+       FROM bookings b
+       JOIN flats f ON b.flat_id = f.id
+       WHERE b.id = ?`,
+      [req.params.id],
+    );
+    if (!booking) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
+    }
+
+    if (req.user.role === "tenant") {
+      if (booking.tenant_id !== req.user.id) {
+        return res.status(403).json({ success: false, message: "Forbidden" });
+      }
+      if (status !== "cancelled") {
+        return res.status(403).json({
+          success: false,
+          message: "Tenants can only cancel bookings",
+        });
+      }
+    }
+
+    if (req.user.role === "owner" && booking.owner_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
+
+    if (booking.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Only pending bookings can be updated",
+      });
+    }
+
+    await query("UPDATE bookings SET status = ? WHERE id = ?", [
+      status,
+      req.params.id,
+    ]);
     res.json({ success: true, message: `Booking ${status}` });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Update failed" });
+    res.status(err.errors ? 400 : 500).json({
+      success: false,
+      message: err.errors?.[0]?.message || "Update failed",
+    });
   }
 });
 
@@ -664,20 +924,32 @@ app.patch("/api/bookings/:id", auth(["owner", "tenant"]), async (req, res) => {
 
       // Ensure Default Admin for verification
       const adminEmail = "admin@flatfinder.com";
-      const existing = await queryOne("SELECT id FROM users WHERE email = ?", [adminEmail]);
+      const existing = await queryOne("SELECT id FROM users WHERE email = ?", [
+        adminEmail,
+      ]);
       if (!existing) {
         const id = crypto.randomUUID();
         const hashed = await bcrypt.hash("admin123", 12);
         await query(
           "INSERT INTO users (id, name, email, password, role, status) VALUES (?,?,?,?,?,?)",
-          [id, "System Admin", adminEmail, hashed, "admin", "active"]
+          [id, "System Admin", adminEmail, hashed, "admin", "active"],
         );
         logger.info(`[SEED] Created default admin: ${adminEmail}`);
       }
 
-      app.listen(PORT, () =>
+      const server = app.listen(PORT, () =>
         logger.info(`Urbanest Engine v19.2 Online @ Port ${PORT}`),
       );
+      server.on("error", (err) => {
+        if (err?.code === "EADDRINUSE") {
+          logger.error(`[STARTUP] Port ${PORT} already in use.`);
+        } else {
+          logger.error(
+            `[STARTUP] Server listen failed: ${err?.message || err}`,
+          );
+        }
+        process.exit(1);
+      });
     } catch (err) {
       logger.error(`Startup migration failed: ${err.message}`);
       process.exit(1);

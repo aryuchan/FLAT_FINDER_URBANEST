@@ -16,7 +16,15 @@ export const addFlatSchema = z.object({
   title: z.string().min(5),
   city: z.string().min(2),
   rent: z.number().positive(),
-  type: z.enum(["Studio", "1BHK", "2BHK", "Penthouse", "Premium Residence"]),
+  type: z.enum([
+    "Studio",
+    "1BHK",
+    "2BHK",
+    "3BHK",
+    "4BHK+",
+    "Penthouse",
+    "Premium Residence",
+  ]),
   images: z.string().optional(),
 });
 

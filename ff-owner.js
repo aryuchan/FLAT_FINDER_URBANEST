@@ -18,7 +18,7 @@ window.Owner = {
     const u = appState.currentUser || {};
     const flats = appState.listings || [];
     const bookings = appState.bookings || [];
-    
+
     const rows = flats.length
       ? flats
           .map(
@@ -26,22 +26,22 @@ window.Owner = {
         <tr data-id="${escHtml(l.id)}" data-flat-id="${escHtml(l.flat_id)}">
           <td>
             <strong>${escHtml(l.flat_title)}</strong>
-            <br><small class="text-muted">📍 ${escHtml(l.city)} · ${escHtml(l.type)}</small>
+            <br><small class="text-muted">${escHtml(l.city)} · ${escHtml(l.type)}</small>
           </td>
           <td>₹${Number(l.rent).toLocaleString("en-IN")}</td>
           <td>
-            <span class="badge badge--${l.status === 'approved' ? 'success' : l.status === 'rejected' ? 'danger' : 'warning'}">
+            <span class="badge badge--${l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning"}">
               ${l.status}
             </span>
           </td>
           <td>
-            ${l.status === 'approved' 
-              ? `<button class="badge badge--neutral btn-toggle-flat" style="cursor:pointer; border:none">Toggle Visibility</button>` 
+            ${l.status === "approved"
+              ? `<button class="badge badge--neutral btn-toggle-flat" type="button">Toggle Visibility</button>`
               : `<small class="text-muted">Awaiting Review</small>`}
           </td>
           <td>${l.submitted_at?.slice(0, 10) || "—"}</td>
           <td>
-            <button class="btn btn--danger btn--sm btn-del-flat">Delete</button>
+            <button class="btn btn--danger btn--sm btn-del-flat" type="button">Delete</button>
           </td>
         </tr>`,
           )
@@ -54,7 +54,7 @@ window.Owner = {
     const hasContact = u.phone || u.whatsapp || u.telegram;
     const contactNudge = !hasContact
       ? `<div class="nudge-banner">
-           <span>💡 Add your contact details so tenants can reach you directly.</span>
+           <span>Add your contact details so tenants can reach you directly.</span>
            <a class="btn btn--sm btn--secondary" href="#/owner/profile" data-route="/owner/profile">Update Profile →</a>
          </div>`
       : "";
@@ -67,20 +67,19 @@ window.Owner = {
           <a class="btn btn--primary" href="#/owner/add-flat" data-route="/owner/add-flat">+ Add Flat</a>
         </div>
 
-        <!-- Quick stats -->
         <div class="stat-grid stat-grid--sm">
           <div class="stat-card card">
-            <p style="font-size:1.25rem">🏠</p>
+            <p class="stat-card__icon">L</p>
             <p class="stat-card__label">Total Listings</p>
             <p class="stat-card__value">${flats.length}</p>
           </div>
           <div class="stat-card card">
-            <p style="font-size:1.25rem">✅</p>
+            <p class="stat-card__icon">A</p>
             <p class="stat-card__label">Active</p>
             <p class="stat-card__value">${flats.filter((l) => l.available).length}</p>
           </div>
           <div class="stat-card card">
-            <p style="font-size:1.25rem">⏸️</p>
+            <p class="stat-card__icon">H</p>
             <p class="stat-card__label">Hidden</p>
             <p class="stat-card__value">${flats.filter((l) => !l.available).length}</p>
           </div>
@@ -110,13 +109,13 @@ window.Owner = {
                   <tr>
                     <td><strong>${escHtml(b.flat_title)}</strong></td>
                     <td>${escHtml(b.tenant_name)}</td>
-                    <td><small>${b.check_in} to ${b.check_out}</small></td>
+                    <td><small>${b.check_in}</small><br><small>→ ${b.check_out}</small></td>
                     <td><span class="badge badge--${b.status === "confirmed" ? "success" : b.status === "cancelled" ? "danger" : "warning"}">${b.status}</span></td>
                     <td>
                       ${
                         b.status === "pending"
-                          ? `<button class="btn btn--primary btn--sm" data-action="confirm-booking" data-id="${b.id}">Confirm</button>
-                             <button class="btn btn--danger btn--sm" data-action="cancel-booking" data-id="${b.id}">Cancel</button>`
+                          ? `<button class="btn btn--primary btn--sm" type="button" data-action="confirm-booking" data-id="${b.id}">Confirm</button>
+                             <button class="btn btn--danger btn--sm" type="button" data-action="cancel-booking" data-id="${b.id}">Cancel</button>`
                           : "—"
                       }
                     </td>
@@ -132,20 +131,19 @@ window.Owner = {
       </div>`;
   },
 
-  // ── ADD FLAT (with Cloudinary) ──────────────────────────────
+  // ── ADD FLAT ────────────────────────────────────────────────
   viewAddFlat() {
     this._uploadedImages = [];
     return `
       <div class="container page-content">
         <a class="back-link" href="#/owner/dashboard" data-route="/owner/dashboard">← Dashboard</a>
-        <div class="card form-card" style="max-width:760px">
+        <div class="card form-card form-card--lg">
           <h2>List a New Flat</h2>
           <p class="form-card__sub">Fill in the details to publish your property instantly.</p>
 
           <form id="add-flat-form" novalidate>
 
-            <!-- ── Section 1: Basic Details ── -->
-            <h4 class="form-section-title">📋 Basic Details</h4>
+            <h4 class="form-section-title">Basic Details</h4>
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Title *</label>
@@ -179,18 +177,19 @@ window.Owner = {
                 </select>
               </div>
             </div>
-            
+
             <div class="form-group">
               <label class="form-label">Full Address *</label>
               <textarea class="form-textarea" name="address" rows="2" placeholder="Street, Area, Landmark" required></textarea>
             </div>
 
-            <!-- ── Section 2: Property Details ── -->
-            <h4 class="form-section-title">🏗️ Property Details</h4>
+            <h4 class="form-section-title">Property Details</h4>
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Floor Number</label>
-                       <div class="form-group">
+                <input class="form-input" name="floor_number" type="number" min="0" placeholder="e.g. 3" />
+              </div>
+              <div class="form-group">
                 <label class="form-label">Area (sq. ft.)</label>
                 <input class="form-input" name="area_sqft" type="number" min="0" placeholder="e.g. 850" />
               </div>
@@ -220,8 +219,7 @@ window.Owner = {
               </div>
             </div>
 
-            <!-- ── Section 3: Preferences / Rules ── -->
-            <h4 class="form-section-title">📜 Preferences & Rules</h4>
+            <h4 class="form-section-title">Preferences and Rules</h4>
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Preferred Tenants</label>
@@ -242,21 +240,20 @@ window.Owner = {
                 </select>
               </div>
             </div>
-            
-            <div style="display:flex; flex-wrap:wrap; gap:var(--space-md); margin-top:var(--space-md)">
-              <label style="display:flex; align-items:center; gap:var(--space-xs); font-size:var(--font-size-sm); cursor:pointer">
-                <input type="checkbox" name="pets_allowed" value="1" /> 🐾 Pets Allowed
+
+            <div class="checkbox-row">
+              <label class="checkbox-label">
+                <input type="checkbox" name="pets_allowed" value="1" /> Pets Allowed
               </label>
-              <label style="display:flex; align-items:center; gap:var(--space-xs); font-size:var(--font-size-sm); cursor:pointer">
-                <input type="checkbox" name="smoking_allowed" value="1" /> 🚬 Smoking Allowed
+              <label class="checkbox-label">
+                <input type="checkbox" name="smoking_allowed" value="1" /> Smoking Allowed
               </label>
-              <label style="display:flex; align-items:center; gap:var(--space-xs); font-size:var(--font-size-sm); cursor:pointer">
-                <input type="checkbox" name="visitors_allowed" value="1" /> 👥 Visitors Allowed
+              <label class="checkbox-label">
+                <input type="checkbox" name="visitors_allowed" value="1" /> Visitors Allowed
               </label>
             </div>
 
-            <!-- ── Section 4: Description & Amenities ── -->
-            <h4 class="form-section-title">📝 Description & Extra Info</h4>
+            <h4 class="form-section-title">Description and Extra Info</h4>
             <div class="form-group">
               <label class="form-label">Description</label>
               <textarea class="form-textarea" name="description" rows="3"
@@ -275,263 +272,40 @@ window.Owner = {
               </div>
             </div>
 
-            <!-- ── Section 5: Photos (Cloudinary) ── -->
-            <h4 class="form-section-title">📸 Property Photos</h4>
+            <h4 class="form-section-title">Property Photos</h4>
             <div class="form-group">
               <label class="form-label">Upload Images <span class="text-muted">(Direct Cloudinary Upload)</span></label>
               <div class="image-upload-zone" id="image-upload-zone">
-                <input type="file" id="image-input" accept="image/*" multiple style="display:none" />
-                <div class="image-upload-zone__inner" id="img-drop-area" onclick="document.getElementById('image-input').click()">
-                  <span style="font-size:2rem">📷</span>
+                <input type="file" id="image-input" class="hidden" accept="image/*" multiple />
+                <label class="image-upload-zone__inner" id="img-drop-area" for="image-input">
+                  <span class="empty-state__icon empty-state__icon--sm">IMG</span>
                   <p>Click here to browse photos</p>
-                </div>
+                </label>
                 <div id="image-preview-grid" class="img-preview-grid"></div>
               </div>
             </div>
 
             <div id="add-flat-error" class="form-error hidden mt-lg"></div>
-            <button class="btn btn--primary mt-lg" type="submit" id="add-flat-submit" style="width: 100%;">🚀 Publish Listing</button>
+            <button class="btn btn--primary btn--full mt-lg" type="submit" id="add-flat-submit">Publish Listing</button>
           </form>
         </div>
       </div>`;
   },
 
-  viewProfile() {
-    const u = appState.currentUser || {};
-    return `
-      <div class="container page-content">
-        <div class="page-header">
-          <h2>My Profile</h2>
-          <a class="btn btn--secondary" href="#/owner/dashboard" data-route="/owner/dashboard">← Dashboard</a>
-        </div>
-        <div class="card form-card" style="max-width:640px">
-          <h3 class="card-title">👤 Personal Information</h3>
-          <form id="profile-form" novalidate>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <input class="form-input" name="name" type="text"
-                  value="${escHtml(u.name || "")}" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Email</label>
-                <input class="form-input" name="email" type="email"
-                  value="${escHtml(u.email || "")}" required />
-              </div>
-            </div>
-
-            <h4 class="form-section-title" style="margin-top:var(--space-md)">📞 Contact Details</h4>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Phone Number</label>
-                <input class="form-input" name="phone" type="tel"
-                  placeholder="+91 XXXXX XXXXX"
-                  value="${escHtml(u.phone || "")}" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">WhatsApp</label>
-                <input class="form-input" name="whatsapp" type="tel"
-                  placeholder="+91 XXXXX XXXXX"
-                  value="${escHtml(u.whatsapp || "")}" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Telegram Username <span class="text-muted">(optional)</span></label>
-                <div class="input-prefix-wrap">
-                  <span class="input-prefix">@</span>
-                  <input class="form-input input-with-prefix" name="telegram" type="text"
-                    placeholder="yourusername"
-                    value="${escHtml(u.telegram || '')}" />
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">About You <span class="text-muted">(shown to tenants)</span></label>
-              <textarea class="form-textarea" name="bio" rows="3"
-                placeholder="A short bio — experience as a landlord, response time, etc.">${escHtml(u.bio || "")}</textarea>
-            </div>
-
-            <h4 class="form-section-title" style="margin-top:var(--space-md)">🔒 Change Password</h4>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">New Password</label>
-                <input class="form-input" name="new_password" type="password"
-                  placeholder="Leave blank to keep current" minlength="8" autocomplete="new-password" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Confirm Password</label>
-                <input class="form-input" name="confirm_password" type="password"
-                  placeholder="Repeat new password" autocomplete="new-password" />
-              </div>
-            </div>
-
-            <div id="profile-error" class="form-error hidden"></div>
-            <button class="btn btn--primary mt-lg" type="submit" id="profile-submit">Save Changes</button>
-          </form>
-        </div>
-      </div>`;
-  },
-
-  bindEvents(root) {
-    this._bindProfileForm(root);
-    this._bindAddFlatForm(root);
-    this._bindDashboardActions(root);
-  },
-
-  _bindProfileForm(root) {
-    const profileForm = root.querySelector("#profile-form");
-    if (!profileForm) return;
-
-    profileForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const fd = new FormData(profileForm);
-      const newPass = fd.get("new_password");
-      const confirmPass = fd.get("confirm_password");
-      const errEl = root.querySelector("#profile-error");
-
-      if (newPass && newPass !== confirmPass) {
-        if (errEl) { errEl.textContent = "Passwords do not match."; errEl.classList.remove("hidden"); }
-        return;
-      }
-      if (errEl) errEl.classList.add("hidden");
-
-      const payload = {
-        name: fd.get("name")?.trim(),
-        email: fd.get("email")?.trim(),
-        phone: fd.get("phone")?.trim() || "",
-        whatsapp: fd.get("whatsapp")?.trim() || "",
-        telegram: fd.get("telegram")?.trim().replace(/^@/, "") || "",
-        bio: fd.get("bio")?.trim() || "",
-        ...(newPass ? { password: newPass } : {}),
-      };
-
-      const btn = root.querySelector("#profile-submit");
-      btn.disabled = true;
-      btn.textContent = "Saving…";
-      const r = await apiFetch("/api/me", { method: "PATCH", body: payload });
-      btn.disabled = false;
-      btn.textContent = "Save Changes";
-
-      if (r.success) {
-        Object.assign(appState.currentUser, payload);
-        renderNavBar();
-        showToast("Profile updated successfully!", "success");
-      } else {
-        showToast(r.message || "Update failed.", "error");
-      }
-    });
-  },
-
-  _bindAddFlatForm(root) {
-    const addFlatForm = root.querySelector("#add-flat-form");
-    if (!addFlatForm) return;
-
-    // Cloudinary logic integration
-    const imgInput = root.querySelector("#image-input");
-    const grid = root.querySelector("#image-preview-grid");
-
-    imgInput?.addEventListener("change", async () => {
-      const files = Array.from(imgInput.files);
-      const config = this._cloudConfig();
-
-      if (!config.cloudName || !config.preset) {
-        return showToast("Cloudinary config missing.", "warning");
-      }
-
-      for (const file of files) {
-        const item = document.createElement("div");
-        item.className = "img-preview-item";
-        item.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:0.8rem;color:#64748b">Uploading...</div>';
-        grid.appendChild(item);
-
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("upload_preset", config.preset);
-
-        try {
-          const res = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`, {
-            method: "POST",
-            body: fd,
-          });
-          const json = await res.json();
-          if (json.secure_url) {
-            this._uploadedImages.push(json.secure_url);
-            item.innerHTML = `<img src="${json.secure_url}" /><button type="button" class="img-preview-item__remove" data-url="${json.secure_url}">×</button>`;
-          } else {
-            item.remove();
-            showToast("Upload failed", "error");
-          }
-        } catch (err) {
-          item.remove();
-          showToast("Network error during upload", "error");
-        }
-      }
-    });
-
-    // Remove image handler
-    grid?.addEventListener("click", (e) => {
-      const btn = e.target.closest(".img-preview-item__remove");
-      if (!btn) return;
-      const url = btn.dataset.url;
-      this._uploadedImages = this._uploadedImages.filter(u => u !== url);
-      btn.parentElement.remove();
-    });
-
-    addFlatForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const btn = root.querySelector("#add-flat-submit");
-      const errEl = root.querySelector("#add-flat-error");
-      
-      const fd = new FormData(addFlatForm);
-      const data = Object.fromEntries(fd);
-      
-      if (!data.title || !data.city || !data.rent || !data.type || !data.address) {
-        if (errEl) { errEl.textContent = "Please fill in all required fields (*)."; errEl.classList.remove("hidden"); }
-        showToast("Please fill in all required fields.", "error");
-        return;
-      }
-      if (errEl) errEl.classList.add("hidden");
-
-      btn.disabled = true;
-      btn.textContent = "Publishing...";
-
-      data.amenities = (data.amenities || "").split(",").map(s => s.trim()).filter(Boolean);
-      data.images = this._uploadedImages;
-      
-      // Collect checkboxes
-      data.pets_allowed = addFlatForm.querySelector('[name="pets_allowed"]')?.checked ? 1 : 0;
-      data.smoking_allowed = addFlatForm.querySelector('[name="smoking_allowed"]')?.checked ? 1 : 0;
-      data.visitors_allowed = addFlatForm.querySelector('[name="visitors_allowed"]')?.checked ? 1 : 0;
-
-      const res = await apiFetch("/api/flats", {
-        method: "POST",
-        body: data,
-      });
-
-      btn.disabled = false;
-      btn.textContent = "🚀 Publish Listing";
-
-      if (res.success) {
-        showToast("Listing published successfully!", "success");
-        window.location.hash = "#/owner/dashboard";
-      } else {
-        showToast(res.message, "error");
-      }
-    });
-  },
-
+  // ── PROFILE ────────────────────────────────────────────────
   viewProfile() {
     const u = appState.currentUser || {};
     return `
       <div class="container page-content">
         <a class="back-link" href="#/owner/dashboard" data-route="/owner/dashboard">← Back to Dashboard</a>
-        <div class="card form-card" style="max-width:600px; margin-top:var(--space-md)">
+        <div class="card form-card form-card--sm mt-md">
           <h2 class="card-title">Update Contact Details</h2>
-          <p class="text-muted" style="margin-bottom:var(--space-lg)">These details help tenants contact you about your flats.</p>
-          
+          <p class="text-muted form-card__lead">These details help tenants contact you about your flats.</p>
+
           <form id="owner-profile-form" novalidate>
             <div class="form-group">
               <label class="form-label">Full Name</label>
-              <input class="form-input" type="text" name="name" value="${escHtml(u.name)}" required />
+              <input class="form-input" type="text" name="name" value="${escHtml(u.name || "")}" required />
             </div>
 
             <div class="form-group">
@@ -544,14 +318,16 @@ window.Owner = {
                 <label class="form-label">WhatsApp (Number only)</label>
                 <div class="input-prefix-wrap">
                   <span class="input-prefix">✆</span>
-                  <input class="form-input input-with-prefix" type="text" name="whatsapp" value="${escHtml(u.whatsapp || "")}" placeholder="919876543210" />
+                  <input class="form-input input-with-prefix" type="text" name="whatsapp"
+                    value="${escHtml(u.whatsapp || "")}" placeholder="919876543210" />
                 </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Telegram Username</label>
                 <div class="input-prefix-wrap">
                   <span class="input-prefix">@</span>
-                  <input class="form-input input-with-prefix" type="text" name="telegram" value="${escHtml(u.telegram || "")}" placeholder="username" />
+                  <input class="form-input input-with-prefix" type="text" name="telegram"
+                    value="${escHtml(u.telegram || "")}" placeholder="username" />
                 </div>
               </div>
             </div>
@@ -559,22 +335,26 @@ window.Owner = {
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">City / Location</label>
-                <input class="form-input" type="text" name="location" value="${escHtml(u.location || "")}" placeholder="e.g. Pune, Maharashtra" />
+                <input class="form-input" type="text" name="location"
+                  value="${escHtml(u.location || "")}" placeholder="e.g. Pune, Maharashtra" />
               </div>
               <div class="form-group">
                 <label class="form-label">Languages Spoken</label>
-                <input class="form-input" type="text" name="languages" value="${escHtml(u.languages || "")}" placeholder="e.g. English, Hindi, Marathi" />
+                <input class="form-input" type="text" name="languages"
+                  value="${escHtml(u.languages || "")}" placeholder="e.g. English, Hindi, Marathi" />
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">About You / Professional Bio</label>
-              <textarea class="form-textarea" name="bio" placeholder="Tell tenants about your property management style...">${escHtml(u.bio || "")}</textarea>
+              <textarea class="form-textarea" name="bio"
+                placeholder="Tell tenants about your property management style...">${escHtml(u.bio || "")}</textarea>
             </div>
 
             <div class="form-group">
-              <label class="form-label">New Password (leave blank to keep current)</label>
-              <input class="form-input" type="password" name="password" placeholder="At least 8 characters" minlength="8" />
+              <label class="form-label">New Password <span class="text-muted">(leave blank to keep current)</span></label>
+              <input class="form-input" type="password" name="password"
+                placeholder="At least 8 characters" minlength="8" autocomplete="new-password" />
             </div>
 
             <button type="submit" class="btn btn--primary btn--full mt-md" id="profile-save-btn">Save Profile Details</button>
@@ -583,7 +363,9 @@ window.Owner = {
       </div>`;
   },
 
+  // ── BIND EVENTS ────────────────────────────────────────────
   bindEvents(root) {
+    // Profile form
     const profileForm = root.querySelector("#owner-profile-form");
     if (profileForm) {
       profileForm.addEventListener("submit", async (e) => {
@@ -592,26 +374,29 @@ window.Owner = {
         const data = Object.fromEntries(fd.entries());
         const btn = root.querySelector("#profile-save-btn");
         btn.disabled = true;
-        btn.textContent = "Saving...";
+        btn.textContent = "Saving…";
         const res = await apiFetch("/api/me", { method: "PATCH", body: data });
         btn.disabled = false;
         btn.textContent = "Save Profile Details";
         if (res.success) {
           showToast("Profile updated successfully", "success");
-          appState.currentUser = res.data;
+          if (res.data) appState.currentUser = res.data;
           renderNavBar();
-        } else showToast(res.message, "error");
+        } else {
+          showToast(res.message, "error");
+        }
       });
       return;
     }
 
+    // Add-flat form
     const addFlatForm = root.querySelector("#add-flat-form");
     if (addFlatForm) {
-      this._bindAddFlatEvents(root);
+      this._bindAddFlatForm(root);
       return;
     }
 
-    // Default dashboard actions
+    // Dashboard actions
     root.addEventListener("click", async (e) => {
       const row = e.target.closest("tr");
       if (!row) return;
@@ -636,25 +421,27 @@ window.Owner = {
       const btnDel = e.target.closest(".btn-del-flat");
       if (btnDel) {
         showModal(`
-          <div style="text-align:center; padding:var(--space-md)">
-            <p style="font-size:3rem">🗑️</p>
+          <div class="modal-message">
+            <p class="empty-state__icon">!</p>
             <h3>Delete Listing?</h3>
-            <p class="text-muted">Are you sure you want to permanently delete this property listing? This action cannot be undone.</p>
-            <div style="display:flex; gap:var(--space-md); margin-top:var(--space-lg)">
-              <button class="btn btn--neutral btn--full" onclick="closeModal()">Cancel</button>
-              <button class="btn btn--danger btn--full" id="confirm-del-flat-btn">Delete Listing</button>
+            <p class="text-muted">Are you sure you want to permanently delete this property listing? This cannot be undone.</p>
+            <div class="modal-btn-row">
+              <button class="btn btn--neutral btn--full" type="button" onclick="closeModal()">Cancel</button>
+              <button class="btn btn--danger btn--full" type="button" id="confirm-del-flat-btn">Delete Listing</button>
             </div>
           </div>
         `);
 
-        document.getElementById("confirm-del-flat-btn").addEventListener("click", async () => {
+        const confirmDeleteBtn = document.getElementById("confirm-del-flat-btn");
+        if (!confirmDeleteBtn) return;
+
+        confirmDeleteBtn.addEventListener("click", async () => {
           const confirmBtn = document.getElementById("confirm-del-flat-btn");
+          if (!confirmBtn) return;
           confirmBtn.disabled = true;
-          confirmBtn.textContent = "Deleting...";
-          
+          confirmBtn.textContent = "Deleting…";
           const res = await apiFetch(`/api/flats/${flatId}`, { method: "DELETE" });
           closeModal();
-          
           if (res.success) {
             showToast("Listing deleted", "success");
             const r = await apiFetch("/api/listings");
@@ -687,6 +474,101 @@ window.Owner = {
           showToast(res.message, "error");
           btnAction.disabled = false;
         }
+      }
+    });
+  },
+
+  // ── PRIVATE: Cloudinary upload + form submit ───────────────
+  _bindAddFlatForm(root) {
+    const addFlatForm = root.querySelector("#add-flat-form");
+    if (!addFlatForm) return;
+
+    const imgInput = root.querySelector("#image-input");
+    const grid     = root.querySelector("#image-preview-grid");
+
+    imgInput?.addEventListener("change", async () => {
+      const files  = Array.from(imgInput.files);
+      const config = this._cloudConfig();
+
+      if (!config.cloudName || !config.preset) {
+        return showToast("Cloudinary config missing.", "warning");
+      }
+
+      for (const file of files) {
+        const item = document.createElement("div");
+        item.className = "img-preview-item";
+        item.innerHTML = '<div class="img-preview-item__loading">Uploading…</div>';
+        grid.appendChild(item);
+
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("upload_preset", config.preset);
+
+        try {
+          const res  = await fetch(`https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`, {
+            method: "POST",
+            body: fd,
+          });
+          const json = await res.json();
+          if (json.secure_url) {
+            this._uploadedImages.push(json.secure_url);
+            item.innerHTML = `<img src="${json.secure_url}" alt="uploaded" />
+              <button type="button" class="img-preview-item__remove"
+                      data-url="${json.secure_url}" aria-label="Remove image">×</button>`;
+          } else {
+            item.remove();
+            showToast("Upload failed", "error");
+          }
+        } catch {
+          item.remove();
+          showToast("Network error during upload", "error");
+        }
+      }
+      imgInput.value = ""; // reset so same file can be selected again
+    });
+
+    grid?.addEventListener("click", (e) => {
+      const btn = e.target.closest(".img-preview-item__remove");
+      if (!btn) return;
+      const url = btn.dataset.url;
+      this._uploadedImages = this._uploadedImages.filter((u) => u !== url);
+      btn.parentElement.remove();
+    });
+
+    addFlatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn   = root.querySelector("#add-flat-submit");
+      const errEl = root.querySelector("#add-flat-error");
+
+      const fd   = new FormData(addFlatForm);
+      const data = Object.fromEntries(fd);
+
+      if (!data.title || !data.city || !data.rent || !data.type || !data.address) {
+        if (errEl) { errEl.textContent = "Please fill in all required fields (*)."; errEl.classList.remove("hidden"); }
+        showToast("Please fill in all required fields.", "error");
+        return;
+      }
+      if (errEl) errEl.classList.add("hidden");
+
+      btn.disabled    = true;
+      btn.textContent = "Publishing…";
+
+      data.amenities        = (data.amenities || "").split(",").map((s) => s.trim()).filter(Boolean);
+      data.images           = this._uploadedImages;
+      data.pets_allowed     = addFlatForm.querySelector('[name="pets_allowed"]')?.checked     ? 1 : 0;
+      data.smoking_allowed  = addFlatForm.querySelector('[name="smoking_allowed"]')?.checked  ? 1 : 0;
+      data.visitors_allowed = addFlatForm.querySelector('[name="visitors_allowed"]')?.checked ? 1 : 0;
+
+      const res = await apiFetch("/api/flats", { method: "POST", body: data });
+
+      btn.disabled    = false;
+      btn.textContent = "Publish Listing";
+
+      if (res.success) {
+        showToast("Listing published successfully!", "success");
+        window.location.hash = "#/owner/dashboard";
+      } else {
+        showToast(res.message, "error");
       }
     });
   },

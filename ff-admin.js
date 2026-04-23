@@ -11,10 +11,10 @@ window.Admin = {
     const listings = appState.listings || [];
     const pending = listings.filter((l) => l.status === "pending").length;
     const stats = [
-      { label: "Total Users", value: users.length, icon: "👥" },
-      { label: "Total Flats", value: flats.length, icon: "🏠" },
-      { label: "Bookings", value: bookings.length, icon: "📋" },
-      { label: "Pending Reviews", value: pending, icon: "⏳" },
+      { label: "Total Users", value: users.length, icon: "U" },
+      { label: "Total Flats", value: flats.length, icon: "F" },
+      { label: "Bookings", value: bookings.length, icon: "B" },
+      { label: "Pending Reviews", value: pending, icon: "P" },
     ];
     return `
       <div class="container page-content">
@@ -24,7 +24,7 @@ window.Admin = {
             .map(
               (s) => `
           <div class="stat-card card">
-            <p style="font-size:1.5rem;margin-bottom:var(--space-xs)">${s.icon}</p>
+            <p class="stat-card__icon stat-card__icon--lg">${s.icon}</p>
             <p class="stat-card__label">${s.label}</p>
             <p class="stat-card__value">${s.value}</p>
           </div>`,
@@ -33,9 +33,9 @@ window.Admin = {
         </div>
         <div class="flex-between mt-lg">
           <a class="btn btn--primary" href="#/admin/approvals" data-route="/admin/approvals">
-            ✅ Review Listings ${pending > 0 ? `<span class="badge badge--danger" style="margin-left:4px">${pending}</span>` : ""}
+            Review Listings ${pending > 0 ? `<span class="badge badge--danger badge--offset">${pending}</span>` : ""}
           </a>
-          <a class="btn btn--secondary" href="#/admin/users" data-route="/admin/users">👥 Manage Users</a>
+          <a class="btn btn--secondary" href="#/admin/users" data-route="/admin/users">Manage Users</a>
         </div>
       </div>`;
   },
@@ -48,7 +48,7 @@ window.Admin = {
         <tr>
           <td>
             <strong>${escHtml(l.flat_title)}</strong>
-            <br><small class="text-muted">📍 ${escHtml(l.city)} · ${escHtml(l.type)} · ₹${Number(l.rent).toLocaleString("en-IN")}</small>
+            <br><small class="text-muted">${escHtml(l.city)} · ${escHtml(l.type)} · ₹${Number(l.rent).toLocaleString("en-IN")}</small>
           </td>
           <td>${escHtml(l.owner_name)}</td>
           <td>${l.submitted_at?.slice(0, 10) || "—"}</td>
@@ -60,8 +60,8 @@ window.Admin = {
           <td>
             ${
               l.status === "pending"
-                ? `<button class="btn btn--primary btn--sm" data-action="approve" data-id="${l.id}">✅ Approve</button>
-                 <button class="btn btn--danger  btn--sm" data-action="reject"  data-id="${l.id}">❌ Reject</button>`
+                ? `<button class="btn btn--primary btn--sm" type="button" data-action="approve" data-id="${l.id}">Approve</button>
+                 <button class="btn btn--danger  btn--sm" type="button" data-action="reject"  data-id="${l.id}">Reject</button>`
                 : l.reviewer_name
                   ? `<small class="text-muted">by ${escHtml(l.reviewer_name)}</small>`
                   : "—"
@@ -76,7 +76,7 @@ window.Admin = {
       <div class="container page-content">
         <div class="page-header">
           <h2>Listing Approvals</h2>
-          <select class="form-select" id="approval-status-filter" style="width:auto;min-width:150px">
+          <select class="form-select page-header__control" id="approval-status-filter">
             <option value="">All Status</option>
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
@@ -87,7 +87,7 @@ window.Admin = {
           <div class="table-wrap">
             <table class="table">
               <thead><tr><th>Flat</th><th>Owner</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>${rows}</tbody>
+              <tbody id="approvals-tbody">${rows}</tbody>
             </table>
           </div>
         </div>
@@ -110,10 +110,10 @@ window.Admin = {
           <td>
             ${
               u.id !== appState.currentUser.id
-                ? `<button class="btn btn--sm btn--secondary" data-action="${u.status === "active" ? "suspend" : "activate"}" data-user-id="${u.id}">
-                   ${u.status === "active" ? "🚫 Suspend" : "✅ Activate"}
+                ? `<button class="btn btn--sm btn--secondary" type="button" data-action="${u.status === "active" ? "suspend" : "activate"}" data-user-id="${u.id}">
+                   ${u.status === "active" ? "Suspend" : "Activate"}
                  </button>
-                 <button class="btn btn--sm btn--danger" data-action="delete" data-user-id="${u.id}">🗑 Delete</button>`
+                 <button class="btn btn--sm btn--danger" type="button" data-action="delete" data-user-id="${u.id}">Delete</button>`
                 : '<span class="text-muted">(you)</span>'
             }
           </td>
@@ -187,19 +187,23 @@ window.Admin = {
 
       if (action === "delete" && userId) {
         showModal(`
-          <div style="text-align:center; padding:var(--space-md)">
-            <p style="font-size:3rem">⚠️</p>
+          <div class="modal-message">
+            <p class="empty-state__icon">!</p>
             <h3>Confirm Deletion</h3>
             <p class="text-muted">Are you sure you want to permanently delete this user and all their associated data (flats, bookings, etc.)?</p>
-            <div style="display:flex; gap:var(--space-md); margin-top:var(--space-lg)">
-              <button class="btn btn--neutral btn--full" onclick="closeModal()">Cancel</button>
-              <button class="btn btn--danger btn--full" id="confirm-delete-btn">Yes, Delete</button>
+            <div class="modal-btn-row">
+              <button class="btn btn--neutral btn--full" type="button" onclick="closeModal()">Cancel</button>
+              <button class="btn btn--danger btn--full" type="button" id="confirm-delete-btn">Yes, Delete</button>
             </div>
           </div>
         `);
 
-        document.getElementById("confirm-delete-btn").addEventListener("click", async () => {
+        const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+        if (!confirmDeleteBtn) return;
+
+        confirmDeleteBtn.addEventListener("click", async () => {
           const confirmBtn = document.getElementById("confirm-delete-btn");
+          if (!confirmBtn) return;
           confirmBtn.disabled = true;
           confirmBtn.textContent = "Deleting...";
           
@@ -244,10 +248,10 @@ window.Admin = {
     root.querySelector("#approval-status-filter")?.addEventListener("change", (e) => {
       const val = e.target.value;
       const filtered = val ? appState.listings.filter((l) => l.status === val) : appState.listings;
-      const tbody = root.querySelector("tbody");
+      const tbody = root.querySelector("#approvals-tbody");
       const tmp = document.createElement("div");
       tmp.innerHTML = Admin.viewApprovals(filtered);
-      const newTbody = tmp.querySelector("tbody");
+      const newTbody = tmp.querySelector("#approvals-tbody");
       if (tbody && newTbody) tbody.innerHTML = newTbody.innerHTML;
     });
   },

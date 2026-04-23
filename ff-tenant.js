@@ -13,9 +13,9 @@ window.Tenant = {
         <tr>
           <td>
             <strong>${escHtml(b.flat_title)}</strong>
-            <br><small class="text-muted">📍 ${escHtml(b.city)}</small>
+            <br><small class="text-muted">${escHtml(b.city)}</small>
           </td>
-          <td>${b.check_in} → ${b.check_out}</td>
+          <td>${b.check_in}<br><small class="text-muted">→ ${b.check_out}</small></td>
           <td>₹${Number(b.total_rent).toLocaleString("en-IN")}</td>
           <td>
             <span class="badge badge--${b.status === "confirmed" ? "success" : b.status === "cancelled" ? "danger" : "warning"}">
@@ -25,7 +25,7 @@ window.Tenant = {
           <td>
             ${
               b.status === "pending"
-                ? `<button class="btn btn--danger btn--sm" data-action="cancel-booking" data-booking-id="${b.id}">Cancel</button>`
+                ? `<button class="btn btn--danger btn--sm" type="button" data-action="cancel-booking" data-booking-id="${b.id}">Cancel</button>`
                 : "—"
             }
           </td>
@@ -39,8 +39,8 @@ window.Tenant = {
     return `
       <div class="container page-content">
         <div class="page-header">
-          <h2>Welcome back, ${escHtml(appState.currentUser.name.split(" ")[0])} 👋</h2>
-          <a class="btn btn--primary" href="#/tenant/search" data-route="/tenant/search">🔍 Search Flats</a>
+          <h2>Welcome back, ${escHtml((appState.currentUser.name || "Guest").split(" ")[0] || "Guest")}</h2>
+          <a class="btn btn--primary" href="#/tenant/search" data-route="/tenant/search">Search Flats</a>
         </div>
         <div class="card">
           <h3 class="card-title">My Bookings</h3>
@@ -70,15 +70,15 @@ window.Tenant = {
           </div>
           <div class="flat-card__img-wrap">
             <img class="flat-card__img" 
-                 src="${(f.images && f.images.length > 0) ? escHtml(f.images[0]) : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop'}" 
-                 alt="${escHtml(f.title || f.flat_title || 'Flat image')}" 
+                 src="${f.images && f.images.length > 0 ? escHtml(f.images[0]) : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop"}" 
+                 alt="${escHtml(f.title || f.flat_title || "Flat image")}" 
                  loading="lazy" 
                  onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop'" />
           </div>
-          <h3 class="flat-card__title">${escHtml(f.title || f.flat_title || '')}</h3>
-          <p class="flat-card__city">📍 ${escHtml(f.city)}</p>
+          <h3 class="flat-card__title">${escHtml(f.title || f.flat_title || "")}</h3>
+          <p class="flat-card__city">${escHtml(f.city)}</p>
           <p class="flat-card__rent">₹${Number(f.rent).toLocaleString("en-IN")}<span>/mo</span></p>
-          <p class="text-muted" style="font-size:0.8rem">Owner: ${escHtml(f.owner_name || "N/A")}</p>
+          <p class="flat-card__owner">Owner: ${escHtml(f.owner_name || "N/A")}</p>
           <a class="btn btn--primary btn--sm mt-sm" href="#/tenant/flat/${f.id}" data-route="/tenant/flat/${f.id}">
             View Details →
           </a>
@@ -86,7 +86,7 @@ window.Tenant = {
           )
           .join("")
       : `<div class="empty-state">
-          <p style="font-size:2rem">🏚️</p>
+          <p class="empty-state__icon empty-state__icon--sm">!</p>
           <p>No flats match your filters.</p>
           <p class="text-muted">Try adjusting your search criteria.</p>
          </div>`;
@@ -111,7 +111,7 @@ window.Tenant = {
           <button class="btn btn--primary" type="submit">Filter</button>
           <button class="btn btn--secondary" type="reset" id="filter-reset-btn">Clear</button>
         </form>
-        <p class="text-muted" style="margin-bottom:var(--space-md)">${flats.length} flat${flats.length !== 1 ? "s" : ""} found</p>
+        <p class="text-muted filter-count">${flats.length} flat${flats.length !== 1 ? "s" : ""} found</p>
         <div class="flat-grid">${cards}</div>
       </div>`;
   },
@@ -121,7 +121,7 @@ window.Tenant = {
       return `
       <div class="container page-content">
         <div class="empty-state">
-          <p style="font-size:2rem">😕</p>
+          <p class="empty-state__icon empty-state__icon--sm">!</p>
           <p>Flat not found.</p>
           <a class="btn btn--secondary" href="#/tenant/search" data-route="/tenant/search">Back to Search</a>
         </div>
@@ -133,12 +133,12 @@ window.Tenant = {
     // Owner contact card
     const ownerContact = `
       <div class="owner-contact-card">
-        <h4 class="owner-contact-card__title">🔑 About the Owner</h4>
+        <h4 class="owner-contact-card__title">About the Owner</h4>
         <p class="owner-contact-card__name">${escHtml(flat.owner_name || "Property Owner")}</p>
-        ${flat.owner_phone ? `<a class="owner-contact-card__item" href="tel:${escHtml(flat.owner_phone)}">📞 ${escHtml(flat.owner_phone)}</a>` : ""}
-        ${flat.owner_email ? `<a class="owner-contact-card__item" href="mailto:${escHtml(flat.owner_email)}">✉️ ${escHtml(flat.owner_email)}</a>` : ""}
-        ${flat.owner_whatsapp ? `<a class="owner-contact-card__item owner-contact-card__item--whatsapp" href="https://wa.me/${flat.owner_whatsapp.replace(/\D/g,"")}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ""}
-        ${flat.owner_telegram ? `<a class="owner-contact-card__item owner-contact-card__item--telegram" href="https://t.me/${flat.owner_telegram}" target="_blank" rel="noopener">✈️ Telegram</a>` : ""}
+        ${flat.owner_phone ? `<a class="owner-contact-card__item" href="tel:${escHtml(flat.owner_phone)}">${escHtml(flat.owner_phone)}</a>` : ""}
+        ${flat.owner_email ? `<a class="owner-contact-card__item" href="mailto:${escHtml(flat.owner_email)}">${escHtml(flat.owner_email)}</a>` : ""}
+        ${flat.owner_whatsapp ? `<a class="owner-contact-card__item owner-contact-card__item--whatsapp" href="https://wa.me/${flat.owner_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
+        ${flat.owner_telegram ? `<a class="owner-contact-card__item owner-contact-card__item--telegram" href="https://t.me/${flat.owner_telegram}" target="_blank" rel="noopener">Telegram</a>` : ""}
         ${flat.owner_bio ? `<p class="owner-contact-card__bio">${escHtml(flat.owner_bio)}</p>` : ""}
       </div>`;
 
@@ -172,10 +172,10 @@ window.Tenant = {
               ${flat.available ? '<span class="badge badge--success">Available</span>' : '<span class="badge badge--danger">Not Available</span>'}
             </div>
             <h2>${escHtml(flat.title)}</h2>
-            <p class="flat-detail__city">📍 ${escHtml(flat.city)}${flat.address ? " — " + escHtml(flat.address) : ""}</p>
+            <p class="flat-detail__city">${escHtml(flat.city)}${flat.address ? " — " + escHtml(flat.address) : ""}</p>
             <p class="flat-detail__rent">₹${Number(flat.rent).toLocaleString("en-IN")} <span>/ month</span></p>
             ${flat.description ? `<p class="flat-detail__desc">${escHtml(flat.description)}</p>` : ""}
-            <div class="grid-2 mt-md" style="gap:var(--space-md)">
+            <div class="grid-2 grid-gap-md mt-md">
               <div class="spec-item"><p class="text-muted small">Type</p><p><strong>${escHtml(flat.type)}</strong></p></div>
               <div class="spec-item"><p class="text-muted small">Rent</p><p><strong>₹${Number(flat.rent).toLocaleString("en-IN")}</strong></p></div>
               <div class="spec-item"><p class="text-muted small">Deposit</p><p><strong>₹${Number(flat.deposit || 0).toLocaleString("en-IN")}</strong></p></div>
@@ -188,10 +188,10 @@ window.Tenant = {
 
             <div class="house-rules mt-md">
               <p class="form-label small">House Rules</p>
-              <div style="display:flex; gap:var(--space-md); flex-wrap:wrap">
-                <span class="text-${flat.pets_allowed ? "success" : "muted"}">${flat.pets_allowed ? "🐾 Pets OK" : "🚫 No Pets"}</span>
-                <span class="text-${flat.smoking_allowed ? "success" : "muted"}">${flat.smoking_allowed ? "🚬 Smoking OK" : "🚫 No Smoking"}</span>
-                <span class="text-${flat.visitors_allowed ? "success" : "muted"}">${flat.visitors_allowed ? "👥 Visitors OK" : "🚫 No Visitors"}</span>
+              <div class="house-rules__tags">
+                <span class="text-${flat.pets_allowed ? "success" : "muted"}">${flat.pets_allowed ? "Pets Allowed" : "No Pets"}</span>
+                <span class="text-${flat.smoking_allowed ? "success" : "muted"}">${flat.smoking_allowed ? "Smoking Allowed" : "No Smoking"}</span>
+                <span class="text-${flat.visitors_allowed ? "success" : "muted"}">${flat.visitors_allowed ? "Visitors Allowed" : "No Visitors"}</span>
               </div>
             </div>
 
@@ -208,8 +208,8 @@ window.Tenant = {
             }
             ${
               flat.available
-                ? `<a class="btn btn--primary" href="#/tenant/booking/${flat.id}" data-route="/tenant/booking/${flat.id}">📅 Book This Flat →</a>`
-                : `<button class="btn btn--secondary" disabled>Not Available</button>`
+                ? `<a class="btn btn--primary" href="#/tenant/booking/${flat.id}" data-route="/tenant/booking/${flat.id}">Book This Flat</a>`
+                : `<button class="btn btn--secondary" type="button" disabled>Not Available</button>`
             }
           </div>
           <aside>${ownerContact}</aside>
@@ -231,7 +231,7 @@ window.Tenant = {
     return `
       <div class="container page-content">
         <a class="back-link" href="#/tenant/flat/${flat.id}" data-route="/tenant/flat/${flat.id}">← Back to Details</a>
-        <div class="card form-card" style="max-width:680px">
+        <div class="card form-card form-card--md">
           <h2>Book Flat</h2>
           <p class="form-card__sub">${escHtml(flat.title)} — ₹${Number(flat.rent).toLocaleString("en-IN")}/month</p>
           <form id="booking-form" novalidate>
@@ -262,15 +262,22 @@ window.Tenant = {
         const params = new URLSearchParams();
         for (const [k, v] of fd.entries()) if (v) params.set(k, v);
         const r = await apiFetch(`/api/flats?${params}`);
-        if (r.success) { appState.flats = r.data; render(Tenant.viewSearch(r.data)); }
-        else showToast(r.message, "error");
+        if (r.success) {
+          appState.flats = r.data;
+          render(Tenant.viewSearch(r.data));
+        } else showToast(r.message, "error");
       });
 
-      root.querySelector("#filter-reset-btn")?.addEventListener("click", async () => {
-        filterForm.reset();
-        const r = await apiFetch("/api/flats");
-        if (r.success) { appState.flats = r.data; render(Tenant.viewSearch(r.data)); }
-      });
+      root
+        .querySelector("#filter-reset-btn")
+        ?.addEventListener("click", async () => {
+          filterForm.reset();
+          const r = await apiFetch("/api/flats");
+          if (r.success) {
+            appState.flats = r.data;
+            render(Tenant.viewSearch(r.data));
+          }
+        });
     }
 
     const bookingForm = root.querySelector("#booking-form");
@@ -283,16 +290,24 @@ window.Tenant = {
         if (ci && co && appState._selectedFlat) {
           const days = Math.ceil((new Date(co) - new Date(ci)) / 86400000);
           if (days > 0) {
-            const est = ((parseFloat(appState._selectedFlat.rent) / 30) * days).toFixed(2);
-            if (val) val.textContent = `₹${Number(est).toLocaleString("en-IN")} (${days} days)`;
+            const est = (
+              (parseFloat(appState._selectedFlat.rent) / 30) *
+              days
+            ).toFixed(2);
+            if (val)
+              val.textContent = `₹${Number(est).toLocaleString("en-IN")} (${days} days)`;
             if (pre) pre.classList.remove("hidden");
             return;
           }
         }
         if (pre) pre.classList.add("hidden");
       };
-      bookingForm.querySelector('[name="check_in"]')?.addEventListener("change", calcRent);
-      bookingForm.querySelector('[name="check_out"]')?.addEventListener("change", calcRent);
+      bookingForm
+        .querySelector('[name="check_in"]')
+        ?.addEventListener("change", calcRent);
+      bookingForm
+        .querySelector('[name="check_out"]')
+        ?.addEventListener("change", calcRent);
 
       bookingForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -303,13 +318,19 @@ window.Tenant = {
           check_out: fd.get("check_out"),
         };
         if (!payload.check_in || !payload.check_out) {
-          showToast("Please select both check-in and check-out dates.", "error");
+          showToast(
+            "Please select both check-in and check-out dates.",
+            "error",
+          );
           return;
         }
         const btn = bookingForm.querySelector('[type="submit"]');
         btn.disabled = true;
         btn.textContent = "Submitting…";
-        const r = await apiFetch("/api/bookings", { method: "POST", body: payload });
+        const r = await apiFetch("/api/bookings", {
+          method: "POST",
+          body: payload,
+        });
         btn.disabled = false;
         btn.textContent = "Confirm Booking";
         if (r.success) {
@@ -328,25 +349,36 @@ window.Tenant = {
       if (!bId) return;
 
       showModal(`
-        <div style="text-align:center; padding:var(--space-md)">
-          <p style="font-size:3rem">📅</p>
+        <div class="modal-message">
+          <p class="empty-state__icon">!</p>
           <h3>Cancel Booking?</h3>
           <p class="text-muted">Are you sure you want to cancel this booking? This will notify the property owner.</p>
-          <div style="display:flex; gap:var(--space-md); margin-top:var(--space-lg)">
-            <button class="btn btn--neutral btn--full" onclick="closeModal()">Keep Booking</button>
-            <button class="btn btn--danger btn--full" id="confirm-cancel-booking-btn">Yes, Cancel</button>
+          <div class="modal-btn-row">
+            <button class="btn btn--neutral btn--full" type="button" onclick="closeModal()">Keep Booking</button>
+            <button class="btn btn--danger btn--full" type="button" id="confirm-cancel-booking-btn">Yes, Cancel</button>
           </div>
         </div>
       `);
 
-      document.getElementById("confirm-cancel-booking-btn").addEventListener("click", async () => {
-        const confirmBtn = document.getElementById("confirm-cancel-booking-btn");
+      const confirmCancelBtn = document.getElementById(
+        "confirm-cancel-booking-btn",
+      );
+      if (!confirmCancelBtn) return;
+
+      confirmCancelBtn.addEventListener("click", async () => {
+        const confirmBtn = document.getElementById(
+          "confirm-cancel-booking-btn",
+        );
+        if (!confirmBtn) return;
         confirmBtn.disabled = true;
         confirmBtn.textContent = "Cancelling...";
-        
-        const r = await apiFetch(`/api/bookings/${bId}`, { method: "PATCH", body: { status: "cancelled" } });
+
+        const r = await apiFetch(`/api/bookings/${bId}`, {
+          method: "PATCH",
+          body: { status: "cancelled" },
+        });
         closeModal();
-        
+
         if (r.success) {
           showToast("Booking cancelled.", "info");
           const br = await apiFetch("/api/bookings");

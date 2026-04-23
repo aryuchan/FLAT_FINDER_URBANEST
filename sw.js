@@ -8,6 +8,11 @@ const ASSETS = [
   "/admin_index.html",
   "/style.css",
   "/ff-core.js",
+  "/ff-auth.js",
+  "/ff-tenant.js",
+  "/ff-owner.js",
+  "/ff-admin.js",
+  "/app.js",
   "/landing.js",
   "/manifest.json",
 ];

@@ -1,21 +1,19 @@
 // landing.js — Production Landing Experience (v18.0)
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Landing Engine Online");
-
   // 1. Theme Sync
   const savedTheme = localStorage.getItem("ff_theme") || "light";
   document.documentElement.setAttribute("data-theme", savedTheme);
 
   const themeBtn = document.getElementById("btn-theme-landing");
   if (themeBtn) {
-    themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+    themeBtn.textContent = savedTheme === "dark" ? "Light" : "Dark";
     themeBtn.addEventListener("click", () => {
       const current = document.documentElement.getAttribute("data-theme");
       const next = current === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", next);
       localStorage.setItem("ff_theme", next);
-      themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
+      themeBtn.textContent = next === "dark" ? "Light" : "Dark";
     });
   }
 

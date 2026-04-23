@@ -7,10 +7,15 @@
 window.Auth = {
   viewLogin(mode = "login") {
     const isLogin = mode === "login";
+    const theme =
+      document.documentElement.getAttribute("data-theme") || "light";
     return `
       <div class="auth-wrapper">
+        <button class="auth-theme-toggle" id="auth-theme-toggle" type="button" aria-label="Toggle theme">
+          ${theme === "dark" ? "Light mode" : "Dark mode"}
+        </button>
         <div class="auth-card">
-          <div class="auth-logo">🏠</div>
+          <div class="auth-logo">FF</div>
           <h1 class="auth-title">FlatFinder</h1>
           <p class="auth-sub">${isLogin ? "Sign in to your account" : "Create a new account"}</p>
 
@@ -21,7 +26,7 @@ window.Auth = {
             <div class="form-group">
               <label class="form-label" for="auth-name">Full Name</label>
               <input class="form-input" id="auth-name" name="name" type="text"
-                placeholder="Aarav Mehta" autocomplete="name" required minlength="2" />
+                placeholder="Full name" autocomplete="name" required minlength="2" />
             </div>`
                 : ""
             }
@@ -29,7 +34,7 @@ window.Auth = {
             <div class="form-group">
               <label class="form-label" for="auth-email">Email</label>
               <input class="form-input" id="auth-email" name="email" type="email"
-                placeholder="you@example.com" autocomplete="email" required />
+                placeholder="Email address" autocomplete="email" required />
             </div>
 
             <div class="form-group">
@@ -38,9 +43,9 @@ window.Auth = {
                 <input class="form-input" id="auth-password" name="password" type="password"
                   placeholder="${isLogin ? "Your password" : "At least 6 characters"}"
                   autocomplete="${isLogin ? "current-password" : "new-password"}" required minlength="6" />
-                <button type="button" class="input-eye" id="toggle-password" aria-label="Toggle password visibility">👁</button>
+                <button type="button" class="input-eye" id="toggle-password" aria-label="Toggle password visibility">Toggle</button>
               </div>
-              ${isLogin ? `<div style="text-align:right; margin-top:4px"><a href="#" id="forgot-password" class="text-sm text-muted">Forgot Password?</a></div>` : ""}
+              ${isLogin ? `<div class="auth-helper-row"><a href="#" id="forgot-password" class="text-sm text-muted">Forgot Password?</a></div>` : ""}
             </div>
 
             ${
@@ -49,9 +54,8 @@ window.Auth = {
             <div class="form-group">
               <label class="form-label">Account Type</label>
               <div class="role-pills">
-                <label class="role-pill"><input type="radio" name="role" value="tenant" checked /> 🏠 Tenant</label>
-                <label class="role-pill"><input type="radio" name="role" value="owner" /> 🔑 Owner</label>
-                <label class="role-pill"><input type="radio" name="role" value="admin" /> ⚙️ Admin</label>
+                <label class="role-pill"><input type="radio" name="role" value="tenant" checked /> Tenant</label>
+                <label class="role-pill"><input type="radio" name="role" value="owner" /> Owner</label>
               </div>
             </div>`
                 : ""
@@ -76,9 +80,30 @@ window.Auth = {
   },
 
   bindEvents(root) {
+    root.querySelector("#auth-theme-toggle")?.addEventListener("click", () => {
+      const current =
+        document.documentElement.getAttribute("data-theme") || "light";
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("ff_theme", next);
+      const btn = root.querySelector("#auth-theme-toggle");
+      if (btn) {
+        btn.textContent = next === "dark" ? "Light mode" : "Dark mode";
+      }
+    });
+
     root.querySelector("#toggle-password")?.addEventListener("click", () => {
       const input = root.querySelector("#auth-password");
       if (input) input.type = input.type === "password" ? "text" : "password";
+    });
+
+    // Bind forgot-password here — not inside submit — so it works immediately
+    root.querySelector("#forgot-password")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      showToast(
+        "Please contact support at support@urbanest.com to reset your password.",
+        "info",
+      );
     });
 
     const authForm = root.querySelector("#auth-form");
@@ -91,16 +116,28 @@ window.Auth = {
       const btn = root.querySelector("#auth-submit");
       const errEl = root.querySelector("#auth-error");
 
-      if (errEl) { errEl.textContent = ""; errEl.classList.add("hidden"); }
+      if (errEl) {
+        errEl.textContent = "";
+        errEl.classList.add("hidden");
+      }
 
-      const payload = mode === "signup"
-          ? { name: fd.get("name")?.trim(), email: fd.get("email")?.trim(), password: fd.get("password"), role: fd.get("role") || "tenant" }
+      const payload =
+        mode === "signup"
+          ? {
+              name: fd.get("name")?.trim(),
+              email: fd.get("email")?.trim(),
+              password: fd.get("password"),
+              role: fd.get("role") || "tenant",
+            }
           : { email: fd.get("email")?.trim(), password: fd.get("password") };
 
       btn.disabled = true;
       btn.textContent = "Please wait…";
 
-      const r = await apiFetch(`/api/${mode}`, { method: "POST", body: payload });
+      const r = await apiFetch(`/api/${mode}`, {
+        method: "POST",
+        body: payload,
+      });
 
       btn.disabled = false;
       btn.textContent = mode === "login" ? "Sign In" : "Create Account";
@@ -112,15 +149,11 @@ window.Auth = {
         showToast(`Welcome back, ${r.data.user.name}!`, "success");
       } else {
         const msg = r.message || "Something went wrong.";
-        if (errEl) { errEl.textContent = msg; errEl.classList.remove("hidden"); }
+        if (errEl) {
+          errEl.textContent = msg;
+          errEl.classList.remove("hidden");
+        }
         showToast(msg, "error");
-      }
-      const forgotBtn = root.querySelector("#forgot-password");
-      if (forgotBtn) {
-        forgotBtn.onclick = (e) => {
-          e.preventDefault();
-          showToast("Please contact support at support@urbanest.com to reset your password.", "info");
-        };
       }
     });
   },
