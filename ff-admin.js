@@ -149,51 +149,52 @@ const Admin = {
 
   bindEvents(root) {
     // Approve / reject / suspend / activate / delete
-    root.addEventListener("click", async (e) => {
-      const btn = e.target.closest("[data-action]");
-      if (!btn) return;
-      const action = btn.dataset.action;
-      const id = btn.dataset.id;
-      const userId = btn.dataset.userId;
+    const actionBtns = root.querySelectorAll("[data-action]");
+    actionBtns.forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        const userId = btn.dataset.userId;
 
-      if ((action === "approve" || action === "reject") && id) {
-        btn.disabled = true;
-        const status = action === "approve" ? "approved" : "rejected";
-        const r = await apiFetch(`/api/listings/${id}`, { method: "PATCH", body: { status } });
-        btn.disabled = false;
-        if (r.success) {
-          showToast(r.message, action === "approve" ? "success" : "warning");
-          const lr = await apiFetch("/api/listings");
-          if (lr.success) appState.listings = lr.data;
-          render(Admin.viewApprovals());
-        } else showToast(r.message, "error");
-      }
+        if ((action === "approve" || action === "reject") && id) {
+          btn.disabled = true;
+          const status = action === "approve" ? "approved" : "rejected";
+          const r = await apiFetch(`/api/listings/${id}`, { method: "PATCH", body: { status } });
+          btn.disabled = false;
+          if (r.success) {
+            showToast(r.message, action === "approve" ? "success" : "warning");
+            const lr = await apiFetch("/api/listings");
+            if (lr.success) appState.listings = lr.data;
+            render(Admin.viewApprovals());
+          } else showToast(r.message, "error");
+        }
 
-      if ((action === "suspend" || action === "activate") && userId) {
-        btn.disabled = true;
-        const status = action === "suspend" ? "suspended" : "active";
-        const r = await apiFetch(`/api/users/${userId}`, { method: "PATCH", body: { status } });
-        btn.disabled = false;
-        if (r.success) {
-          showToast(r.message, action === "suspend" ? "warning" : "success");
-          const ur = await apiFetch("/api/users");
-          if (ur.success) appState.users = ur.data;
-          render(Admin.viewUsers());
-        } else showToast(r.message, "error");
-      }
+        if ((action === "suspend" || action === "activate") && userId) {
+          btn.disabled = true;
+          const status = action === "suspend" ? "suspended" : "active";
+          const r = await apiFetch(`/api/users/${userId}`, { method: "PATCH", body: { status } });
+          btn.disabled = false;
+          if (r.success) {
+            showToast(r.message, action === "suspend" ? "warning" : "success");
+            const ur = await apiFetch("/api/users");
+            if (ur.success) appState.users = ur.data;
+            render(Admin.viewUsers());
+          } else showToast(r.message, "error");
+        }
 
-      if (action === "delete" && userId) {
-        if (!confirm("Permanently delete this user and all their data?")) return;
-        btn.disabled = true;
-        const r = await apiFetch(`/api/users/${userId}`, { method: "DELETE" });
-        btn.disabled = false;
-        if (r.success) {
-          showToast("User deleted.", "info");
-          const ur = await apiFetch("/api/users");
-          if (ur.success) appState.users = ur.data;
-          render(Admin.viewUsers());
-        } else showToast(r.message, "error");
-      }
+        if (action === "delete" && userId) {
+          if (!confirm("Permanently delete this user and all their data?")) return;
+          btn.disabled = true;
+          const r = await apiFetch(`/api/users/${userId}`, { method: "DELETE" });
+          btn.disabled = false;
+          if (r.success) {
+            showToast("User deleted.", "info");
+            const ur = await apiFetch("/api/users");
+            if (ur.success) appState.users = ur.data;
+            render(Admin.viewUsers());
+          } else showToast(r.message, "error");
+        }
+      });
     });
 
     // User search / filter

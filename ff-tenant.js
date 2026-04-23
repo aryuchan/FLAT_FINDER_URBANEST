@@ -296,20 +296,21 @@ const Tenant = {
       });
     }
 
-    root.addEventListener("click", async (e) => {
-      const btn = e.target.closest('[data-action="cancel-booking"]');
-      if (!btn) return;
-      const bId = btn.dataset.bookingId;
-      if (!bId || !confirm("Cancel this booking?")) return;
-      btn.disabled = true;
-      const r = await apiFetch(`/api/bookings/${bId}`, { method: "PATCH", body: { status: "cancelled" } });
-      btn.disabled = false;
-      if (r.success) {
-        showToast("Booking cancelled.", "info");
-        const br = await apiFetch("/api/bookings");
-        if (br.success) appState.bookings = br.data;
-        render(Tenant.viewDashboard());
-      } else showToast(r.message, "error");
+    const cancelBtns = root.querySelectorAll('[data-action="cancel-booking"]');
+    cancelBtns.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const bId = btn.dataset.bookingId;
+        if (!bId || !confirm("Cancel this booking?")) return;
+        btn.disabled = true;
+        const r = await apiFetch(`/api/bookings/${bId}`, { method: "PATCH", body: { status: "cancelled" } });
+        btn.disabled = false;
+        if (r.success) {
+          showToast("Booking cancelled.", "info");
+          const br = await apiFetch("/api/bookings");
+          if (br.success) appState.bookings = br.data;
+          render(Tenant.viewDashboard());
+        } else showToast(r.message, "error");
+      });
     });
   },
 };

@@ -158,37 +158,43 @@ function bindEvents() {
   const root = document.getElementById("app-root");
   if (!root) return;
 
-  // SPA navigation
-  root.addEventListener("click", (e) => {
-    const link = e.target.closest("[data-route]");
-    if (!link) return;
-    const route = link.dataset.route;
-    if (route) { e.preventDefault(); window.location.hash = "#" + route; }
-  });
-
   // Module binders
   Auth.bindEvents(root);
   Tenant.bindEvents(root);
   Owner.bindEvents(root);
   Admin.bindEvents(root);
-
-  // Logout (lives in nav)
-  document.getElementById("logout-btn")?.addEventListener("click", async () => {
-    await apiFetch("/api/logout", { method: "POST" });
-    Token.clear();
-    Object.assign(appState, {
-      currentUser: null, flats: [], bookings: [], users: [], listings: [], _selectedFlat: null,
-    });
-    renderNavBar();
-    window.location.hash = "#/login";
-    showToast("Logged out successfully.", "info");
-  });
 }
 
 // ── BOOT ─────────────────────────────────────────────────────────
 window.addEventListener("hashchange", () => navigate(window.location.hash));
 
 window.addEventListener("load", async () => {
+  // Global event delegations
+  document.body.addEventListener("click", async (e) => {
+    // 1. SPA Navigation
+    const link = e.target.closest("[data-route]");
+    if (link && link.dataset.route) {
+      e.preventDefault();
+      window.location.hash = "#" + link.dataset.route;
+      return;
+    }
+
+    // 2. Global Logout
+    const logoutBtn = e.target.closest("#logout-btn");
+    if (logoutBtn) {
+      e.preventDefault();
+      await apiFetch("/api/logout", { method: "POST" });
+      Token.clear();
+      Object.assign(appState, {
+        currentUser: null, flats: [], bookings: [], users: [], listings: [], _selectedFlat: null,
+      });
+      renderNavBar();
+      window.location.hash = "#/login";
+      showToast("Logged out successfully.", "info");
+      return;
+    }
+  });
+
   // Ping server
   try {
     await fetch(`${API}/api/ping`, { signal: AbortSignal.timeout(3000) });
