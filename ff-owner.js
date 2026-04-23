@@ -115,14 +115,17 @@ const Owner = {
               </div>
               <div class="form-group">
                 <label class="form-label">Monthly Rent (₹) *</label>
-                <input class="form-input" name="rent" type="number" min="1" step="100" placeholder="20000" required />
+                <input class="form-input" name="rent" type="text" inputmode="numeric" placeholder="20000" required />
               </div>
               <div class="form-group">
                 <label class="form-label">Type *</label>
                 <select class="form-select" name="type" required>
                   <option value="">Select type…</option>
-                  <option>1BHK</option><option>2BHK</option><option>3BHK</option>
-                  <option>Studio</option><option>4BHK+</option>
+                  <option value="1BHK">1BHK</option>
+                  <option value="2BHK">2BHK</option>
+                  <option value="3BHK">3BHK</option>
+                  <option value="Studio">Studio</option>
+                  <option value="4BHK+">4BHK+</option>
                 </select>
               </div>
               <div class="form-group">
@@ -138,7 +141,7 @@ const Owner = {
               </div>
               <div class="form-group">
                 <label class="form-label">Deposit (₹)</label>
-                <input class="form-input" name="deposit" type="number" min="0" step="100" placeholder="e.g. 40000" />
+                <input class="form-input" name="deposit" type="text" inputmode="numeric" placeholder="e.g. 40000" />
               </div>
             </div>
 
@@ -147,15 +150,15 @@ const Owner = {
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Floor Number</label>
-                <input class="form-input" name="floor" type="number" min="0" placeholder="e.g. 3" />
+                <input class="form-input" name="floor" type="text" inputmode="numeric" placeholder="e.g. 3" />
               </div>
               <div class="form-group">
                 <label class="form-label">Total Floors in Building</label>
-                <input class="form-input" name="total_floors" type="number" min="1" placeholder="e.g. 10" />
+                <input class="form-input" name="total_floors" type="text" inputmode="numeric" placeholder="e.g. 10" />
               </div>
               <div class="form-group">
                 <label class="form-label">Area (sq. ft.)</label>
-                <input class="form-input" name="area_sqft" type="number" min="0" placeholder="e.g. 850" />
+                <input class="form-input" name="area_sqft" type="text" inputmode="numeric" placeholder="e.g. 850" />
               </div>
               <div class="form-group">
                 <label class="form-label">Bathrooms</label>
@@ -444,16 +447,16 @@ const Owner = {
         title: fd.get("title")?.trim(),
         city: fd.get("city")?.trim(),
         address: fd.get("address")?.trim() || "",
-        rent: fd.get("rent"),
+        rent: (fd.get("rent") || "").toString().replace(/,/g, "").trim(),
         type: fd.get("type"),
         furnished: fd.get("furnished"),
         description: fd.get("description")?.trim() || "",
         amenities,
         available_from: fd.get("available_from") || "",
-        deposit: fd.get("deposit") || "",
-        floor: fd.get("floor") || "",
-        total_floors: fd.get("total_floors") || "",
-        area_sqft: fd.get("area_sqft") || "",
+        deposit: (fd.get("deposit") || "").toString().replace(/,/g, "").trim(),
+        floor: (fd.get("floor") || "").toString().replace(/,/g, "").trim(),
+        total_floors: (fd.get("total_floors") || "").toString().replace(/,/g, "").trim(),
+        area_sqft: (fd.get("area_sqft") || "").toString().replace(/,/g, "").trim(),
         bathrooms: fd.get("bathrooms") || "",
         parking: fd.get("parking") || "none",
         facing: fd.get("facing") || "",

@@ -105,8 +105,8 @@ const Tenant = {
             <option value="1">Yes</option>
             <option value="0">No</option>
           </select>
-          <input class="form-input" name="min_rent" type="number" min="0" placeholder="Min ₹" />
-          <input class="form-input" name="max_rent" type="number" min="0" placeholder="Max ₹" />
+          <input class="form-input" name="min_rent" type="text" inputmode="numeric" placeholder="Min ₹" />
+          <input class="form-input" name="max_rent" type="text" inputmode="numeric" placeholder="Max ₹" />
           <button class="btn btn--primary" type="submit">Filter</button>
           <button class="btn btn--secondary" type="reset" id="filter-reset-btn">Clear</button>
         </form>
