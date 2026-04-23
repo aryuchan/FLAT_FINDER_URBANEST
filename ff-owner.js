@@ -96,7 +96,7 @@ const Owner = {
           <h2>List a New Flat</h2>
           <p class="form-card__sub">Fill in the details. An admin will review and approve your listing.</p>
 
-          <form id="add-flat-form" novalidate enctype="multipart/form-data">
+          <form id="add-flat-form" novalidate enctype="multipart/form-data" onsubmit="return false;">
 
             <!-- ── Section 1: Basic Details ── -->
             <h4 class="form-section-title">📋 Basic Details</h4>
@@ -323,7 +323,7 @@ const Owner = {
         </div>
         <div class="card form-card" style="max-width:640px">
           <h3 class="card-title">👤 Personal Information</h3>
-          <form id="profile-form" novalidate>
+          <form id="profile-form" novalidate onsubmit="return false;">
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Full Name</label>

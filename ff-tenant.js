@@ -93,7 +93,7 @@ const Tenant = {
     return `
       <div class="container page-content">
         <div class="page-header"><h2>Search Flats</h2></div>
-        <form id="flat-search-filter-form" class="filter-bar card">
+        <form id="flat-search-filter-form" class="filter-bar card" onsubmit="return false;">
           <input class="form-input" name="city" placeholder="City…" />
           <select class="form-select" name="type">
             <option value="">All Types</option>
@@ -209,7 +209,7 @@ const Tenant = {
         <div class="card form-card" style="max-width:680px">
           <h2>Book Flat</h2>
           <p class="form-card__sub">${escHtml(flat.title)} — ₹${Number(flat.rent).toLocaleString("en-IN")}/month</p>
-          <form id="booking-form" novalidate>
+          <form id="booking-form" novalidate onsubmit="return false;">
             <input type="hidden" name="flat_id" value="${flat.id}" />
             <div class="form-group">
               <label class="form-label" for="check-in">Check-in Date</label>

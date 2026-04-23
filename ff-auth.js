@@ -14,7 +14,7 @@ const Auth = {
           <h1 class="auth-title">FlatFinder</h1>
           <p class="auth-sub">${isLogin ? "Sign in to your account" : "Create a new account"}</p>
 
-          <form id="auth-form" class="auth-form" novalidate autocomplete="on">
+          <form id="auth-form" class="auth-form" novalidate autocomplete="on" onsubmit="return false;">
             ${
               !isLogin
                 ? `
