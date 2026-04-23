@@ -111,6 +111,68 @@
       }
     </script>
 
+        <!-- HTML Templates for Admin Module -->
+    <template id="admin-dashboard-template">
+      <div class="container page-content">
+        <div class="page-header"><h2>Admin Dashboard</h2></div>
+        <div class="stat-grid" id="admin-stat-grid"></div>
+        <div class="flex-between mt-lg">
+          <a class="btn btn--primary btn-hover-scale" href="#/admin/approvals" data-route="/admin/approvals" id="admin-review-btn">Review Listings</a>
+          <a class="btn btn--secondary btn-hover-scale" href="#/admin/users" data-route="/admin/users">Manage Users</a>
+        </div>
+      </div>
+    </template>
+
+    <template id="admin-approvals-template">
+      <div class="container page-content">
+        <div class="page-header">
+          <h2>Listing Approvals</h2>
+          <select class="form-select page-header__control" id="approval-status-filter">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Flat</th><th>Owner</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="approvals-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="admin-users-template">
+      <div class="container page-content">
+        <div class="page-header"><h2>User Management</h2></div>
+        <div class="card">
+          <div class="filter-bar filter-bar--inline">
+            <input class="form-input" id="user-search-input" placeholder="Search by name or email…" />
+            <select class="form-select" id="user-role-filter">
+              <option value="">All Roles</option>
+              <option value="tenant">Tenant</option>
+              <option value="owner">Owner</option>
+              <option value="admin">Admin</option>
+            </select>
+            <select class="form-select" id="user-status-filter">
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <!-- FlatFinder modules — load order matters -->
     <script src="ff-utils.js?v=20260424" defer></script>
     <script src="ff-core.js?v=20260424" defer></script>

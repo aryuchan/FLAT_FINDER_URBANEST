@@ -4,7 +4,11 @@
 // ─────────────────────────────────────────────────────────────────
 
 window.Admin = {
-  viewDashboard() {
+    viewDashboard() {
+    const template = document.getElementById("admin-dashboard-template");
+    if (!template) return "<p>Error: admin dashboard template missing</p>";
+    const clone = template.content.cloneNode(true);
+    
     const users = appState.users || [];
     const flats = appState.flats || [];
     const bookings = appState.bookings || [];
@@ -16,138 +20,100 @@ window.Admin = {
       { label: "Bookings", value: bookings.length, icon: "📅" },
       { label: "Pending Reviews", value: pending, icon: "📝" },
     ];
-    return `
-      <div class="container page-content">
-        <div class="page-header"><h2>Admin Dashboard</h2></div>
-        <div class="stat-grid">
-          ${stats
-            .map(
-              (s) => `
-          <div class="stat-card card card-hover-lift">
-            <p class="stat-card__icon stat-card__icon--lg">${s.icon}</p>
-            <p class="stat-card__label">${s.label}</p>
-            <p class="stat-card__value">${s.value}</p>
-          </div>`,
-            )
-            .join("")}
-        </div>
-        <div class="flex-between mt-lg">
-          <a class="btn btn--primary btn-hover-scale" href="#/admin/approvals" data-route="/admin/approvals">
-            Review Listings ${pending > 0 ? `<span class="badge badge--danger badge--offset">${pending}</span>` : ""}
-          </a>
-          <a class="btn btn--secondary btn-hover-scale" href="#/admin/users" data-route="/admin/users">Manage Users</a>
-        </div>
-      </div>`;
+    
+    const grid = clone.querySelector("#admin-stat-grid");
+    grid.innerHTML = stats.map((s) => 
+      "<div class=\"stat-card card card-hover-lift\">" +
+        "<p class=\"stat-card__icon stat-card__icon--lg\">" + s.icon + "</p>" +
+        "<p class=\"stat-card__label\">" + s.label + "</p>" +
+        "<p class=\"stat-card__value\">" + s.value + "</p>" +
+      "</div>"
+    ).join("");
+    
+    const btn = clone.querySelector("#admin-review-btn");
+    if (pending > 0) btn.innerHTML = 'Review Listings <span class="badge badge--danger badge--offset">' + pending + '</span>';
+    
+    const div = document.createElement("div");
+    div.appendChild(clone);
+    return div.innerHTML;
   },
 
-  viewApprovals(listings = appState.listings) {
-    const rows = listings.length
-      ? listings
-          .map(
-            (l) => `
-        <tr>
-          <td>
-            <strong>🏠 ${escHtml(l.flat_title)}</strong>
-            <br><small class="text-muted">📍 ${escHtml(l.city)} · 🏢 ${escHtml(l.type)} · 💰 ₹${Number(l.rent).toLocaleString("en-IN")}</small>
-          </td>
-          <td>👤 ${escHtml(l.owner_name)}</td>
-          <td>📅 ${l.submitted_at?.slice(0, 10) || "—"}</td>
-          <td>
-            <span class="badge badge--${l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning"}">
-              ${l.status === "approved" ? "✅ " : l.status === "rejected" ? "❌ " : "⏳ "}${l.status}
-            </span>
-          </td>
-          <td>
-            ${
-              l.status === "pending"
-                ? `<button class="btn btn--primary btn--sm" type="button" data-action="approve" data-id="${l.id}">Approve</button>
-                 <button class="btn btn--danger  btn--sm" type="button" data-action="reject"  data-id="${l.id}">Reject</button>`
-                : l.reviewer_name
-                  ? `<small class="text-muted">by ${escHtml(l.reviewer_name)}</small>`
-                  : "—"
-            }
-          </td>
-        </tr>`,
-          )
-          .join("")
-      : `<tr><td colspan="5" class="empty-cell">No listings found.</td></tr>`;
-
-    return `
-      <div class="container page-content">
-        <div class="page-header">
-          <h2>Listing Approvals</h2>
-          <select class="form-select page-header__control" id="approval-status-filter">
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-        <div class="card">
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>Flat</th><th>Owner</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="approvals-tbody">${rows}</tbody>
-            </table>
-          </div>
-        </div>
-      </div>`;
+    viewApprovals(listings = appState.listings) {
+    const template = document.getElementById("admin-approvals-template");
+    if (!template) return "<p>Error: admin approvals template missing</p>";
+    const clone = template.content.cloneNode(true);
+    
+    const tbody = clone.querySelector("#approvals-tbody");
+    if (listings.length) {
+      tbody.innerHTML = listings.map((l) => {
+        const statusIcon = l.status === "approved" ? "✅ " : l.status === "rejected" ? "❌ " : "⏳ ";
+        const statusClass = l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning";
+        let actions = "";
+        if (l.status === "pending") {
+          actions = '<button class="btn btn--primary btn--sm" type="button" data-action="approve" data-id="' + l.id + '">Approve</button> ' +
+                    '<button class="btn btn--danger  btn--sm" type="button" data-action="reject"  data-id="' + l.id + '">Reject</button>';
+        } else if (l.reviewer_name) {
+          actions = '<small class="text-muted">by ' + escHtml(l.reviewer_name) + '</small>';
+        } else {
+          actions = "—";
+        }
+        return "<tr>" +
+          "<td>" +
+            "<strong>🏠 " + escHtml(l.flat_title) + "</strong><br>" +
+            "<small class=\"text-muted\">📍 " + escHtml(l.city) + " · 🏢 " + escHtml(l.type) + " · 💰 ₹" + Number(l.rent).toLocaleString("en-IN") + "</small>" +
+          "</td>" +
+          "<td>👤 " + escHtml(l.owner_name) + "</td>" +
+          "<td>📅 " + (l.submitted_at?.slice(0, 10) || "—") + "</td>" +
+          "<td><span class=\"badge badge--" + statusClass + "\">" + statusIcon + l.status + "</span></td>" +
+          "<td>" + actions + "</td>" +
+        "</tr>";
+      }).join("");
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">No listings found.</td></tr>';
+    }
+    
+    const div = document.createElement("div");
+    div.appendChild(clone);
+    return div.innerHTML;
   },
 
-  viewUsers(users = appState.users) {
-    const rows = users.length
-      ? users
-          .map(
-            (u) => `
-        <tr>
-          <td>
-            <strong>👤 ${escHtml(u.name)}</strong>
-            <br><small class="text-muted">✉️ ${escHtml(u.email)}</small>
-          </td>
-          <td><span class="badge badge--neutral">🛡️ ${u.role}</span></td>
-          <td><span class="badge badge--${u.status === "active" ? "success" : "danger"}">${u.status === "active" ? "🟢 " : "🔴 "}${u.status}</span></td>
-          <td>📅 ${u.created_at?.slice(0, 10) || "—"}</td>
-          <td>
-            ${
-              u.id !== appState.currentUser.id
-                ? `<button class="btn btn--sm btn--secondary" type="button" data-action="${u.status === "active" ? "suspend" : "activate"}" data-user-id="${u.id}">
-                   ${u.status === "active" ? "Suspend" : "Activate"}
-                 </button>
-                 <button class="btn btn--sm btn--danger" type="button" data-action="delete" data-user-id="${u.id}">Delete</button>`
-                : '<span class="text-muted">(you)</span>'
-            }
-          </td>
-        </tr>`,
-          )
-          .join("")
-      : `<tr><td colspan="5" class="empty-cell">No users found.</td></tr>`;
-
-    return `
-      <div class="container page-content">
-        <div class="page-header"><h2>User Management</h2></div>
-        <div class="card">
-          <div class="filter-bar filter-bar--inline">
-            <input class="form-input" id="user-search-input" placeholder="Search by name or email…" />
-            <select class="form-select" id="user-role-filter">
-              <option value="">All Roles</option>
-              <option value="tenant">Tenant</option>
-              <option value="owner">Owner</option>
-              <option value="admin">Admin</option>
-            </select>
-            <select class="form-select" id="user-status-filter">
-              <option value="">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="suspended">Suspended</option>
-            </select>
-          </div>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
-              <tbody id="users-tbody">${rows}</tbody>
-            </table>
-          </div>
-        </div>
-      </div>`;
+    viewUsers(users = appState.users) {
+    const template = document.getElementById("admin-users-template");
+    if (!template) return "<p>Error: admin users template missing</p>";
+    const clone = template.content.cloneNode(true);
+    
+    const tbody = clone.querySelector("#users-tbody");
+    if (users.length) {
+      tbody.innerHTML = users.map((u) => {
+        const statusIcon = u.status === "active" ? "🟢 " : "🔴 ";
+        const statusClass = u.status === "active" ? "success" : "danger";
+        let actions = "";
+        if (u.id !== appState.currentUser.id) {
+          const toggleAction = u.status === "active" ? "suspend" : "activate";
+          const toggleLabel = u.status === "active" ? "Suspend" : "Activate";
+          actions = '<button class="btn btn--sm btn--secondary" type="button" data-action="' + toggleAction + '" data-user-id="' + u.id + '">' + toggleLabel + '</button> ' +
+                    '<button class="btn btn--sm btn--danger" type="button" data-action="delete" data-user-id="' + u.id + '">Delete</button>';
+        } else {
+          actions = '<span class="text-muted">(you)</span>';
+        }
+        return "<tr>" +
+          "<td>" +
+            "<strong>👤 " + escHtml(u.name) + "</strong><br>" +
+            "<small class=\"text-muted\">✉️ " + escHtml(u.email) + "</small>" +
+          "</td>" +
+          "<td><span class=\"badge badge--neutral\">🛡️ " + u.role + "</span></td>" +
+          "<td><span class=\"badge badge--" + statusClass + "\">" + statusIcon + u.status + "</span></td>" +
+          "<td>📅 " + (u.created_at?.slice(0, 10) || "—") + "</td>" +
+          "<td>" + actions + "</td>" +
+        "</tr>";
+      }).join("");
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">No users found.</td></tr>';
+    }
+    
+    const div = document.createElement("div");
+    div.appendChild(clone);
+    return div.innerHTML;
   },
 
   bindEvents(root) {

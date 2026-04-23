@@ -123,6 +123,46 @@
       }
     </script>
 
+        <!-- HTML Templates for Auth Module -->
+    <template id="auth-template">
+      <div class="auth-wrapper">
+        <button class="auth-theme-toggle" id="auth-theme-toggle" type="button" aria-label="Toggle theme"></button>
+        <div class="auth-card">
+          <div class="auth-logo">FF</div>
+          <h1 class="auth-title">FlatFinder</h1>
+          <p class="auth-sub"></p>
+          <form id="auth-form" class="auth-form" novalidate autocomplete="on">
+            <div class="form-group signup-only hidden">
+              <label class="form-label" for="auth-name">Full Name</label>
+              <input class="form-input" id="auth-name" name="name" type="text" placeholder="Full name" autocomplete="name" minlength="2" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="auth-email">Email</label>
+              <input class="form-input" id="auth-email" name="email" type="email" placeholder="Email address" autocomplete="email" inputmode="email" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="auth-password">Password</label>
+              <div class="input-wrap">
+                <input class="form-input" id="auth-password" name="password" type="password" required minlength="6" />
+                <button type="button" class="input-eye" id="toggle-password" aria-label="Toggle password visibility">Toggle</button>
+              </div>
+              <div class="auth-helper-row login-only hidden"><a href="#" id="forgot-password" class="text-sm text-muted">Forgot Password?</a></div>
+            </div>
+            <div class="form-group signup-only hidden">
+              <label class="form-label">Account Type</label>
+              <div class="role-pills">
+                <label class="role-pill"><input type="radio" name="role" value="tenant" checked /> Tenant</label>
+                <label class="role-pill"><input type="radio" name="role" value="owner" /> Owner</label>
+              </div>
+            </div>
+            <div id="auth-error" class="form-error hidden"></div>
+            <button class="btn btn--primary btn--full" type="submit" id="auth-submit"></button>
+          </form>
+          <p class="auth-switch"></p>
+        </div>
+      </div>
+    </template>
+
     <!-- FlatFinder modules — load order matters -->
     <script src="ff-utils.js?v=20260424" defer></script>
     <script src="ff-core.js?v=20260424" defer></script>

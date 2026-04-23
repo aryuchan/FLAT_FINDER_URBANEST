@@ -116,6 +116,79 @@
       }
     </script>
 
+        <!-- HTML Templates for Tenant Module -->
+    <template id="flat-search-template">
+      <div class="container page-content">
+        <div class="page-header"><h2>Search Flats</h2></div>
+        <form id="flat-search-filter-form" class="filter-bar card">
+          <input class="form-input" name="city" placeholder="City…" />
+          <select class="form-select" name="type">
+            <option value="">All Types</option>
+            <option>1BHK</option><option>2BHK</option><option>3BHK</option>
+            <option>Studio</option><option>4BHK+</option>
+          </select>
+          <select class="form-select" name="furnished">
+            <option value="">Furnished?</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+          <input class="form-input" name="min_rent" type="number" min="0" placeholder="Min ₹" />
+          <input class="form-input" name="max_rent" type="number" min="0" placeholder="Max ₹" />
+          <button class="btn btn--primary" type="submit">Filter</button>
+          <button class="btn btn--secondary" type="reset" id="filter-reset-btn">Clear</button>
+        </form>
+        <p class="text-muted flat-count" style="margin-bottom:var(--space-md)"></p>
+        <div class="flat-grid"></div>
+      </div>
+    </template>
+
+    <template id="flat-detail-template">
+      <div class="container page-content">
+        <a class="back-link" href="#/tenant/search" data-route="/tenant/search">← Back to Search</a>
+        <div class="gallery-container"></div>
+        <div class="flat-detail-layout">
+          <div class="flat-detail card">
+            <div class="flat-detail__meta">
+              <span class="badge badge--neutral detail-type"></span>
+              <span class="badge detail-furnished"></span>
+              <span class="badge detail-available"></span>
+            </div>
+            <h2 class="detail-title"></h2>
+            <p class="flat-detail__city detail-city"></p>
+            <p class="flat-detail__rent detail-rent"><span>/ month</span></p>
+            <p class="flat-detail__desc detail-desc"></p>
+            <div class="amenities-container"></div>
+            <div class="action-container"></div>
+          </div>
+          <aside class="owner-contact-container"></aside>
+        </div>
+      </div>
+    </template>
+
+    <template id="booking-form-template">
+      <div class="container page-content">
+        <a class="back-link booking-back-link" href="#" data-route="">← Back to Details</a>
+        <div class="card form-card" style="max-width:680px">
+          <h2>Book Flat</h2>
+          <p class="form-card__sub booking-sub"></p>
+          <form id="booking-form" novalidate>
+            <input type="hidden" name="flat_id" value="" />
+            <div class="form-group">
+              <label class="form-label" for="check-in">Check-in Date</label>
+              <input class="form-input" id="check-in" name="check_in" type="date" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="check-out">Check-out Date</label>
+              <input class="form-input" id="check-out" name="check_out" type="date" required />
+            </div>
+            <div id="rent-preview" class="rent-preview hidden">
+              <p>Estimated Rent: <strong id="rent-preview-value"></strong></p>
+            </div>
+            <button class="btn btn--primary btn--full" type="submit" id="booking-submit-btn">Confirm Booking</button>
+          </form>
+        </div>
+      </div>
+    </template>
     <!-- FlatFinder modules — load order matters -->
     <script src="ff-utils.js?v=20260424" defer></script>
     <script src="ff-core.js?v=20260424" defer></script>

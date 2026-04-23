@@ -5,78 +5,35 @@
 // ─────────────────────────────────────────────────────────────────
 
 window.Auth = {
-  viewLogin(mode = "login") {
+    viewLogin(mode = "login") {
     const isLogin = mode === "login";
-    const theme =
-      document.documentElement.getAttribute("data-theme") || "light";
-    return `
-      <div class="auth-wrapper">
-        <button class="auth-theme-toggle" id="auth-theme-toggle" type="button" aria-label="Toggle theme">
-          ${theme === "dark" ? "Light mode" : "Dark mode"}
-        </button>
-        <div class="auth-card">
-          <div class="auth-logo">FF</div>
-          <h1 class="auth-title">FlatFinder</h1>
-          <p class="auth-sub">${isLogin ? "Sign in to your account" : "Create a new account"}</p>
-
-          <form id="auth-form" class="auth-form" novalidate autocomplete="on">
-            ${
-              !isLogin
-                ? `
-            <div class="form-group">
-              <label class="form-label" for="auth-name">Full Name</label>
-              <input class="form-input" id="auth-name" name="name" type="text"
-                placeholder="Full name" autocomplete="name" required minlength="2" />
-            </div>`
-                : ""
-            }
-
-            <div class="form-group">
-              <label class="form-label" for="auth-email">Email</label>
-              <input class="form-input" id="auth-email" name="email" type="email"
-                placeholder="Email address" autocomplete="email" inputmode="email" required />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="auth-password">Password</label>
-              <div class="input-wrap">
-                <input class="form-input" id="auth-password" name="password" type="password"
-                  placeholder="${isLogin ? "Your password" : "At least 6 characters"}"
-                  autocomplete="${isLogin ? "current-password" : "new-password"}" required minlength="6" />
-                <button type="button" class="input-eye" id="toggle-password" aria-label="Toggle password visibility">Toggle</button>
-              </div>
-              ${isLogin ? `<div class="auth-helper-row"><a href="#" id="forgot-password" class="text-sm text-muted">Forgot Password?</a></div>` : ""}
-            </div>
-
-            ${
-              !isLogin
-                ? `
-            <div class="form-group">
-              <label class="form-label">Account Type</label>
-              <div class="role-pills">
-                <label class="role-pill"><input type="radio" name="role" value="tenant" checked /> Tenant</label>
-                <label class="role-pill"><input type="radio" name="role" value="owner" /> Owner</label>
-              </div>
-            </div>`
-                : ""
-            }
-
-            <div id="auth-error" class="form-error hidden"></div>
-
-            <button class="btn btn--primary btn--full" type="submit" id="auth-submit">
-              ${isLogin ? "Sign In" : "Create Account"}
-            </button>
-          </form>
-
-          <p class="auth-switch">
-            ${
-              isLogin
-                ? `Don't have an account? <a href="#/signup" data-route="/signup">Sign up free</a>`
-                : `Already have an account? <a href="#/login" data-route="/login">Sign in</a>`
-            }
-          </p>
-        </div>
-      </div>`;
+    const template = document.getElementById("auth-template");
+    if (!template) return "<p>Error: auth template missing</p>";
+    const clone = template.content.cloneNode(true);
+    
+    const theme = document.documentElement.getAttribute("data-theme") || "light";
+    clone.querySelector("#auth-theme-toggle").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+    clone.querySelector(".auth-sub").textContent = isLogin ? "Sign in to your account" : "Create a new account";
+    
+    if (!isLogin) {
+      clone.querySelectorAll(".signup-only").forEach(el => el.classList.remove("hidden"));
+      clone.querySelector("#auth-name").required = true;
+      clone.querySelector("#auth-password").placeholder = "At least 6 characters";
+      clone.querySelector("#auth-password").autocomplete = "new-password";
+    } else {
+      clone.querySelectorAll(".login-only").forEach(el => el.classList.remove("hidden"));
+      clone.querySelector("#auth-password").placeholder = "Your password";
+      clone.querySelector("#auth-password").autocomplete = "current-password";
+    }
+    
+    clone.querySelector("#auth-submit").textContent = isLogin ? "Sign In" : "Create Account";
+    clone.querySelector(".auth-switch").innerHTML = isLogin 
+      ? "Don't have an account? <a href=\"#/signup\" data-route=\"/signup\">Sign up free</a>"
+      : "Already have an account? <a href=\"#/login\" data-route=\"/login\">Sign in</a>";
+      
+    const div = document.createElement("div");
+    div.appendChild(clone);
+    return div.innerHTML;
   },
 
   bindEvents(root) {

@@ -140,3 +140,8 @@ vite.config.ts.timestamp-*
 
 # Local QA artifacts
 qa-*.png
+
+REFERANCE_FFCNND/
+OLD-server.js
+uploads/
+

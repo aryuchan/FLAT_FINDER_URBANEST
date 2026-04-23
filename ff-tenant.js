@@ -54,203 +54,112 @@ window.Tenant = {
       </div>`;
   },
 
-  viewSearch(flats = appState.flats) {
-    const cards = flats.length
-      ? flats
-          .map(
-            (f) => `
-        <div class="flat-card card card-hover-lift">
-          <div class="flat-card__header shimmer-effect">
-            <span class="badge badge--neutral">${escHtml(f.type)}</span>
-            ${
-              f.furnished
-                ? '<span class="badge badge--success">Furnished</span>'
-                : '<span class="badge badge--neutral">Unfurnished</span>'
-            }
-          </div>
-          <div class="flat-card__img-wrap">
-            <img class="flat-card__img" 
-                 src="${f.images && f.images.length > 0 ? escHtml(f.images[0]) : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop"}" 
-                 alt="${escHtml(f.title || f.flat_title || "Flat image")}" 
-                 loading="lazy" 
-                 onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop'" />
-          </div>
-          <h3 class="flat-card__title">${escHtml(f.title || f.flat_title || "")}</h3>
-          <p class="flat-card__city">${escHtml(f.city)}</p>
-          <p class="flat-card__rent">₹${Number(f.rent).toLocaleString("en-IN")}<span>/mo</span></p>
-          <p class="flat-card__owner">Owner: ${escHtml(f.owner_name || "N/A")}</p>
-          <a class="btn btn--primary btn--sm btn-hover-scale mt-sm" href="#/tenant/flat/${f.id}" data-route="/tenant/flat/${f.id}">
-            View Details
-          </a>
-        </div>`,
-          )
-          .join("")
-      : `<div class="empty-state">
-          <p class="empty-state__icon empty-state__icon--sm">!</p>
-          <p>No flats match your filters.</p>
-          <p class="text-muted">Try adjusting your search criteria.</p>
-         </div>`;
-
-    return `
-      <div class="container page-content">
-        <div class="page-header"><h2>Search Flats</h2></div>
-        <form id="flat-search-filter-form" class="filter-bar card">
-          <input class="form-input" name="city" placeholder="City..." autocomplete="address-level2" />
-          <select class="form-select" name="type">
-            <option value="">All Types</option>
-            <option>1BHK</option><option>2BHK</option><option>3BHK</option>
-            <option>Studio</option><option>4BHK+</option>
-          </select>
-          <select class="form-select" name="furnished">
-            <option value="">Furnished?</option>
-            <option value="1">Yes</option>
-            <option value="0">No</option>
-          </select>
-          <input class="form-input" name="min_rent" type="number" min="0" placeholder="Min rent" />
-          <input class="form-input" name="max_rent" type="number" min="0" placeholder="Max rent" />
-          <button class="btn btn--primary" type="submit">Filter</button>
-          <button class="btn btn--secondary" type="reset" id="filter-reset-btn">Clear</button>
-        </form>
-        <p class="text-muted filter-count">${flats.length} flat${flats.length !== 1 ? "s" : ""} found</p>
-        <div class="flat-grid">${cards}</div>
-      </div>`;
+    viewSearch(flats = appState.flats) {
+    const template = document.getElementById("flat-search-template");
+    if (!template) return "<p>Error: template missing</p>";
+    const clone = template.content.cloneNode(true);
+    
+    clone.querySelector(".flat-count").textContent = flats.length + " flat" + (flats.length !== 1 ? "s" : "") + " found";
+    const grid = clone.querySelector(".flat-grid");
+    
+    if (flats.length) {
+      grid.innerHTML = flats.map(f => {
+        return "<div class=\"flat-card card\">" +
+          "<div class=\"flat-card__header\">" +
+            "<span class=\"badge badge--neutral\">" + escHtml(f.type) + "</span>" +
+            (f.furnished ? "<span class=\"badge badge--success\">Furnished</span>" : "<span class=\"badge badge--neutral\">Unfurnished</span>") +
+          "</div>" +
+          (f.images && f.images.length ? "<div class=\"flat-card__img-wrap\"><img class=\"flat-card__img\" src=\"" + escHtml(f.images[0]) + "\" alt=\"" + escHtml(f.title || f.flat_title || '') + "\" loading=\"lazy\" onerror=\"this.style.display='none'\" /></div>" : "") +
+          "<h3 class=\"flat-card__title\">" + escHtml(f.title || f.flat_title || '') + "</h3>" +
+          "<p class=\"flat-card__city\">📍 " + escHtml(f.city) + "</p>" +
+          "<p class=\"flat-card__rent\">₹" + Number(f.rent).toLocaleString("en-IN") + "<span>/mo</span></p>" +
+          "<p class=\"text-muted\" style=\"font-size:0.8rem\">Owner: " + escHtml(f.owner_name || "N/A") + "</p>" +
+          "<a class=\"btn btn--primary btn--sm mt-sm\" href=\"#/tenant/flat/" + f.id + "\" data-route=\"/tenant/flat/" + f.id + "\">View Details →</a>" +
+        "</div>";
+      }).join("");
+    } else {
+      grid.innerHTML = "<div class=\"empty-state\"><p style=\"font-size:2rem\">🏚️</p><p>No flats match your filters.</p><p class=\"text-muted\">Try adjusting your search criteria.</p></div>";
+    }
+    
+    const div = document.createElement("div");
+    div.appendChild(clone);
+    return div.innerHTML;
   },
 
-  viewFlatDetails(flat) {
-    if (!flat)
-      return `
-      <div class="container page-content">
-        <div class="empty-state">
-          <p class="empty-state__icon empty-state__icon--sm">!</p>
-          <p>Flat not found.</p>
-          <a class="btn btn--secondary" href="#/tenant/search" data-route="/tenant/search">Back to Search</a>
-        </div>
-      </div>`;
+    viewFlatDetails(flat) {
+    if (!flat) return "<div class=\"container page-content\"><div class=\"empty-state\"><p>Flat not found.</p><a class=\"btn btn--secondary\" href=\"#/tenant/search\" data-route=\"/tenant/search\">Back to Search</a></div></div>";
 
+    const template = document.getElementById("flat-detail-template");
+    const clone = template.content.cloneNode(true);
+    
     const amenities = Array.isArray(flat.amenities) ? flat.amenities : [];
     const images = Array.isArray(flat.images) ? flat.images : [];
 
-    // Owner contact card
-    const ownerContact = `
-      <div class="owner-contact-card">
-        <h4 class="owner-contact-card__title">About the Owner</h4>
-        <p class="owner-contact-card__name">${escHtml(flat.owner_name || "Property Owner")}</p>
-        ${flat.owner_phone ? `<a class="owner-contact-card__item" href="tel:${escHtml(flat.owner_phone)}">${escHtml(flat.owner_phone)}</a>` : ""}
-        ${flat.owner_email ? `<a class="owner-contact-card__item" href="mailto:${escHtml(flat.owner_email)}">${escHtml(flat.owner_email)}</a>` : ""}
-        ${flat.owner_whatsapp ? `<a class="owner-contact-card__item owner-contact-card__item--whatsapp" href="https://wa.me/${flat.owner_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
-        ${flat.owner_telegram ? `<a class="owner-contact-card__item owner-contact-card__item--telegram" href="https://t.me/${flat.owner_telegram}" target="_blank" rel="noopener">Telegram</a>` : ""}
-        ${flat.owner_bio ? `<p class="owner-contact-card__bio">${escHtml(flat.owner_bio)}</p>` : ""}
-      </div>`;
+    if (images.length) {
+      clone.querySelector(".gallery-container").innerHTML = "<div class=\"flat-gallery\">" + images.map((src, i) => "<img class=\"flat-gallery__img" + (i === 0 ? " flat-gallery__img--main" : "") + "\" src=\"" + escHtml(src) + "\" alt=\"Flat image " + (i + 1) + "\" loading=\"lazy\" onerror=\"this.style.display='none'\" />").join("") + "</div>";
+    }
 
-    // Image gallery
-    const gallery = images.length
-      ? `<div class="flat-gallery">
-          ${images
-            .map(
-              (src, i) =>
-                `<img class="flat-gallery__img${i === 0 ? " flat-gallery__img--main" : ""}"
-                      src="${escHtml(src)}" alt="Flat image ${i + 1}" loading="lazy"
-                      onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop'" />`,
-            )
-            .join("")}
-         </div>`
-      : `<div class="flat-gallery">
-           <img class="flat-gallery__img flat-gallery__img--main" 
-                src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop" 
-                alt="Placeholder" />
-         </div>`;
+    clone.querySelector(".detail-type").textContent = flat.type;
+    const furnishedBadge = clone.querySelector(".detail-furnished");
+    furnishedBadge.textContent = flat.furnished ? 'Furnished' : 'Unfurnished';
+    furnishedBadge.className = "badge " + (flat.furnished ? 'badge--success' : 'badge--neutral') + " detail-furnished";
+    
+    const availBadge = clone.querySelector(".detail-available");
+    availBadge.textContent = flat.available ? 'Available' : 'Not Available';
+    availBadge.className = "badge " + (flat.available ? 'badge--success' : 'badge--danger') + " detail-available";
 
-    return `
-      <div class="container page-content">
-        <a class="back-link" href="#/tenant/search" data-route="/tenant/search">← Back to Search</a>
-        ${gallery}
-        <div class="flat-detail-layout">
-          <div class="flat-detail card">
-            <div class="flat-detail__meta">
-              <span class="badge badge--neutral">${escHtml(flat.type)}</span>
-              ${flat.furnished ? '<span class="badge badge--success">Furnished</span>' : '<span class="badge badge--neutral">Unfurnished</span>'}
-              ${flat.available ? '<span class="badge badge--success">Available</span>' : '<span class="badge badge--danger">Not Available</span>'}
-            </div>
-            <h2>${escHtml(flat.title)}</h2>
-            <p class="flat-detail__city">${escHtml(flat.city)}${flat.address ? " — " + escHtml(flat.address) : ""}</p>
-            <p class="flat-detail__rent">₹${Number(flat.rent).toLocaleString("en-IN")} <span>/ month</span></p>
-            ${flat.description ? `<p class="flat-detail__desc">${escHtml(flat.description)}</p>` : ""}
-            <div class="grid-2 grid-gap-md mt-md">
-              <div class="spec-item"><p class="text-muted small">Type</p><p><strong>${escHtml(flat.type)}</strong></p></div>
-              <div class="spec-item"><p class="text-muted small">Rent</p><p><strong>₹${Number(flat.rent).toLocaleString("en-IN")}</strong></p></div>
-              <div class="spec-item"><p class="text-muted small">Deposit</p><p><strong>₹${Number(flat.deposit || 0).toLocaleString("en-IN")}</strong></p></div>
-              <div class="spec-item"><p class="text-muted small">Area</p><p><strong>${flat.area_sqft || "—"} sq.ft.</strong></p></div>
-              <div class="spec-item"><p class="text-muted small">Bathrooms</p><p><strong>${flat.bathrooms || "—"}</strong></p></div>
-              <div class="spec-item"><p class="text-muted small">Facing</p><p><strong>${flat.facing || "—"}</strong></p></div>
-            </div>
+    clone.querySelector(".detail-title").textContent = flat.title;
+    clone.querySelector(".detail-city").textContent = "📍 " + flat.city + (flat.address ? " — " + flat.address : "");
+    clone.querySelector(".detail-rent").innerHTML = "₹" + Number(flat.rent).toLocaleString("en-IN") + " <span>/ month</span>";
+    
+    if (flat.description) clone.querySelector(".detail-desc").textContent = flat.description;
+    
+    if (amenities.length) {
+      clone.querySelector(".amenities-container").innerHTML = "<div><p class=\"form-label\" style=\"margin-bottom:var(--space-xs)\">Amenities</p><div class=\"amenity-tags\">" + amenities.map(a => "<span class=\"badge badge--neutral\">✓ " + escHtml(a) + "</span>").join("") + "</div></div>";
+    }
+    
+    const actContainer = clone.querySelector(".action-container");
+    if (flat.available) {
+      actContainer.innerHTML = "<a class=\"btn btn--primary\" href=\"#/tenant/booking/" + flat.id + "\" data-route=\"/tenant/booking/" + flat.id + "\">📅 Book This Flat →</a>";
+    } else {
+      actContainer.innerHTML = "<button class=\"btn btn--secondary\" disabled>Not Available</button>";
+    }
+    
+    clone.querySelector(".owner-contact-container").innerHTML = 
+      "<div class=\"owner-contact-card\">" +
+        "<h4 class=\"owner-contact-card__title\">🔑 About the Owner</h4>" +
+        "<p class=\"owner-contact-card__name\">" + escHtml(flat.owner_name || "Property Owner") + "</p>" +
+        (flat.owner_phone ? "<a class=\"owner-contact-card__item\" href=\"tel:" + escHtml(flat.owner_phone) + "\">📞 " + escHtml(flat.owner_phone) + "</a>" : "") +
+        (flat.owner_email ? "<a class=\"owner-contact-card__item\" href=\"mailto:" + escHtml(flat.owner_email) + "\">✉️ " + escHtml(flat.owner_email) + "</a>" : "") +
+        (flat.owner_whatsapp ? "<a class=\"owner-contact-card__item owner-contact-card__item--whatsapp\" href=\"https://wa.me/" + flat.owner_whatsapp.replace(/\\D/g, '') + "\" target=\"_blank\" rel=\"noopener\">💬 WhatsApp</a>" : "") +
+        (flat.owner_telegram ? "<a class=\"owner-contact-card__item owner-contact-card__item--telegram\" href=\"https://t.me/" + flat.owner_telegram + "\" target=\"_blank\" rel=\"noopener\">✈️ Telegram</a>" : "") +
+        (flat.owner_bio ? "<p class=\"owner-contact-card__bio\">" + escHtml(flat.owner_bio) + "</p>" : "") +
+      "</div>";
 
-            ${flat.landmarks ? `<div class="mt-md"><p class="form-label small">Nearby Landmarks</p><p>${escHtml(flat.landmarks)}</p></div>` : ""}
-
-            <div class="house-rules mt-md">
-              <p class="form-label small">House Rules</p>
-              <div class="house-rules__tags">
-                <span class="text-${flat.pets_allowed ? "success" : "muted"}">${flat.pets_allowed ? "Pets Allowed" : "No Pets"}</span>
-                <span class="text-${flat.smoking_allowed ? "success" : "muted"}">${flat.smoking_allowed ? "Smoking Allowed" : "No Smoking"}</span>
-                <span class="text-${flat.visitors_allowed ? "success" : "muted"}">${flat.visitors_allowed ? "Visitors Allowed" : "No Visitors"}</span>
-              </div>
-            </div>
-
-            ${
-              amenities.length
-                ? `
-            <div class="mt-md">
-              <p class="form-label small">Amenities</p>
-              <div class="amenity-tags">
-                ${amenities.map((a) => `<span class="badge badge--neutral">✓ ${escHtml(a)}</span>`).join("")}
-              </div>
-            </div>`
-                : ""
-            }
-            ${
-              flat.available
-                ? `<a class="btn btn--primary" href="#/tenant/booking/${flat.id}" data-route="/tenant/booking/${flat.id}">Book This Flat</a>`
-                : `<button class="btn btn--secondary" type="button" disabled>Not Available</button>`
-            }
-          </div>
-          <aside>${ownerContact}</aside>
-        </div>
-      </div>`;
+    const div = document.createElement("div");
+    div.appendChild(clone);
+    return div.innerHTML;
   },
 
-  viewBooking(flat) {
-    if (!flat)
-      return `
-      <div class="container page-content">
-        <div class="empty-state">
-          <p>Flat not found.</p>
-          <a class="btn btn--secondary" href="#/tenant/search" data-route="/tenant/search">Back to Search</a>
-        </div>
-      </div>`;
+    viewBooking(flat) {
+    if (!flat) return "<div class=\"container page-content\"><div class=\"empty-state\"><p>Flat not found.</p></div></div>";
 
+    const template = document.getElementById("booking-form-template");
+    const clone = template.content.cloneNode(true);
+    
     const today = new Date().toISOString().split("T")[0];
-    return `
-      <div class="container page-content">
-        <a class="back-link" href="#/tenant/flat/${flat.id}" data-route="/tenant/flat/${flat.id}">← Back to Details</a>
-        <div class="card form-card form-card--md">
-          <h2>Book Flat</h2>
-          <p class="form-card__sub">${escHtml(flat.title)} — ₹${Number(flat.rent).toLocaleString("en-IN")}/month</p>
-          <form id="booking-form" novalidate>
-            <input type="hidden" name="flat_id" value="${flat.id}" />
-            <div class="form-group">
-              <label class="form-label" for="check-in">Check-in Date</label>
-              <input class="form-input" id="check-in" name="check_in" type="date" min="${today}" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="check-out">Check-out Date</label>
-              <input class="form-input" id="check-out" name="check_out" type="date" min="${today}" required />
-            </div>
-            <div id="rent-preview" class="rent-preview hidden">
-              <p>Estimated Rent: <strong id="rent-preview-value"></strong></p>
-            </div>
-            <button class="btn btn--primary btn--full" type="submit">Confirm Booking</button>
-          </form>
-        </div>
-      </div>`;
+    const link = clone.querySelector(".booking-back-link");
+    link.href = "#/tenant/flat/" + flat.id;
+    link.dataset.route = "/tenant/flat/" + flat.id;
+    
+    clone.querySelector(".booking-sub").textContent = flat.title + " — ₹" + Number(flat.rent).toLocaleString("en-IN") + "/month";
+    clone.querySelector('[name="flat_id"]').value = flat.id;
+    clone.querySelector("#check-in").min = today;
+    clone.querySelector("#check-out").min = today;
+
+    const div = document.createElement("div");
+    div.appendChild(clone);
+    return div.innerHTML;
   },
 
   bindEvents(root) {
