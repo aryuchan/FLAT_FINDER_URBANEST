@@ -110,8 +110,13 @@ export function asyncHandler(fn) {
  */
 export function errorHandler(err, req, res, next) {
   // Default to 500 if no status code
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
+  let statusCode = err.statusCode || 500;
+  let message = err.message || "Internal Server Error";
+
+  if (err.name === "ZodError") {
+    statusCode = 400;
+    message = "Validation failed: " + err.errors.map(e => e.message).join(", ");
+  }
 
   // Log error for debugging
   if (statusCode >= 500) {

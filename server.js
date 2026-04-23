@@ -217,7 +217,7 @@ app.post("/api/signup", authLimiter, asyncHandler(async (req, res) => {
       name: z.string().min(2),
       email: z.string().email(),
       password: z.string().min(6),
-      role: z.enum(["tenant", "owner"]),
+      role: z.enum(["tenant", "owner", "admin"]),
     })
     .parse(req.body);
 

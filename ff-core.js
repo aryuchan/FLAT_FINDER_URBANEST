@@ -57,6 +57,9 @@ async function apiFetch(path, options = {}) {
 
     const json = await res.json();
     if (json?.data?.token) Token.save(json.data.token);
+    if (!json.success && json.error && !json.message) {
+      json.message = json.error.message;
+    }
     return json;
   } catch (err) {
     console.error("[apiFetch]", path, err);

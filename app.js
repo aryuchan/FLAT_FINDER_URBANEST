@@ -40,7 +40,10 @@ const ROLE_ROUTES = {
 function guardRoute(path) {
   const base = "/" + path.split("/").filter(Boolean).slice(0, 2).join("/");
   const roles = ROLE_ROUTES[base];
-  if (roles === null) return true;          // public
+  if (roles === null) {
+    if (appState.currentUser && (base === "/login" || base === "/signup")) return false;
+    return true;
+  }
   if (!appState.currentUser) return false;  // unauthenticated
   return roles?.includes(appState.currentUser.role) ?? false;
 }
