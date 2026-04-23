@@ -59,8 +59,8 @@ window.Tenant = {
       ? flats
           .map(
             (f) => `
-        <div class="flat-card card">
-          <div class="flat-card__header">
+        <div class="flat-card card card-hover-lift">
+          <div class="flat-card__header shimmer-effect">
             <span class="badge badge--neutral">${escHtml(f.type)}</span>
             ${
               f.furnished
@@ -79,8 +79,8 @@ window.Tenant = {
           <p class="flat-card__city">${escHtml(f.city)}</p>
           <p class="flat-card__rent">₹${Number(f.rent).toLocaleString("en-IN")}<span>/mo</span></p>
           <p class="flat-card__owner">Owner: ${escHtml(f.owner_name || "N/A")}</p>
-          <a class="btn btn--primary btn--sm mt-sm" href="#/tenant/flat/${f.id}" data-route="/tenant/flat/${f.id}">
-            View Details →
+          <a class="btn btn--primary btn--sm btn-hover-scale mt-sm" href="#/tenant/flat/${f.id}" data-route="/tenant/flat/${f.id}">
+            View Details
           </a>
         </div>`,
           )
@@ -95,7 +95,7 @@ window.Tenant = {
       <div class="container page-content">
         <div class="page-header"><h2>Search Flats</h2></div>
         <form id="flat-search-filter-form" class="filter-bar card">
-          <input class="form-input" name="city" placeholder="City…" />
+          <input class="form-input" name="city" placeholder="City..." autocomplete="address-level2" />
           <select class="form-select" name="type">
             <option value="">All Types</option>
             <option>1BHK</option><option>2BHK</option><option>3BHK</option>
@@ -106,8 +106,8 @@ window.Tenant = {
             <option value="1">Yes</option>
             <option value="0">No</option>
           </select>
-          <input class="form-input" name="min_rent" type="number" min="0" placeholder="Min ₹" />
-          <input class="form-input" name="max_rent" type="number" min="0" placeholder="Max ₹" />
+          <input class="form-input" name="min_rent" type="number" min="0" placeholder="Min rent" />
+          <input class="form-input" name="max_rent" type="number" min="0" placeholder="Max rent" />
           <button class="btn btn--primary" type="submit">Filter</button>
           <button class="btn btn--secondary" type="reset" id="filter-reset-btn">Clear</button>
         </form>

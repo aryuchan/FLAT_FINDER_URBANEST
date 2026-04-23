@@ -11,10 +11,10 @@ window.Admin = {
     const listings = appState.listings || [];
     const pending = listings.filter((l) => l.status === "pending").length;
     const stats = [
-      { label: "Total Users", value: users.length, icon: "U" },
-      { label: "Total Flats", value: flats.length, icon: "F" },
-      { label: "Bookings", value: bookings.length, icon: "B" },
-      { label: "Pending Reviews", value: pending, icon: "P" },
+      { label: "Total Users", value: users.length, icon: "👥" },
+      { label: "Total Flats", value: flats.length, icon: "🏢" },
+      { label: "Bookings", value: bookings.length, icon: "📅" },
+      { label: "Pending Reviews", value: pending, icon: "📝" },
     ];
     return `
       <div class="container page-content">
@@ -23,7 +23,7 @@ window.Admin = {
           ${stats
             .map(
               (s) => `
-          <div class="stat-card card">
+          <div class="stat-card card card-hover-lift">
             <p class="stat-card__icon stat-card__icon--lg">${s.icon}</p>
             <p class="stat-card__label">${s.label}</p>
             <p class="stat-card__value">${s.value}</p>
@@ -32,10 +32,10 @@ window.Admin = {
             .join("")}
         </div>
         <div class="flex-between mt-lg">
-          <a class="btn btn--primary" href="#/admin/approvals" data-route="/admin/approvals">
+          <a class="btn btn--primary btn-hover-scale" href="#/admin/approvals" data-route="/admin/approvals">
             Review Listings ${pending > 0 ? `<span class="badge badge--danger badge--offset">${pending}</span>` : ""}
           </a>
-          <a class="btn btn--secondary" href="#/admin/users" data-route="/admin/users">Manage Users</a>
+          <a class="btn btn--secondary btn-hover-scale" href="#/admin/users" data-route="/admin/users">Manage Users</a>
         </div>
       </div>`;
   },
@@ -47,14 +47,14 @@ window.Admin = {
             (l) => `
         <tr>
           <td>
-            <strong>${escHtml(l.flat_title)}</strong>
-            <br><small class="text-muted">${escHtml(l.city)} · ${escHtml(l.type)} · ₹${Number(l.rent).toLocaleString("en-IN")}</small>
+            <strong>🏠 ${escHtml(l.flat_title)}</strong>
+            <br><small class="text-muted">📍 ${escHtml(l.city)} · 🏢 ${escHtml(l.type)} · 💰 ₹${Number(l.rent).toLocaleString("en-IN")}</small>
           </td>
-          <td>${escHtml(l.owner_name)}</td>
-          <td>${l.submitted_at?.slice(0, 10) || "—"}</td>
+          <td>👤 ${escHtml(l.owner_name)}</td>
+          <td>📅 ${l.submitted_at?.slice(0, 10) || "—"}</td>
           <td>
             <span class="badge badge--${l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning"}">
-              ${l.status}
+              ${l.status === "approved" ? "✅ " : l.status === "rejected" ? "❌ " : "⏳ "}${l.status}
             </span>
           </td>
           <td>
@@ -101,12 +101,12 @@ window.Admin = {
             (u) => `
         <tr>
           <td>
-            <strong>${escHtml(u.name)}</strong>
-            <br><small class="text-muted">${escHtml(u.email)}</small>
+            <strong>👤 ${escHtml(u.name)}</strong>
+            <br><small class="text-muted">✉️ ${escHtml(u.email)}</small>
           </td>
-          <td><span class="badge badge--neutral">${u.role}</span></td>
-          <td><span class="badge badge--${u.status === "active" ? "success" : "danger"}">${u.status}</span></td>
-          <td>${u.created_at?.slice(0, 10) || "—"}</td>
+          <td><span class="badge badge--neutral">🛡️ ${u.role}</span></td>
+          <td><span class="badge badge--${u.status === "active" ? "success" : "danger"}">${u.status === "active" ? "🟢 " : "🔴 "}${u.status}</span></td>
+          <td>📅 ${u.created_at?.slice(0, 10) || "—"}</td>
           <td>
             ${
               u.id !== appState.currentUser.id
@@ -188,7 +188,7 @@ window.Admin = {
       if (action === "delete" && userId) {
         showModal(`
           <div class="modal-message">
-            <p class="empty-state__icon">!</p>
+            <p class="empty-state__icon">⚠️</p>
             <h3>Confirm Deletion</h3>
             <p class="text-muted">Are you sure you want to permanently delete this user and all their associated data (flats, bookings, etc.)?</p>
             <div class="modal-btn-row">

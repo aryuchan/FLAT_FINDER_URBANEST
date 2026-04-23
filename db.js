@@ -5,17 +5,36 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const dbConfig = {
-  host: process.env.DB_HOST || "127.0.0.1",
-  port: parseInt(process.env.DB_PORT, 10) || 3306,
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_DATABASE || "flatfinder",
-  ssl: {
+const dbName = process.env.DB_DATABASE || process.env.DB_NAME || "flatfinder";
+const useDatabaseUrl = Boolean(process.env.DATABASE_URL);
+const dbUrl = useDatabaseUrl ? new URL(process.env.DATABASE_URL) : null;
+const isLocalHost = (host) => ["localhost", "127.0.0.1"].includes(String(host || "").toLowerCase());
+const sslEnabled = process.env.DB_SSL
+  ? String(process.env.DB_SSL).toLowerCase() !== "false"
+  : !(useDatabaseUrl ? isLocalHost(dbUrl.hostname) : isLocalHost(process.env.DB_HOST));
+
+const dbConfig = useDatabaseUrl
+  ? {
+      host: dbUrl.hostname,
+      port: Number(dbUrl.port || 3306),
+      user: decodeURIComponent(dbUrl.username || "root"),
+      password: decodeURIComponent(dbUrl.password || ""),
+      database: decodeURIComponent(dbUrl.pathname?.replace(/^\//, "") || dbName),
+    }
+  : {
+      host: process.env.DB_HOST || "127.0.0.1",
+      port: parseInt(process.env.DB_PORT, 10) || 3306,
+      user: process.env.DB_USER || "root",
+      password: process.env.DB_PASSWORD || "",
+      database: dbName,
+    };
+
+if (sslEnabled) {
+  dbConfig.ssl = {
     rejectUnauthorized: false,
     minVersion: "TLSv1.2",
-  },
-};
+  };
+}
 
 logger.info(`[DB_INIT] Connecting to ${dbConfig.host}:${dbConfig.port}`);
 

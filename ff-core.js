@@ -34,6 +34,7 @@ window.appState = {
 
 // ── API CLIENT ───────────────────────────────────────────────────
 window.apiFetch = async function (path, options = {}) {
+  showProgress();
   try {
     const token      = Token.get();
     const isFormData = options.body instanceof FormData;
@@ -62,18 +63,30 @@ window.apiFetch = async function (path, options = {}) {
     const res = await fetch(`${API}${path}`, init);
     clearTimeout(timeoutId);
 
+    if (res.status === 401) {
+      Token.clear();
+      if (!window.location.hash.includes("login")) window.location.hash = "#/login";
+      return { success: false, data: null, message: "Session expired. Please login again." };
+    }
+
     const ct = res.headers.get("content-type") || "";
     if (!ct.includes("application/json")) {
-      return { success: false, data: null, message: `Server error ${res.status}.` };
+      const text = await res.text();
+      console.error("[apiFetch] Non-JSON response:", text);
+      return { success: false, data: null, message: `System error (${res.status}).` };
     }
 
     const json = await res.json();
-    // Auto-save token if returned in response body
     if (json?.data?.token) Token.save(json.data.token);
     return json;
   } catch (err) {
+    if (err.name === "AbortError") {
+      return { success: false, data: null, message: "Request timed out. Please try again." };
+    }
     console.error("[apiFetch]", path, err);
-    return { success: false, data: null, message: "Network error. Please check your connection." };
+    return { success: false, data: null, message: "Connection lost. Please check your internet." };
+  } finally {
+    hideProgress();
   }
 };
 
@@ -228,6 +241,36 @@ window.defaultRoute = function () {
   if (u.role === "admin") return "#/admin/dashboard";
   if (u.role === "owner") return "#/owner/dashboard";
   return "#/tenant/dashboard";
+};
+
+// ── PROGRESS INDICATOR ───────────────────────────────────────────
+let _progressTimer = null;
+window.showProgress = function () {
+  let bar = document.getElementById("app-progress");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "app-progress";
+    bar.className = "progress-bar";
+    document.body.appendChild(bar);
+  }
+  bar.style.width = "0%";
+  bar.style.opacity = "1";
+  bar.style.display = "block";
+  
+  clearTimeout(_progressTimer);
+  // Simple fake progress
+  setTimeout(() => { if (bar) bar.style.width = "30%"; }, 50);
+  setTimeout(() => { if (bar) bar.style.width = "70%"; }, 400);
+};
+
+window.hideProgress = function () {
+  const bar = document.getElementById("app-progress");
+  if (!bar) return;
+  bar.style.width = "100%";
+  _progressTimer = setTimeout(() => {
+    bar.style.opacity = "0";
+    setTimeout(() => { bar.style.display = "none"; }, 300);
+  }, 200);
 };
 
 window.bindEvents = function () {

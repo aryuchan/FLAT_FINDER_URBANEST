@@ -63,23 +63,23 @@ window.Owner = {
       <div class="container page-content">
         ${contactNudge}
         <div class="page-header">
-          <h2>Owner Dashboard</h2>
-          <a class="btn btn--primary" href="#/owner/add-flat" data-route="/owner/add-flat">+ Add Flat</a>
+          <h2>Owner Dashboard 🏠</h2>
+          <a class="btn btn--primary btn-hover-scale" href="#/owner/add-flat" data-route="/owner/add-flat">+ Add New Flat</a>
         </div>
 
         <div class="stat-grid stat-grid--sm">
-          <div class="stat-card card">
-            <p class="stat-card__icon">L</p>
+          <div class="stat-card card card-hover-lift">
+            <p class="stat-card__icon">📊</p>
             <p class="stat-card__label">Total Listings</p>
             <p class="stat-card__value">${flats.length}</p>
           </div>
-          <div class="stat-card card">
-            <p class="stat-card__icon">A</p>
+          <div class="stat-card card card-hover-lift">
+            <p class="stat-card__icon">✅</p>
             <p class="stat-card__label">Active</p>
             <p class="stat-card__value">${flats.filter((l) => l.available).length}</p>
           </div>
-          <div class="stat-card card">
-            <p class="stat-card__icon">H</p>
+          <div class="stat-card card card-hover-lift">
+            <p class="stat-card__icon">👁️‍🗨️</p>
             <p class="stat-card__label">Hidden</p>
             <p class="stat-card__value">${flats.filter((l) => !l.available).length}</p>
           </div>
@@ -147,19 +147,31 @@ window.Owner = {
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Title *</label>
-                <input class="form-input" name="title" type="text" placeholder="2BHK in Koregaon Park" required />
+                <div class="input-with-icon">
+                  <span class="input-icon">🏢</span>
+                  <input class="form-input" name="title" type="text" placeholder="2BHK in Koregaon Park" required />
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">City *</label>
-                <input class="form-input" name="city" type="text" placeholder="Pune" required />
+                <div class="input-with-icon">
+                  <span class="input-icon">📍</span>
+                  <input class="form-input" name="city" type="text" placeholder="Pune" required />
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Monthly Rent (₹) *</label>
-                <input class="form-input" name="rent" type="number" min="1" step="100" placeholder="20000" required />
+                <div class="input-with-icon">
+                  <span class="input-icon">💰</span>
+                  <input class="form-input" name="rent" type="number" min="1" step="100" placeholder="20000" required />
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Deposit (₹)</label>
-                <input class="form-input" name="deposit" type="number" min="0" step="100" placeholder="e.g. 40000" />
+                <div class="input-with-icon">
+                  <span class="input-icon">🔒</span>
+                  <input class="form-input" name="deposit" type="number" min="0" step="100" placeholder="e.g. 40000" />
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Type *</label>
@@ -187,11 +199,17 @@ window.Owner = {
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Floor Number</label>
-                <input class="form-input" name="floor_number" type="number" min="0" placeholder="e.g. 3" />
+                <div class="input-with-icon">
+                  <span class="input-icon">📶</span>
+                  <input class="form-input" name="floor_number" type="number" min="0" placeholder="e.g. 3" />
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Area (sq. ft.)</label>
-                <input class="form-input" name="area_sqft" type="number" min="0" placeholder="e.g. 850" />
+                <div class="input-with-icon">
+                  <span class="input-icon">📏</span>
+                  <input class="form-input" name="area_sqft" type="number" min="0" placeholder="e.g. 850" />
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Bathrooms</label>
@@ -305,28 +323,34 @@ window.Owner = {
           <form id="owner-profile-form" novalidate>
             <div class="form-group">
               <label class="form-label">Full Name</label>
-              <input class="form-input" type="text" name="name" value="${escHtml(u.name || "")}" required />
+              <div class="input-with-icon">
+                <span class="input-icon">👤</span>
+                <input class="form-input" type="text" name="name" value="${escHtml(u.name || "")}" required />
+              </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">Phone Number</label>
-              <input class="form-input" type="tel" name="phone" value="${escHtml(u.phone || "")}" placeholder="e.g. +91 98765 43210" />
+              <div class="input-with-icon">
+                <span class="input-icon">📞</span>
+                <input class="form-input" type="tel" name="phone" value="${escHtml(u.phone || "")}" placeholder="e.g. +91 98765 43210" />
+              </div>
             </div>
 
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">WhatsApp (Number only)</label>
-                <div class="input-prefix-wrap">
-                  <span class="input-prefix">✆</span>
-                  <input class="form-input input-with-prefix" type="text" name="whatsapp"
+                <div class="input-with-icon">
+                  <span class="input-icon">💬</span>
+                  <input class="form-input" type="text" name="whatsapp"
                     value="${escHtml(u.whatsapp || "")}" placeholder="919876543210" />
                 </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Telegram Username</label>
-                <div class="input-prefix-wrap">
-                  <span class="input-prefix">@</span>
-                  <input class="form-input input-with-prefix" type="text" name="telegram"
+                <div class="input-with-icon">
+                  <span class="input-icon">✈️</span>
+                  <input class="form-input" type="text" name="telegram"
                     value="${escHtml(u.telegram || "")}" placeholder="username" />
                 </div>
               </div>
@@ -335,8 +359,11 @@ window.Owner = {
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">City / Location</label>
-                <input class="form-input" type="text" name="location"
-                  value="${escHtml(u.location || "")}" placeholder="e.g. Pune, Maharashtra" />
+                <div class="input-with-icon">
+                  <span class="input-icon">📍</span>
+                  <input class="form-input" type="text" name="location"
+                    value="${escHtml(u.location || "")}" placeholder="e.g. Pune, Maharashtra" />
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Languages Spoken</label>
@@ -353,8 +380,11 @@ window.Owner = {
 
             <div class="form-group">
               <label class="form-label">New Password <span class="text-muted">(leave blank to keep current)</span></label>
-              <input class="form-input" type="password" name="password"
-                placeholder="At least 8 characters" minlength="8" autocomplete="new-password" />
+              <div class="input-with-icon">
+                <span class="input-icon">🔒</span>
+                <input class="form-input" type="password" name="password"
+                  placeholder="At least 8 characters" minlength="8" autocomplete="new-password" />
+              </div>
             </div>
 
             <button type="submit" class="btn btn--primary btn--full mt-md" id="profile-save-btn">Save Profile Details</button>

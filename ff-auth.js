@@ -34,7 +34,7 @@ window.Auth = {
             <div class="form-group">
               <label class="form-label" for="auth-email">Email</label>
               <input class="form-input" id="auth-email" name="email" type="email"
-                placeholder="Email address" autocomplete="email" required />
+                placeholder="Email address" autocomplete="email" inputmode="email" required />
             </div>
 
             <div class="form-group">
