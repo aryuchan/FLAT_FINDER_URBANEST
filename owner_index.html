@@ -117,6 +117,26 @@
     </script>
 
     
+        <template id="owner-dashboard-template">
+      <div class="container page-content">
+        <div id="contact-nudge-container"></div>
+        <div class="page-header">
+          <h2>Owner Dashboard</h2>
+          <a class="btn btn--primary" href="#/owner/add-flat" data-route="/owner/add-flat">+ Add Flat</a>
+        </div>
+        <div class="stat-grid stat-grid--sm" id="owner-stat-grid"></div>
+        <div class="card">
+          <h3 class="card-title">My Listings</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Flat</th><th>Rent</th><th>Status</th><th>Submitted</th><th>Reviewed By</th></tr></thead>
+              <tbody id="owner-listings-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <!-- HTML Templates for Owner Module -->
     <template id="add-flat-template">
       <div class="container page-content">

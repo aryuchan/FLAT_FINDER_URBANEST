@@ -8,87 +8,48 @@ const Owner = {
   _imgPreviews: [], // holds base64 data-URLs for preview
 
   // ── DASHBOARD ─────────────────────────────────────────────────
-  viewDashboard() {
+    viewDashboard() {
+    const template = document.getElementById("owner-dashboard-template");
+    if (!template) return "<p>Error: template missing</p>";
+    const clone = template.content.cloneNode(true);
     const u = appState.currentUser;
-    const rows = appState.listings.length
-      ? appState.listings
-          .map(
-            (l) => `
-        <tr>
-          <td>
-            <strong>${escHtml(l.flat_title)}</strong>
-            <br><small class="text-muted">📍 ${escHtml(l.city)} · ${escHtml(l.type)}</small>
-          </td>
-          <td>₹${Number(l.rent).toLocaleString("en-IN")}</td>
-          <td>
-            <span class="badge badge--${l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning"}">
-              ${l.status}
-            </span>
-          </td>
-          <td>${l.submitted_at?.slice(0, 10) || "—"}</td>
-          <td>${l.reviewer_name ? escHtml(l.reviewer_name) : "—"}</td>
-        </tr>`,
-          )
-          .join("")
-      : `<tr><td colspan="5" class="empty-cell">
-          No listings yet. <a href="#/owner/add-flat" data-route="/owner/add-flat">Add your first flat →</a>
-         </td></tr>`;
-
-    // Quick contact completeness nudge
+    const listings = appState.listings || [];
+    
     const hasContact = u.phone || u.whatsapp || u.telegram;
-    const contactNudge = !hasContact
-      ? `<div class="nudge-banner">
-           <span>💡 Add your contact details so tenants can reach you directly.</span>
-           <a class="btn btn--sm btn--secondary" href="#/owner/profile" data-route="/owner/profile">Update Profile →</a>
-         </div>`
-      : "";
-
-    return `
-      <div class="container page-content">
-        ${contactNudge}
-        <div class="page-header">
-          <h2>Owner Dashboard</h2>
-          <a class="btn btn--primary" href="#/owner/add-flat" data-route="/owner/add-flat">+ Add Flat</a>
-        </div>
-
-        <!-- Quick stats -->
-        <div class="stat-grid stat-grid--sm">
-          <div class="stat-card card">
-            <p style="font-size:1.25rem">🏠</p>
-            <p class="stat-card__label">Total Listings</p>
-            <p class="stat-card__value">${appState.listings.length}</p>
-          </div>
-          <div class="stat-card card">
-            <p style="font-size:1.25rem">✅</p>
-            <p class="stat-card__label">Approved</p>
-            <p class="stat-card__value">${appState.listings.filter((l) => l.status === "approved").length}</p>
-          </div>
-          <div class="stat-card card">
-            <p style="font-size:1.25rem">⏳</p>
-            <p class="stat-card__label">Pending</p>
-            <p class="stat-card__value">${appState.listings.filter((l) => l.status === "pending").length}</p>
-          </div>
-          <div class="stat-card card">
-            <p style="font-size:1.25rem">❌</p>
-            <p class="stat-card__label">Rejected</p>
-            <p class="stat-card__value">${appState.listings.filter((l) => l.status === "rejected").length}</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 class="card-title">My Listings</h3>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>Flat</th><th>Rent</th><th>Status</th><th>Submitted</th><th>Reviewed By</th></tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-        </div>
-      </div>`;
+    if (!hasContact) {
+      clone.querySelector("#contact-nudge-container").innerHTML = "<div class=\"nudge-banner\"><span>💡 Add your contact details so tenants can reach you directly.</span><a class=\"btn btn--sm btn--secondary\" href=\"#/owner/profile\" data-route=\"#/owner/profile\">Update Profile →</a></div>";
+    }
+    
+    const stats = [
+      { icon: "🏠", label: "Total Listings", value: listings.length },
+      { icon: "✅", label: "Approved", value: listings.filter(l => l.status === "approved").length },
+      { icon: "⏳", label: "Pending", value: listings.filter(l => l.status === "pending").length },
+      { icon: "❌", label: "Rejected", value: listings.filter(l => l.status === "rejected").length }
+    ];
+    clone.querySelector("#owner-stat-grid").innerHTML = stats.map(s => "<div class=\"stat-card card\"><p style=\"font-size:1.25rem\">" + s.icon + "</p><p class=\"stat-card__label\">" + s.label + "</p><p class=\"stat-card__value\">" + s.value + "</p></div>").join("");
+    
+    const tbody = clone.querySelector("#owner-listings-tbody");
+    if (listings.length) {
+      tbody.innerHTML = listings.map(l => {
+        const statusClass = l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning";
+        return "<tr>" +
+          "<td><strong>" + escHtml(l.flat_title) + "</strong><br><small class=\"text-muted\">📍 " + escHtml(l.city) + " · " + escHtml(l.type) + "</small></td>" +
+          "<td>₹" + Number(l.rent).toLocaleString("en-IN") + "</td>" +
+          "<td><span class=\"badge badge--" + statusClass + "\">" + l.status + "</span></td>" +
+          "<td>" + (l.submitted_at?.slice(0, 10) || "—") + "</td>" +
+          "<td>" + (l.reviewer_name ? escHtml(l.reviewer_name) : "—") + "</td>" +
+        "</tr>";
+      }).join("");
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">No listings yet. <a href="#/owner/add-flat" data-route="/owner/add-flat">Add your first flat →</a></td></tr>';
+    }
+    
+    const div = document.createElement("div");
+    div.appendChild(clone);
+    return div.innerHTML;
   },
 
-  // ── ADD FLAT (with image upload) ──────────────────────────────
-    viewAddFlat() {
+  viewAddFlat() {
     const template = document.getElementById("add-flat-template");
     if (!template) return "<p>Error: Template not found</p>";
     const clone = template.content.cloneNode(true);

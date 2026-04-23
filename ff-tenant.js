@@ -4,57 +4,38 @@
 // ─────────────────────────────────────────────────────────────────
 
 window.Tenant = {
-  viewDashboard() {
+    viewDashboard() {
+    const template = document.getElementById("tenant-dashboard-template");
+    if (!template) return "<p>Error: template missing</p>";
+    const clone = template.content.cloneNode(true);
     const bookings = appState.bookings || [];
-    const rows = bookings.length
-      ? bookings
-          .map(
-            (b) => `
-        <tr>
-          <td>
-            <strong>${escHtml(b.flat_title)}</strong>
-            <br><small class="text-muted">${escHtml(b.city)}</small>
-          </td>
-          <td>${b.check_in}<br><small class="text-muted">→ ${b.check_out}</small></td>
-          <td>₹${Number(b.total_rent).toLocaleString("en-IN")}</td>
-          <td>
-            <span class="badge badge--${b.status === "confirmed" ? "success" : b.status === "cancelled" ? "danger" : "warning"}">
-              ${b.status}
-            </span>
-          </td>
-          <td>
-            ${
-              b.status === "pending"
-                ? `<button class="btn btn--danger btn--sm" type="button" data-action="cancel-booking" data-booking-id="${b.id}">Cancel</button>`
-                : "—"
-            }
-          </td>
-        </tr>`,
-          )
-          .join("")
-      : `<tr><td colspan="5" class="empty-cell">
-          No bookings yet. <a href="#/tenant/search" data-route="/tenant/search">Search flats →</a>
-         </td></tr>`;
-
-    return `
-      <div class="container page-content">
-        <div class="page-header">
-          <h2>Welcome back, ${escHtml((appState.currentUser.name || "Guest").split(" ")[0] || "Guest")}</h2>
-          <a class="btn btn--primary" href="#/tenant/search" data-route="/tenant/search">Search Flats</a>
-        </div>
-        <div class="card">
-          <h3 class="card-title">My Bookings</h3>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>Flat</th><th>Dates</th><th>Total Rent</th><th>Status</th><th>Action</th></tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-        </div>
-      </div>`;
+    
+    const name = (appState.currentUser.name || "Guest").split(" ")[0] || "Guest";
+    clone.querySelector("#tenant-welcome").textContent = "Welcome back, " + escHtml(name) + " 👋";
+    
+    const tbody = clone.querySelector("#tenant-bookings-tbody");
+    if (bookings.length) {
+      tbody.innerHTML = bookings.map(b => {
+        const statusClass = b.status === "confirmed" ? "success" : b.status === "cancelled" ? "danger" : "warning";
+        const cancelAction = b.status === "pending" ? '<button class="btn btn--danger btn--sm" type="button" data-action="cancel-booking" data-booking-id="' + b.id + '">Cancel</button>' : "—";
+        return "<tr>" +
+          "<td><strong>" + escHtml(b.flat_title) + "</strong><br><small class=\"text-muted\">📍 " + escHtml(b.city) + "</small></td>" +
+          "<td>" + b.check_in + " → " + b.check_out + "</td>" +
+          "<td>₹" + Number(b.total_rent).toLocaleString("en-IN") + "</td>" +
+          "<td><span class=\"badge badge--" + statusClass + "\">" + b.status + "</span></td>" +
+          "<td>" + cancelAction + "</td>" +
+        "</tr>";
+      }).join("");
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">No bookings yet. <a href="#/tenant/search" data-route="/tenant/search">Search flats →</a></td></tr>';
+    }
+    
+    const div = document.createElement("div");
+    div.appendChild(clone);
+    return div.innerHTML;
   },
 
-    viewSearch(flats = appState.flats) {
+  viewSearch(flats = appState.flats) {
     const template = document.getElementById("flat-search-template");
     if (!template) return "<p>Error: template missing</p>";
     const clone = template.content.cloneNode(true);
