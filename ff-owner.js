@@ -8,97 +8,399 @@ const Owner = {
   _imgPreviews: [], // holds base64 data-URLs for preview
 
   // ── DASHBOARD ─────────────────────────────────────────────────
-    viewDashboard() {
-    const template = document.getElementById("owner-dashboard-template");
-    if (!template) return "<p>Error: template missing</p>";
-    const clone = template.content.cloneNode(true);
+  viewDashboard() {
     const u = appState.currentUser;
-    const listings = appState.listings || [];
-    
+    const rows = appState.listings.length
+      ? appState.listings
+          .map(
+            (l) => `
+        <tr>
+          <td>
+            <strong>${escHtml(l.flat_title)}</strong>
+            <br><small class="text-muted">📍 ${escHtml(l.city)} · ${escHtml(l.type)}</small>
+          </td>
+          <td>₹${Number(l.rent).toLocaleString("en-IN")}</td>
+          <td>
+            <span class="badge badge--${l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning"}">
+              ${l.status}
+            </span>
+          </td>
+          <td>${l.submitted_at?.slice(0, 10) || "—"}</td>
+          <td>${l.reviewer_name ? escHtml(l.reviewer_name) : "—"}</td>
+        </tr>`,
+          )
+          .join("")
+      : `<tr><td colspan="5" class="empty-cell">
+          No listings yet. <a href="#/owner/add-flat" data-route="/owner/add-flat">Add your first flat →</a>
+         </td></tr>`;
+
+    // Quick contact completeness nudge
     const hasContact = u.phone || u.whatsapp || u.telegram;
-    if (!hasContact) {
-      clone.querySelector("#contact-nudge-container").innerHTML = "<div class=\"nudge-banner\"><span>💡 Add your contact details so tenants can reach you directly.</span><a class=\"btn btn--sm btn--secondary\" href=\"#/owner/profile\" data-route=\"#/owner/profile\">Update Profile →</a></div>";
-    }
-    
-    const stats = [
-      { icon: "🏠", label: "Total Listings", value: listings.length },
-      { icon: "✅", label: "Approved", value: listings.filter(l => l.status === "approved").length },
-      { icon: "⏳", label: "Pending", value: listings.filter(l => l.status === "pending").length },
-      { icon: "❌", label: "Rejected", value: listings.filter(l => l.status === "rejected").length }
-    ];
-    clone.querySelector("#owner-stat-grid").innerHTML = stats.map(s => "<div class=\"stat-card card\"><p style=\"font-size:1.25rem\">" + s.icon + "</p><p class=\"stat-card__label\">" + s.label + "</p><p class=\"stat-card__value\">" + s.value + "</p></div>").join("");
-    
-    const tbody = clone.querySelector("#owner-listings-tbody");
-    if (listings.length) {
-      tbody.innerHTML = listings.map(l => {
-        const statusClass = l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning";
-        return "<tr>" +
-          "<td><strong>" + escHtml(l.flat_title) + "</strong><br><small class=\"text-muted\">📍 " + escHtml(l.city) + " · " + escHtml(l.type) + "</small></td>" +
-          "<td>₹" + Number(l.rent).toLocaleString("en-IN") + "</td>" +
-          "<td><span class=\"badge badge--" + statusClass + "\">" + l.status + "</span></td>" +
-          "<td>" + (l.submitted_at?.slice(0, 10) || "—") + "</td>" +
-          "<td>" + (l.reviewer_name ? escHtml(l.reviewer_name) : "—") + "</td>" +
-        "</tr>";
-      }).join("");
-    } else {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">No listings yet. <a href="#/owner/add-flat" data-route="/owner/add-flat">Add your first flat →</a></td></tr>';
-    }
-    
-    const div = document.createElement("div");
-    div.appendChild(clone);
-    return div.innerHTML;
+    const contactNudge = !hasContact
+      ? `<div class="nudge-banner">
+           <span>💡 Add your contact details so tenants can reach you directly.</span>
+           <a class="btn btn--sm btn--secondary" href="#/owner/profile" data-route="/owner/profile">Update Profile →</a>
+         </div>`
+      : "";
+
+    return `
+      <div class="container page-content">
+        ${contactNudge}
+        <div class="page-header">
+          <h2>Owner Dashboard</h2>
+          <a class="btn btn--primary" href="#/owner/add-flat" data-route="/owner/add-flat">+ Add Flat</a>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="stat-grid stat-grid--sm">
+          <div class="stat-card card">
+            <p style="font-size:1.25rem">🏠</p>
+            <p class="stat-card__label">Total Listings</p>
+            <p class="stat-card__value">${appState.listings.length}</p>
+          </div>
+          <div class="stat-card card">
+            <p style="font-size:1.25rem">✅</p>
+            <p class="stat-card__label">Approved</p>
+            <p class="stat-card__value">${appState.listings.filter((l) => l.status === "approved").length}</p>
+          </div>
+          <div class="stat-card card">
+            <p style="font-size:1.25rem">⏳</p>
+            <p class="stat-card__label">Pending</p>
+            <p class="stat-card__value">${appState.listings.filter((l) => l.status === "pending").length}</p>
+          </div>
+          <div class="stat-card card">
+            <p style="font-size:1.25rem">❌</p>
+            <p class="stat-card__label">Rejected</p>
+            <p class="stat-card__value">${appState.listings.filter((l) => l.status === "rejected").length}</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">My Listings</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Flat</th><th>Rent</th><th>Status</th><th>Submitted</th><th>Reviewed By</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
   },
 
+  // ── ADD FLAT (with image upload) ──────────────────────────────
   viewAddFlat() {
-    const template = document.getElementById("add-flat-template");
-    if (!template) return "<p>Error: Template not found</p>";
-    const clone = template.content.cloneNode(true);
-    const u = appState.currentUser || {};
+    return `
+      <div class="container page-content">
+        <a class="back-link" href="#/owner/dashboard" data-route="/owner/dashboard">← Dashboard</a>
+        <div class="card form-card" style="max-width:760px">
+          <h2>List a New Flat</h2>
+          <p class="form-card__sub">Fill in the details. An admin will review and approve your listing.</p>
 
-    const setVal = (name, val) => {
-      const el = clone.querySelector(`[name="${name}"]`);
-      if (el) el.value = val || "";
-    };
+          <form id="add-flat-form" novalidate enctype="multipart/form-data">
 
-    // Auto-fill values
-    const today = new Date().toISOString().split("T")[0];
-    const availableFromEl = clone.querySelector('[name="available_from"]');
-    if (availableFromEl) availableFromEl.min = today;
+            <!-- ── Section 1: Basic Details ── -->
+            <h4 class="form-section-title">📋 Basic Details</h4>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Title *</label>
+                <input class="form-input" name="title" type="text" placeholder="2BHK in Koregaon Park" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">City *</label>
+                <input class="form-input" name="city" type="text" placeholder="Pune" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Full Address</label>
+                <input class="form-input" name="address" type="text" placeholder="Street, Area, Landmark" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Monthly Rent (₹) *</label>
+                <input class="form-input" name="rent" type="number" min="1" step="100" placeholder="20000" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Type *</label>
+                <select class="form-select" name="type" required>
+                  <option value="">Select type…</option>
+                  <option>1BHK</option><option>2BHK</option><option>3BHK</option>
+                  <option>Studio</option><option>4BHK+</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Furnished</label>
+                <select class="form-select" name="furnished">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Available From</label>
+                <input class="form-input" name="available_from" type="date" min="${new Date().toISOString().split("T")[0]}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Deposit (₹)</label>
+                <input class="form-input" name="deposit" type="number" min="0" step="100" placeholder="e.g. 40000" />
+              </div>
+            </div>
 
-    setVal("contact_phone", u.phone);
-    setVal("contact_whatsapp", u.whatsapp);
-    setVal("contact_email", u.email);
-    setVal("contact_telegram", u.telegram);
+            <!-- ── Section 2: Property Details ── -->
+            <h4 class="form-section-title">🏗️ Property Details</h4>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Floor Number</label>
+                <input class="form-input" name="floor" type="number" min="0" placeholder="e.g. 3" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Total Floors in Building</label>
+                <input class="form-input" name="total_floors" type="number" min="1" placeholder="e.g. 10" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Area (sq. ft.)</label>
+                <input class="form-input" name="area_sqft" type="number" min="0" placeholder="e.g. 850" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bathrooms</label>
+                <select class="form-select" name="bathrooms">
+                  <option value="">Select…</option>
+                  <option>1</option><option>2</option><option>3</option><option>4+</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Parking</label>
+                <select class="form-select" name="parking">
+                  <option value="none">None</option>
+                  <option value="bike">Bike</option>
+                  <option value="car">Car</option>
+                  <option value="both">Bike + Car</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Facing Direction</label>
+                <select class="form-select" name="facing">
+                  <option value="">Select…</option>
+                  <option>North</option><option>South</option><option>East</option><option>West</option>
+                  <option>North-East</option><option>North-West</option><option>South-East</option><option>South-West</option>
+                </select>
+              </div>
+            </div>
 
-    const tempDiv = document.createElement("div");
-    tempDiv.appendChild(clone);
-    return tempDiv.innerHTML;
+            <!-- ── Section 3: Preferences / Rules ── -->
+            <h4 class="form-section-title">📜 Preferences & Rules</h4>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Preferred Tenants</label>
+                <select class="form-select" name="preferred_tenants">
+                  <option value="any">Any</option>
+                  <option value="family">Family</option>
+                  <option value="bachelors">Bachelors</option>
+                  <option value="working_women">Working Women</option>
+                  <option value="students">Students</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Food Preference</label>
+                <select class="form-select" name="food_preference">
+                  <option value="any">Any</option>
+                  <option value="veg">Vegetarian Only</option>
+                  <option value="nonveg">Non-Veg OK</option>
+                </select>
+              </div>
+            </div>
+            <div class="checkbox-row">
+              <label class="checkbox-label"><input type="checkbox" name="pets_allowed" value="1" /> 🐾 Pets Allowed</label>
+              <label class="checkbox-label"><input type="checkbox" name="smoking_allowed" value="1" /> 🚬 Smoking Allowed</label>
+              <label class="checkbox-label"><input type="checkbox" name="visitors_allowed" value="1" /> 👥 Visitors Allowed</label>
+            </div>
+
+            <!-- ── Section 4: Description & Amenities ── -->
+            <h4 class="form-section-title">📝 Description</h4>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <textarea class="form-textarea" name="description" rows="3"
+                placeholder="Describe the flat — location highlights, nearby facilities, house rules…"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Amenities <span class="text-muted">(comma-separated)</span></label>
+              <input class="form-input" name="amenities" type="text"
+                placeholder="WiFi, AC, Parking, Geyser, Lift, Gym, CCTV…" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nearby Landmarks</label>
+              <input class="form-input" name="landmarks" type="text"
+                placeholder="2 min walk to Metro, Near Phoenix Mall…" />
+            </div>
+
+            <!-- ── Section 5: Photos ── -->
+            <h4 class="form-section-title">📸 Property Photos</h4>
+            <div class="form-group">
+              <label class="form-label">Upload Images <span class="text-muted">(up to 8, max 2 MB each)</span></label>
+              <div class="image-upload-zone" id="image-upload-zone">
+                <input type="file" id="flat-images-input" name="images" accept="image/*" multiple
+                  style="display:none" />
+                <div class="image-upload-zone__inner" id="img-drop-area">
+                  <span style="font-size:2rem">📷</span>
+                  <p>Drag &amp; drop photos here, or <button type="button" class="btn-link" id="img-browse-btn">browse</button></p>
+                  <p class="text-muted" style="font-size:0.75rem">JPG, PNG, WEBP — up to 2 MB each</p>
+                </div>
+                <div id="img-preview-grid" class="img-preview-grid"></div>
+              </div>
+            </div>
+
+            <!-- ── Section 6: Owner Contact Details ── -->
+            <h4 class="form-section-title">📞 Contact Details for Tenants</h4>
+            <p class="text-muted" style="font-size:0.85rem;margin-bottom:var(--space-md)">
+              These details will be shown to tenants who view your listing. Fill what you're comfortable sharing.
+            </p>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Contact Phone</label>
+                <input class="form-input" name="contact_phone" type="tel"
+                  placeholder="+91 XXXXX XXXXX"
+                  value="${escHtml(appState.currentUser.phone || "")}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">WhatsApp Number</label>
+                <input class="form-input" name="contact_whatsapp" type="tel"
+                  placeholder="+91 XXXXX XXXXX (if different)"
+                  value="${escHtml(appState.currentUser.whatsapp || "")}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contact Email <span class="text-muted">(optional)</span></label>
+                <input class="form-input" name="contact_email" type="email"
+                  placeholder="your@email.com"
+                  value="${escHtml(appState.currentUser.email || "")}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Telegram Username <span class="text-muted">(optional)</span></label>
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix">@</span>
+                  <input class="form-input input-with-prefix" name="contact_telegram" type="text"
+                    placeholder="yourusername"
+                    value="${escHtml(appState.currentUser.telegram || '')}" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Best Time to Call</label>
+                <select class="form-select" name="best_time_to_call">
+                  <option value="">Anytime</option>
+                  <option>Morning (8 AM – 12 PM)</option>
+                  <option>Afternoon (12 PM – 4 PM)</option>
+                  <option>Evening (4 PM – 8 PM)</option>
+                  <option>Night (8 PM – 10 PM)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Preferred Contact Method</label>
+                <select class="form-select" name="preferred_contact">
+                  <option value="">No preference</option>
+                  <option value="phone">Phone Call</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="telegram">Telegram</option>
+                  <option value="email">Email</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Short Note for Tenants</label>
+              <textarea class="form-textarea" name="owner_note" rows="2"
+                placeholder="e.g. Please call before visiting. Brokerage free. Serious inquiries only."></textarea>
+            </div>
+
+            <div id="add-flat-error" class="form-error hidden"></div>
+            <button class="btn btn--primary" type="submit" id="add-flat-submit">Submit for Review</button>
+          </form>
+        </div>
+      </div>`;
   },
 
   // ── OWNER PROFILE ──────────────────────────────────────────────
-    viewProfile() {
-    const template = document.getElementById("owner-profile-template");
-    if (!template) return "<p>Error: Template not found</p>";
-    const clone = template.content.cloneNode(true);
-    const u = appState.currentUser || {};
+  viewProfile() {
+    const u = appState.currentUser;
+    return `
+      <div class="container page-content">
+        <div class="page-header">
+          <h2>My Profile</h2>
+          <a class="btn btn--secondary" href="#/owner/dashboard" data-route="/owner/dashboard">← Dashboard</a>
+        </div>
+        <div class="card form-card" style="max-width:640px">
+          <h3 class="card-title">👤 Personal Information</h3>
+          <form id="profile-form" novalidate>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input class="form-input" name="name" type="text"
+                  value="${escHtml(u.name || "")}" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-input" name="email" type="email"
+                  value="${escHtml(u.email || "")}" required />
+              </div>
+            </div>
 
-    const setVal = (name, val) => {
-      const el = clone.querySelector(`[name="${name}"]`);
-      if (el) el.value = val || "";
-    };
+            <h4 class="form-section-title" style="margin-top:var(--space-md)">📞 Contact Details</h4>
+            <p class="text-muted" style="font-size:0.85rem;margin-bottom:var(--space-md)">
+              These are saved to your profile and auto-filled when you add a flat.
+            </p>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input class="form-input" name="phone" type="tel"
+                  placeholder="+91 XXXXX XXXXX"
+                  value="${escHtml(u.phone || "")}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">WhatsApp</label>
+                <input class="form-input" name="whatsapp" type="tel"
+                  placeholder="+91 XXXXX XXXXX"
+                  value="${escHtml(u.whatsapp || "")}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Telegram Username <span class="text-muted">(optional)</span></label>
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix">@</span>
+                  <input class="form-input input-with-prefix" name="telegram" type="text"
+                    placeholder="yourusername"
+                    value="${escHtml(u.telegram || '')}" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">City / Location</label>
+                <input class="form-input" name="location" type="text"
+                  placeholder="Pune, Maharashtra"
+                  value="${escHtml(u.location || "")}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Languages Spoken</label>
+                <input class="form-input" name="languages" type="text"
+                  placeholder="English, Hindi, Marathi"
+                  value="${escHtml(u.languages || "")}" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">About You <span class="text-muted">(shown to tenants)</span></label>
+              <textarea class="form-textarea" name="bio" rows="3"
+                placeholder="A short bio — experience as a landlord, response time, etc.">${escHtml(u.bio || "")}</textarea>
+            </div>
 
-    setVal("name", u.name);
-    setVal("email", u.email);
-    setVal("phone", u.phone);
-    setVal("whatsapp", u.whatsapp);
-    setVal("telegram", u.telegram);
-    setVal("location", u.location);
-    setVal("languages", u.languages);
-    setVal("bio", u.bio);
+            <h4 class="form-section-title" style="margin-top:var(--space-md)">🔒 Change Password</h4>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input class="form-input" name="new_password" type="password"
+                  placeholder="Leave blank to keep current" minlength="6" autocomplete="new-password" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <input class="form-input" name="confirm_password" type="password"
+                  placeholder="Repeat new password" autocomplete="new-password" />
+              </div>
+            </div>
 
-    const tempDiv = document.createElement("div");
-    tempDiv.appendChild(clone);
-    return tempDiv.innerHTML;
+            <div id="profile-error" class="form-error hidden"></div>
+            <button class="btn btn--primary" type="submit" id="profile-submit">Save Changes</button>
+          </form>
+        </div>
+      </div>`;
   },
 
   // ── EVENT BINDERS ─────────────────────────────────────────────

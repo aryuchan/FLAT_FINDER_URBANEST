@@ -2,419 +2,43 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
-    <meta
-      name="description"
-      content="FlatFinder — Owner Portal. List properties, review applications, and manage your rentals efficiently."
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="FlatFinder — Owner Portal. List properties, review applications, and manage your rentals." />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="author" content="FlatFinder" />
     <meta name="theme-color" content="#d97706" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="FlatFinder Owner" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="FlatFinder — Owner Portal" />
-    <meta
-      property="og:description"
-      content="List properties, review applications, and manage your rentals."
-    />
+    <meta property="og:description" content="List properties, review applications, and manage your rentals." />
     <meta property="og:site_name" content="FlatFinder" />
-
-    <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="https://api.example.com" />
-
     <title>FlatFinder — Owner</title>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%23d97706'>🏢</text></svg>"
-    />
-    <link
-      rel="apple-touch-icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><text y='135' font-size='120' fill='%23d97706'>🏢</text></svg>"
-    />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="preload" href="style.css" as="style" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <a class="skip-link" href="#app-root">Skip to main content</a>
-    <div id="app-loader" class="loader-overlay">
-      <div class="loader-spinner"></div>
-      <p>Initializing Owner Portal...</p>
-    </div>
     <nav id="app-nav" role="navigation" aria-label="Main navigation"></nav>
-    <main
-      id="app-root"
-      role="main"
-      aria-live="polite"
-      aria-atomic="false"
-    ></main>
-    <div
-      id="app-toast"
-      role="status"
-      aria-live="assertive"
-      aria-atomic="true"
-      aria-relevant="additions text"
-    ></div>
-    <div
-      id="app-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Application dialog"
-      aria-hidden="true"
-    ></div>
+    <main id="app-root" role="main" aria-live="polite" aria-atomic="false"></main>
+    <div id="app-toast" role="status" aria-live="assertive" aria-atomic="true" aria-relevant="additions text"></div>
+    <div id="app-modal" role="dialog" aria-modal="true" aria-label="Dialog" aria-hidden="true"></div>
 
     <noscript>
-      <p class="noscript-message">
-        FlatFinder requires JavaScript. Please enable it in your browser
-        settings.
+      <p style="text-align:center;padding:2rem;font-family:sans-serif;">
+        FlatFinder requires JavaScript to run. Please enable it in your browser settings.
       </p>
     </noscript>
 
     <!-- Role hint for router -->
-    <script>
-      window.FF_ROLE_HINT = "owner";
-    </script>
+    <script>window.FF_ROLE_HINT = 'owner';</script>
 
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("/sw.js")
-            .then((reg) => {
-              console.log("[ServiceWorker] Registered successfully");
-              reg.onupdatefound = () => {
-                const newWorker = reg.installing;
-                newWorker.onstatechange = () => {
-                  if (
-                    newWorker.state === "installed" &&
-                    navigator.serviceWorker.controller
-                  ) {
-                    console.log(
-                      "[ServiceWorker] Update available, reloading...",
-                    );
-                    window.location.reload();
-                  }
-                };
-              };
-            })
-            .catch((err) =>
-              console.warn("[ServiceWorker] Registration failed:", err),
-            );
-        });
-      }
-    </script>
-
-    
-        <template id="owner-dashboard-template">
-      <div class="container page-content">
-        <div id="contact-nudge-container"></div>
-        <div class="page-header">
-          <h2>Owner Dashboard</h2>
-          <a class="btn btn--primary" href="#/owner/add-flat" data-route="/owner/add-flat">+ Add Flat</a>
-        </div>
-        <div class="stat-grid stat-grid--sm" id="owner-stat-grid"></div>
-        <div class="card">
-          <h3 class="card-title">My Listings</h3>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>Flat</th><th>Rent</th><th>Status</th><th>Submitted</th><th>Reviewed By</th></tr></thead>
-              <tbody id="owner-listings-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    <!-- HTML Templates for Owner Module -->
-    <template id="add-flat-template">
-      <div class="container page-content">
-        <a class="back-link" href="#/owner/dashboard" data-route="/owner/dashboard">← Dashboard</a>
-        <div class="card form-card" style="max-width:760px">
-          <h2>List a New Flat</h2>
-          <p class="form-card__sub">Fill in the details. An admin will review and approve your listing.</p>
-          <form id="add-flat-form" novalidate enctype="multipart/form-data">
-            <h4 class="form-section-title">📋 Basic Details</h4>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Title *</label>
-                <input class="form-input" name="title" type="text" placeholder="2BHK in Koregaon Park" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">City *</label>
-                <input class="form-input" name="city" type="text" placeholder="Pune" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Full Address</label>
-                <input class="form-input" name="address" type="text" placeholder="Street, Area, Landmark" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Monthly Rent (₹) *</label>
-                <input class="form-input" name="rent" type="number" min="1" step="100" placeholder="20000" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Type *</label>
-                <select class="form-select" name="type" required>
-                  <option value="">Select type…</option>
-                  <option>1BHK</option><option>2BHK</option><option>3BHK</option>
-                  <option>Studio</option><option>4BHK+</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Furnished</label>
-                <select class="form-select" name="furnished">
-                  <option value="0">No</option>
-                  <option value="1">Yes</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Available From</label>
-                <input class="form-input" name="available_from" type="date" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Deposit (₹)</label>
-                <input class="form-input" name="deposit" type="number" min="0" step="100" placeholder="e.g. 40000" />
-              </div>
-            </div>
-
-            <h4 class="form-section-title">🏗️ Property Details</h4>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Floor Number</label>
-                <input class="form-input" name="floor" type="number" min="0" placeholder="e.g. 3" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Total Floors in Building</label>
-                <input class="form-input" name="total_floors" type="number" min="1" placeholder="e.g. 10" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Area (sq. ft.)</label>
-                <input class="form-input" name="area_sqft" type="number" min="0" placeholder="e.g. 850" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Bathrooms</label>
-                <select class="form-select" name="bathrooms">
-                  <option value="">Select…</option>
-                  <option>1</option><option>2</option><option>3</option><option>4+</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Parking</label>
-                <select class="form-select" name="parking">
-                  <option value="none">None</option>
-                  <option value="bike">Bike</option>
-                  <option value="car">Car</option>
-                  <option value="both">Bike + Car</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Facing Direction</label>
-                <select class="form-select" name="facing">
-                  <option value="">Select…</option>
-                  <option>North</option><option>South</option><option>East</option><option>West</option>
-                  <option>North-East</option><option>North-West</option><option>South-East</option><option>South-West</option>
-                </select>
-              </div>
-            </div>
-
-            <h4 class="form-section-title">📜 Preferences & Rules</h4>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Preferred Tenants</label>
-                <select class="form-select" name="preferred_tenants">
-                  <option value="any">Any</option>
-                  <option value="family">Family</option>
-                  <option value="bachelors">Bachelors</option>
-                  <option value="working_women">Working Women</option>
-                  <option value="students">Students</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Food Preference</label>
-                <select class="form-select" name="food_preference">
-                  <option value="any">Any</option>
-                  <option value="veg">Vegetarian Only</option>
-                  <option value="nonveg">Non-Veg OK</option>
-                </select>
-              </div>
-            </div>
-            <div class="checkbox-row">
-              <label class="checkbox-label"><input type="checkbox" name="pets_allowed" value="1" /> 🐾 Pets Allowed</label>
-              <label class="checkbox-label"><input type="checkbox" name="smoking_allowed" value="1" /> 🚬 Smoking Allowed</label>
-              <label class="checkbox-label"><input type="checkbox" name="visitors_allowed" value="1" /> 👥 Visitors Allowed</label>
-            </div>
-
-            <h4 class="form-section-title">📝 Description</h4>
-            <div class="form-group">
-              <label class="form-label">Description</label>
-              <textarea class="form-textarea" name="description" rows="3" placeholder="Describe the flat..."></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Amenities <span class="text-muted">(comma-separated)</span></label>
-              <input class="form-input" name="amenities" type="text" placeholder="WiFi, AC, Parking, Geyser, Lift, Gym, CCTV…" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Nearby Landmarks</label>
-              <input class="form-input" name="landmarks" type="text" placeholder="2 min walk to Metro, Near Phoenix Mall…" />
-            </div>
-
-            <h4 class="form-section-title">📸 Property Photos</h4>
-            <div class="form-group">
-              <label class="form-label">Upload Images <span class="text-muted">(up to 8, max 2 MB each)</span></label>
-              <div class="image-upload-zone" id="image-upload-zone">
-                <input type="file" id="flat-images-input" name="images" accept="image/*" multiple style="display:none" />
-                <div class="image-upload-zone__inner" id="img-drop-area">
-                  <span style="font-size:2rem">📷</span>
-                  <p>Drag &amp; drop photos here, or <button type="button" class="btn-link" id="img-browse-btn">browse</button></p>
-                  <p class="text-muted" style="font-size:0.75rem">JPG, PNG, WEBP — up to 2 MB each</p>
-                </div>
-                <div id="img-preview-grid" class="img-preview-grid"></div>
-              </div>
-            </div>
-
-            <h4 class="form-section-title">📞 Contact Details for Tenants</h4>
-            <p class="text-muted" style="font-size:0.85rem;margin-bottom:var(--space-md)">These details will be shown to tenants who view your listing. Fill what you\'re comfortable sharing.</p>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Contact Phone</label>
-                <input class="form-input" name="contact_phone" type="tel" placeholder="+91 XXXXX XXXXX" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">WhatsApp Number</label>
-                <input class="form-input" name="contact_whatsapp" type="tel" placeholder="+91 XXXXX XXXXX (if different)" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Contact Email <span class="text-muted">(optional)</span></label>
-                <input class="form-input" name="contact_email" type="email" placeholder="your@email.com" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Telegram Username <span class="text-muted">(optional)</span></label>
-                <div class="input-prefix-wrap">
-                  <span class="input-prefix">@</span>
-                  <input class="form-input input-with-prefix" name="contact_telegram" type="text" placeholder="yourusername" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Best Time to Call</label>
-                <select class="form-select" name="best_time_to_call">
-                  <option value="">Anytime</option>
-                  <option>Morning (8 AM – 12 PM)</option>
-                  <option>Afternoon (12 PM – 4 PM)</option>
-                  <option>Evening (4 PM – 8 PM)</option>
-                  <option>Night (8 PM – 10 PM)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Preferred Contact Method</label>
-                <select class="form-select" name="preferred_contact">
-                  <option value="">No preference</option>
-                  <option value="phone">Phone Call</option>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="telegram">Telegram</option>
-                  <option value="email">Email</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Short Note for Tenants</label>
-              <textarea class="form-textarea" name="owner_note" rows="2" placeholder="e.g. Please call before visiting. Brokerage free. Serious inquiries only."></textarea>
-            </div>
-
-            <div id="add-flat-error" class="form-error hidden"></div>
-            <button class="btn btn--primary" type="submit" id="add-flat-submit">Submit for Review</button>
-          </form>
-        </div>
-      </div>
-    </template>
-
-    <template id="owner-profile-template">
-      <div class="container page-content">
-        <div class="page-header">
-          <h2>My Profile</h2>
-          <a class="btn btn--secondary" href="#/owner/dashboard" data-route="/owner/dashboard">← Dashboard</a>
-        </div>
-        <div class="card form-card" style="max-width:640px">
-          <h3 class="card-title">👤 Personal Information</h3>
-          <form id="profile-form" novalidate>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <input class="form-input" name="name" type="text" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Email</label>
-                <input class="form-input" name="email" type="email" required />
-              </div>
-            </div>
-
-            <h4 class="form-section-title" style="margin-top:var(--space-md)">📞 Contact Details</h4>
-            <p class="text-muted" style="font-size:0.85rem;margin-bottom:var(--space-md)">These are saved to your profile and auto-filled when you add a flat.</p>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Phone Number</label>
-                <input class="form-input" name="phone" type="tel" placeholder="+91 XXXXX XXXXX" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">WhatsApp</label>
-                <input class="form-input" name="whatsapp" type="tel" placeholder="+91 XXXXX XXXXX" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Telegram Username <span class="text-muted">(optional)</span></label>
-                <div class="input-prefix-wrap">
-                  <span class="input-prefix">@</span>
-                  <input class="form-input input-with-prefix" name="telegram" type="text" placeholder="yourusername" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">City / Location</label>
-                <input class="form-input" name="location" type="text" placeholder="Pune, Maharashtra" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Languages Spoken</label>
-                <input class="form-input" name="languages" type="text" placeholder="English, Hindi, Marathi" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">About You <span class="text-muted">(shown to tenants)</span></label>
-              <textarea class="form-textarea" name="bio" rows="3" placeholder="A short bio — experience as a landlord, response time, etc."></textarea>
-            </div>
-
-            <h4 class="form-section-title" style="margin-top:var(--space-md)">🔒 Change Password</h4>
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">New Password</label>
-                <input class="form-input" name="new_password" type="password" placeholder="Leave blank to keep current" minlength="6" autocomplete="new-password" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Confirm Password</label>
-                <input class="form-input" name="confirm_password" type="password" placeholder="Repeat new password" autocomplete="new-password" />
-              </div>
-            </div>
-
-            <div id="profile-error" class="form-error hidden"></div>
-            <button class="btn btn--primary" type="submit" id="profile-submit">Save Changes</button>
-          </form>
-        </div>
-      </div>
-    </template>
-\n    <!-- FlatFinder modules — load order matters -->
-    <script src="ff-utils.js?v=20260424" defer></script>
-    <script src="ff-core.js?v=20260424" defer></script>
-    <script src="ff-auth.js?v=20260424" defer></script>
-    <script src="ff-tenant.js?v=20260424" defer></script>
-    <script src="ff-owner.js?v=20260424" defer></script>
-    <script src="ff-admin.js?v=20260424" defer></script>
-    <script src="app.js?v=20260424" defer></script>
+    <!-- FlatFinder modules — load order matters -->
+    <script src="ff-core.js"></script>
+    <script src="ff-auth.js"></script>
+    <script src="ff-tenant.js"></script>
+    <script src="ff-owner.js"></script>
+    <script src="ff-admin.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>

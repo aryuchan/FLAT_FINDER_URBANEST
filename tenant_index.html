@@ -2,218 +2,43 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
-    <meta
-      name="description"
-      content="FlatFinder — Tenant Portal. Browse listings, submit applications, and manage your tenancy. Find your perfect flat today."
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="FlatFinder — Tenant Portal. Browse listings, submit applications, and manage your tenancy." />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="author" content="FlatFinder" />
     <meta name="theme-color" content="#1d4ed8" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="FlatFinder Tenant" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="FlatFinder — Tenant Portal" />
-    <meta
-      property="og:description"
-      content="Browse listings, submit applications, and manage your tenancy."
-    />
+    <meta property="og:description" content="Browse listings, submit applications, and manage your tenancy." />
     <meta property="og:site_name" content="FlatFinder" />
-
-    <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="https://api.example.com" />
-
     <title>FlatFinder — Tenant</title>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%231d4ed8'>🏠</text></svg>"
-    />
-    <link
-      rel="apple-touch-icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><text y='135' font-size='120' fill='%231d4ed8'>🏠</text></svg>"
-    />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="preload" href="style.css" as="style" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <a class="skip-link" href="#app-root">Skip to main content</a>
-    <div id="app-loader" class="loader-overlay">
-      <div class="loader-spinner"></div>
-      <p>Initializing Tenant Portal...</p>
-    </div>
     <nav id="app-nav" role="navigation" aria-label="Main navigation"></nav>
-    <main
-      id="app-root"
-      role="main"
-      aria-live="polite"
-      aria-atomic="false"
-    ></main>
-    <div
-      id="app-toast"
-      role="status"
-      aria-live="assertive"
-      aria-atomic="true"
-      aria-relevant="additions text"
-    ></div>
-    <div
-      id="app-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Application dialog"
-      aria-hidden="true"
-    ></div>
+    <main id="app-root" role="main" aria-live="polite" aria-atomic="false"></main>
+    <div id="app-toast" role="status" aria-live="assertive" aria-atomic="true" aria-relevant="additions text"></div>
+    <div id="app-modal" role="dialog" aria-modal="true" aria-label="Dialog" aria-hidden="true"></div>
 
     <noscript>
-      <p class="noscript-message">
-        FlatFinder requires JavaScript. Please enable it in your browser
-        settings.
+      <p style="text-align:center;padding:2rem;font-family:sans-serif;">
+        FlatFinder requires JavaScript to run. Please enable it in your browser settings.
       </p>
     </noscript>
 
     <!-- Role hint for router -->
-    <script>
-      window.FF_ROLE_HINT = "tenant";
-    </script>
+    <script>window.FF_ROLE_HINT = 'tenant';</script>
 
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("/sw.js")
-            .then((reg) => {
-              console.log("[ServiceWorker] Registered successfully");
-              reg.onupdatefound = () => {
-                const newWorker = reg.installing;
-                newWorker.onstatechange = () => {
-                  if (
-                    newWorker.state === "installed" &&
-                    navigator.serviceWorker.controller
-                  ) {
-                    console.log(
-                      "[ServiceWorker] Update available, reloading...",
-                    );
-                    window.location.reload();
-                  }
-                };
-              };
-            })
-            .catch((err) =>
-              console.warn("[ServiceWorker] Registration failed:", err),
-            );
-        });
-      }
-    </script>
-
-            <template id="tenant-dashboard-template">
-      <div class="container page-content">
-        <div class="page-header">
-          <h2 id="tenant-welcome">Welcome back</h2>
-          <a class="btn btn--primary" href="#/tenant/search" data-route="/tenant/search">🔍 Search Flats</a>
-        </div>
-        <div class="card">
-          <h3 class="card-title">My Bookings</h3>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>Flat</th><th>Dates</th><th>Total Rent</th><th>Status</th><th>Action</th></tr></thead>
-              <tbody id="tenant-bookings-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    <!-- HTML Templates for Tenant Module -->
-    <template id="flat-search-template">
-      <div class="container page-content">
-        <div class="page-header"><h2>Search Flats</h2></div>
-        <form id="flat-search-filter-form" class="filter-bar card">
-          <input class="form-input" name="city" placeholder="City…" />
-          <select class="form-select" name="type">
-            <option value="">All Types</option>
-            <option>1BHK</option><option>2BHK</option><option>3BHK</option>
-            <option>Studio</option><option>4BHK+</option>
-          </select>
-          <select class="form-select" name="furnished">
-            <option value="">Furnished?</option>
-            <option value="1">Yes</option>
-            <option value="0">No</option>
-          </select>
-          <input class="form-input" name="min_rent" type="number" min="0" placeholder="Min ₹" />
-          <input class="form-input" name="max_rent" type="number" min="0" placeholder="Max ₹" />
-          <button class="btn btn--primary" type="submit">Filter</button>
-          <button class="btn btn--secondary" type="reset" id="filter-reset-btn">Clear</button>
-        </form>
-        <p class="text-muted flat-count" style="margin-bottom:var(--space-md)"></p>
-        <div class="flat-grid"></div>
-      </div>
-    </template>
-
-    <template id="flat-detail-template">
-      <div class="container page-content">
-        <a class="back-link" href="#/tenant/search" data-route="/tenant/search">← Back to Search</a>
-        <div class="gallery-container"></div>
-        <div class="flat-detail-layout">
-          <div class="flat-detail card">
-            <div class="flat-detail__meta">
-              <span class="badge badge--neutral detail-type"></span>
-              <span class="badge detail-furnished"></span>
-              <span class="badge detail-available"></span>
-            </div>
-            <h2 class="detail-title"></h2>
-            <p class="flat-detail__city detail-city"></p>
-            <p class="flat-detail__rent detail-rent"><span>/ month</span></p>
-            <p class="flat-detail__desc detail-desc"></p>
-            <div class="amenities-container"></div>
-            <div class="action-container"></div>
-          </div>
-          <aside class="owner-contact-container"></aside>
-        </div>
-      </div>
-    </template>
-
-    <template id="booking-form-template">
-      <div class="container page-content">
-        <a class="back-link booking-back-link" href="#" data-route="">← Back to Details</a>
-        <div class="card form-card" style="max-width:680px">
-          <h2>Book Flat</h2>
-          <p class="form-card__sub booking-sub"></p>
-          <form id="booking-form" novalidate>
-            <input type="hidden" name="flat_id" value="" />
-            <div class="form-group">
-              <label class="form-label" for="check-in">Check-in Date</label>
-              <input class="form-input" id="check-in" name="check_in" type="date" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="check-out">Check-out Date</label>
-              <input class="form-input" id="check-out" name="check_out" type="date" required />
-            </div>
-            <div id="rent-preview" class="rent-preview hidden">
-              <p>Estimated Rent: <strong id="rent-preview-value"></strong></p>
-            </div>
-            <button class="btn btn--primary btn--full" type="submit" id="booking-submit-btn">Confirm Booking</button>
-          </form>
-        </div>
-      </div>
-    </template>
     <!-- FlatFinder modules — load order matters -->
-    <script src="ff-utils.js?v=20260424" defer></script>
-    <script src="ff-core.js?v=20260424" defer></script>
-    <script src="ff-auth.js?v=20260424" defer></script>
-    <script src="ff-tenant.js?v=20260424" defer></script>
-    <script src="ff-owner.js?v=20260424" defer></script>
-    <script src="ff-admin.js?v=20260424" defer></script>
-    <script src="app.js?v=20260424" defer></script>
+    <script src="ff-core.js"></script>
+    <script src="ff-auth.js"></script>
+    <script src="ff-tenant.js"></script>
+    <script src="ff-owner.js"></script>
+    <script src="ff-admin.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>

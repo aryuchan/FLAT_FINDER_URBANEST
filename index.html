@@ -2,174 +2,48 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- Primary Meta -->
-    <meta
-      name="description"
-      content="FlatFinder — Find, book, and manage rental flats effortlessly. Browse, book, and manage rentals with ease."
-    />
+    <meta name="description" content="FlatFinder — Find, book, and manage rental flats effortlessly." />
     <meta name="robots" content="index, follow" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="author" content="FlatFinder" />
-    <meta
-      name="keywords"
-      content="flat, rental, property, booking, real estate"
-    />
 
     <!-- PWA / Mobile -->
     <meta name="theme-color" content="#1d4ed8" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="FlatFinder" />
     <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="FlatFinder" />
-    <meta
-      property="og:description"
-      content="Find, book, and manage rental flats effortlessly."
-    />
+    <meta property="og:description" content="Find, book, and manage rental flats effortlessly." />
     <meta property="og:site_name" content="FlatFinder" />
-    <meta property="og:locale" content="en_US" />
-
-    <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="https://api.example.com" />
 
     <title>FlatFinder</title>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%231d4ed8'>🏠</text></svg>"
-    />
-    <link
-      rel="apple-touch-icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><text y='135' font-size='120' fill='%231d4ed8'>🏠</text></svg>"
-    />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="preload" href="style.css" as="style" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <a class="skip-link" href="#app-root">Skip to main content</a>
-    <div id="app-loader" class="loader-overlay">
-      <div class="loader-spinner"></div>
-      <p>Initializing FlatFinder...</p>
-    </div>
     <nav id="app-nav" role="navigation" aria-label="Main navigation"></nav>
-    <main
-      id="app-root"
-      role="main"
-      aria-live="polite"
-      aria-atomic="false"
-    ></main>
+    <main id="app-root" role="main" aria-live="polite" aria-atomic="false"></main>
 
-    <div
-      id="app-toast"
-      role="status"
-      aria-live="assertive"
-      aria-atomic="true"
-      aria-relevant="additions text"
-    ></div>
-    <div
-      id="app-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Application dialog"
-      aria-hidden="true"
-    ></div>
+    <div id="app-toast" role="status" aria-live="assertive" aria-atomic="true" aria-relevant="additions text"></div>
+    <div id="app-modal" role="dialog" aria-modal="true" aria-label="Dialog" aria-hidden="true"></div>
 
     <noscript>
-      <p class="noscript-message">
-        FlatFinder requires JavaScript. Please enable it in your browser
-        settings.
+      <p style="text-align:center;padding:2rem;font-family:sans-serif;">
+        FlatFinder requires JavaScript to run. Please enable it in your browser settings.
       </p>
     </noscript>
 
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("/sw.js")
-            .then((reg) => {
-              console.log("[ServiceWorker] Registered successfully");
-              reg.onupdatefound = () => {
-                const newWorker = reg.installing;
-                newWorker.onstatechange = () => {
-                  if (
-                    newWorker.state === "installed" &&
-                    navigator.serviceWorker.controller
-                  ) {
-                    console.log(
-                      "[ServiceWorker] Update available, reloading...",
-                    );
-                    window.location.reload();
-                  }
-                };
-              };
-            })
-            .catch((err) =>
-              console.warn("[ServiceWorker] Registration failed:", err),
-            );
-        });
-      }
-    </script>
-
-        <!-- HTML Templates for Auth Module -->
-    <template id="auth-template">
-      <div class="auth-wrapper">
-        <button class="auth-theme-toggle" id="auth-theme-toggle" type="button" aria-label="Toggle theme"></button>
-        <div class="auth-card">
-          <div class="auth-logo">FF</div>
-          <h1 class="auth-title">FlatFinder</h1>
-          <p class="auth-sub"></p>
-          <form id="auth-form" class="auth-form" novalidate autocomplete="on">
-            <div class="form-group signup-only hidden">
-              <label class="form-label" for="auth-name">Full Name</label>
-              <input class="form-input" id="auth-name" name="name" type="text" placeholder="Full name" autocomplete="name" minlength="2" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="auth-email">Email</label>
-              <input class="form-input" id="auth-email" name="email" type="email" placeholder="Email address" autocomplete="email" inputmode="email" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="auth-password">Password</label>
-              <div class="input-wrap">
-                <input class="form-input" id="auth-password" name="password" type="password" required minlength="6" />
-                <button type="button" class="input-eye" id="toggle-password" aria-label="Toggle password visibility">Toggle</button>
-              </div>
-              <div class="auth-helper-row login-only hidden"><a href="#" id="forgot-password" class="text-sm text-muted">Forgot Password?</a></div>
-            </div>
-            <div class="form-group signup-only hidden">
-              <label class="form-label">Account Type</label>
-              <div class="role-pills">
-                <label class="role-pill"><input type="radio" name="role" value="tenant" checked /> Tenant</label>
-                <label class="role-pill"><input type="radio" name="role" value="owner" /> Owner</label>
-              </div>
-            </div>
-            <div id="auth-error" class="form-error hidden"></div>
-            <button class="btn btn--primary btn--full" type="submit" id="auth-submit"></button>
-          </form>
-          <p class="auth-switch"></p>
-        </div>
-      </div>
-    </template>
-
     <!-- FlatFinder modules — load order matters -->
-    <script src="ff-utils.js?v=20260424" defer></script>
-    <script src="ff-core.js?v=20260424" defer></script>
-    <script src="ff-auth.js?v=20260424" defer></script>
-    <script src="ff-tenant.js?v=20260424" defer></script>
-    <script src="ff-owner.js?v=20260424" defer></script>
-    <script src="ff-admin.js?v=20260424" defer></script>
-    <script src="app.js?v=20260424" defer></script>
+    <script src="ff-core.js"></script>
+    <script src="ff-auth.js"></script>
+    <script src="ff-tenant.js"></script>
+    <script src="ff-owner.js"></script>
+    <script src="ff-admin.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>
