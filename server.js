@@ -659,6 +659,12 @@ app.post("/api/bookings", auth(["tenant"]), asyncHandler(async (req, res) => {
   if (!Number.isFinite(days) || days <= 0) {
     throw new ValidationError("Check-out must be after check-in");
   }
+
+  // Reject past dates (server-side guard)
+  const today = new Date().toISOString().split("T")[0];
+  if (check_in < today) {
+    throw new ValidationError("Check-in date cannot be in the past");
+  }
   
   const total_rent = ((parseFloat(flat.rent) / 30) * (days > 0 ? days : 1)).toFixed(2);
   const id = crypto.randomUUID();

@@ -495,6 +495,18 @@ const Owner = {
         showToast("Please fill in all required fields.", "error");
         return;
       }
+      // Reject past dates for Available From
+      if (payload.available_from) {
+        const today = new Date().toISOString().split("T")[0];
+        if (payload.available_from < today) {
+          if (errEl) {
+            errEl.textContent = "Available From date cannot be in the past.";
+            errEl.classList.remove("hidden");
+          }
+          showToast("Available From date cannot be in the past.", "error");
+          return;
+        }
+      }
       if (errEl) errEl.classList.add("hidden");
 
       const btn = root.querySelector("#add-flat-submit");
