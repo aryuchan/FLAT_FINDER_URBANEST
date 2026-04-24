@@ -27,6 +27,9 @@ const Owner = {
           </td>
           <td>${l.submitted_at?.slice(0, 10) || "—"}</td>
           <td>${l.reviewer_name ? escHtml(l.reviewer_name) : "—"}</td>
+          <td>
+            <button class="btn btn--danger btn--sm" data-action="delete-flat" data-flat-id="${l.flat_id}">🗑 Delete</button>
+          </td>
         </tr>`,
           )
           .join("")
@@ -79,7 +82,7 @@ const Owner = {
           <h3 class="card-title">My Listings</h3>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>Flat</th><th>Rent</th><th>Status</th><th>Submitted</th><th>Reviewed By</th></tr></thead>
+              <thead><tr><th>Flat</th><th>Rent</th><th>Status</th><th>Submitted</th><th>Reviewer</th><th>Actions</th></tr></thead>
               <tbody>${rows}</tbody>
             </table>
           </div>
@@ -417,6 +420,26 @@ const Owner = {
 
   // ── EVENT BINDERS ─────────────────────────────────────────────
   bindEvents(root) {
+    // Dashboard actions (Delete flat)
+    const dashboardActions = root.querySelectorAll('[data-action="delete-flat"]');
+    dashboardActions.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const flatId = btn.dataset.flatId;
+        if (!flatId || !confirm("Permanently delete this listing?")) return;
+        btn.disabled = true;
+        const r = await apiFetch(`/api/flats/${flatId}`, { method: "DELETE" });
+        if (r.success) {
+          showToast("Listing deleted.", "info");
+          const lr = await apiFetch("/api/listings");
+          if (lr.success) appState.listings = lr.data;
+          render(Owner.viewDashboard());
+        } else {
+          showToast(r.message, "error");
+          btn.disabled = false;
+        }
+      });
+    });
+
     this._bindAddFlatForm(root);
     this._bindImageUpload(root);
     this._bindProfileForm(root);

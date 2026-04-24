@@ -177,8 +177,15 @@ const Admin = {
           if (r.success) {
             showToast(r.message, action === "suspend" ? "warning" : "success");
             const ur = await apiFetch("/api/users");
-            if (ur.success) appState.users = ur.data;
-            render(Admin.viewUsers());
+            if (ur.success) {
+              appState.users = ur.data;
+              const qInput = root.querySelector("#user-search-input");
+              if (qInput) {
+                qInput.dispatchEvent(new Event("input"));
+              } else {
+                render(Admin.viewUsers());
+              }
+            }
           } else showToast(r.message, "error");
         }
 
@@ -190,8 +197,15 @@ const Admin = {
           if (r.success) {
             showToast("User deleted.", "info");
             const ur = await apiFetch("/api/users");
-            if (ur.success) appState.users = ur.data;
-            render(Admin.viewUsers());
+            if (ur.success) {
+              appState.users = ur.data;
+              const qInput = root.querySelector("#user-search-input");
+              if (qInput) {
+                qInput.dispatchEvent(new Event("input"));
+              } else {
+                render(Admin.viewUsers());
+              }
+            }
           } else showToast(r.message, "error");
         }
       });
@@ -250,8 +264,10 @@ const Admin = {
               if (r.success) {
                 showToast(r.message, action === "suspend" ? "warning" : "success");
                 const ur = await apiFetch("/api/users");
-                if (ur.success) appState.users = ur.data;
-                render(Admin.viewUsers());
+                if (ur.success) {
+                  appState.users = ur.data;
+                  doFilter();
+                }
               } else showToast(r.message, "error");
             }
             if (action === "delete" && userId) {
@@ -262,8 +278,10 @@ const Admin = {
               if (r.success) {
                 showToast("User deleted.", "info");
                 const ur = await apiFetch("/api/users");
-                if (ur.success) appState.users = ur.data;
-                render(Admin.viewUsers());
+                if (ur.success) {
+                  appState.users = ur.data;
+                  doFilter();
+                }
               } else showToast(r.message, "error");
             }
           });

@@ -81,7 +81,7 @@ async function loadRouteData(base, param) {
   if (base === "/admin/dashboard") {
     const [ur, fr, br, lr] = await Promise.all([
       apiFetch("/api/users"),
-      apiFetch("/api/flats"),
+      apiFetch("/api/flats?all=1"),
       apiFetch("/api/bookings"),
       apiFetch("/api/listings"),
     ]);

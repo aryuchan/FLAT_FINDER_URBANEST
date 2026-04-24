@@ -624,7 +624,7 @@ app.delete("/api/flats/:id", auth(["owner", "admin"]), asyncHandler(async (req, 
   res.success(null, "Listing deleted successfully");
 }));
 
-app.get("/api/bookings", auth(["tenant", "owner"]), asyncHandler(async (req, res) => {
+app.get("/api/bookings", auth(["tenant", "owner", "admin"]), asyncHandler(async (req, res) => {
   let sql = `
     SELECT b.*, f.title as flat_title, f.city, u.name as tenant_name 
     FROM bookings b 
@@ -634,10 +634,12 @@ app.get("/api/bookings", auth(["tenant", "owner"]), asyncHandler(async (req, res
   if (req.user.role === "tenant") {
     sql += " WHERE b.tenant_id = ?";
     params.push(req.user.id);
-  } else {
+  } else if (req.user.role === "owner") {
     sql += " WHERE f.owner_id = ?";
     params.push(req.user.id);
   }
+  // admin: no WHERE clause — sees all bookings
+  sql += " ORDER BY b.created_at DESC LIMIT 200";
   const rows = await query(sql, params);
   res.success(rows);
 }));
