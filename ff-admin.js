@@ -197,37 +197,126 @@ const Admin = {
       });
     });
 
-    // User search / filter
+    // User search / filter — uses local filtering with full re-render
     const userSearch = root.querySelector("#user-search-input");
     if (userSearch) {
+      // Store filter state so it persists across re-renders
+      Admin._userFilterState = Admin._userFilterState || { q: "", role: "", status: "" };
+
       const doFilter = () => {
         const q = (root.querySelector("#user-search-input")?.value || "").toLowerCase();
         const role = root.querySelector("#user-role-filter")?.value || "";
         const status = root.querySelector("#user-status-filter")?.value || "";
+        Admin._userFilterState = { q, role, status };
+
         let filtered = [...appState.users];
         if (q) filtered = filtered.filter((u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
         if (role) filtered = filtered.filter((u) => u.role === role);
         if (status) filtered = filtered.filter((u) => u.status === status);
+
+        // Re-render tbody only (avoids losing filter input focus)
         const tbody = root.querySelector("#users-tbody");
-        const tmp = document.createElement("div");
-        tmp.innerHTML = Admin.viewUsers(filtered);
-        const newTbody = tmp.querySelector("#users-tbody");
-        if (tbody && newTbody) tbody.innerHTML = newTbody.innerHTML;
+        if (!tbody) return;
+        const rows = filtered.length
+          ? filtered.map((u) => {
+              const isMe = u.id === appState.currentUser.id;
+              return `<tr>
+                <td><strong>${escHtml(u.name)}</strong><br><small class="text-muted">${escHtml(u.email)}</small></td>
+                <td><span class="badge badge--neutral">${u.role}</span></td>
+                <td><span class="badge badge--${u.status === "active" ? "success" : "danger"}">${u.status}</span></td>
+                <td>${u.created_at?.slice(0, 10) || "—"}</td>
+                <td>${isMe ? '<span class="text-muted">(you)</span>' :
+                  `<button class="btn btn--sm btn--secondary" data-action="${u.status === "active" ? "suspend" : "activate"}" data-user-id="${u.id}">
+                     ${u.status === "active" ? "🚫 Suspend" : "✅ Activate"}
+                   </button>
+                   <button class="btn btn--sm btn--danger" data-action="delete" data-user-id="${u.id}">🗑 Delete</button>`
+                }</td>
+              </tr>`;
+            }).join("")
+          : '<tr><td colspan="5" class="empty-cell">No users match filters.</td></tr>';
+
+        tbody.innerHTML = rows;
+
+        // Re-bind action buttons for the new rows
+        tbody.querySelectorAll("[data-action]").forEach((newBtn) => {
+          newBtn.addEventListener("click", async () => {
+            const action = newBtn.dataset.action;
+            const userId = newBtn.dataset.userId;
+            if ((action === "suspend" || action === "activate") && userId) {
+              newBtn.disabled = true;
+              const st = action === "suspend" ? "suspended" : "active";
+              const r = await apiFetch(`/api/users/${userId}`, { method: "PATCH", body: { status: st } });
+              newBtn.disabled = false;
+              if (r.success) {
+                showToast(r.message, action === "suspend" ? "warning" : "success");
+                const ur = await apiFetch("/api/users");
+                if (ur.success) appState.users = ur.data;
+                render(Admin.viewUsers());
+              } else showToast(r.message, "error");
+            }
+            if (action === "delete" && userId) {
+              if (!confirm("Permanently delete this user and all their data?")) return;
+              newBtn.disabled = true;
+              const r = await apiFetch(`/api/users/${userId}`, { method: "DELETE" });
+              newBtn.disabled = false;
+              if (r.success) {
+                showToast("User deleted.", "info");
+                const ur = await apiFetch("/api/users");
+                if (ur.success) appState.users = ur.data;
+                render(Admin.viewUsers());
+              } else showToast(r.message, "error");
+            }
+          });
+        });
       };
+
       root.querySelector("#user-search-input")?.addEventListener("input", doFilter);
       root.querySelector("#user-role-filter")?.addEventListener("change", doFilter);
       root.querySelector("#user-status-filter")?.addEventListener("change", doFilter);
     }
 
-    // Approval status filter
+    // Approval status filter — re-renders tbody with new event bindings
     root.querySelector("#approval-status-filter")?.addEventListener("change", (e) => {
       const val = e.target.value;
       const filtered = val ? appState.listings.filter((l) => l.status === val) : appState.listings;
+
       const tbody = root.querySelector("tbody");
-      const tmp = document.createElement("div");
-      tmp.innerHTML = Admin.viewApprovals(filtered);
-      const newTbody = tmp.querySelector("tbody");
-      if (tbody && newTbody) tbody.innerHTML = newTbody.innerHTML;
+      if (!tbody) return;
+      const rows = filtered.length
+        ? filtered.map((l) => `<tr>
+            <td><strong>${escHtml(l.flat_title)}</strong><br><small class="text-muted">📍 ${escHtml(l.city)} · ${escHtml(l.type)} · ₹${Number(l.rent).toLocaleString("en-IN")}</small></td>
+            <td>${escHtml(l.owner_name)}</td>
+            <td>${l.submitted_at?.slice(0, 10) || "—"}</td>
+            <td><span class="badge badge--${l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "warning"}">${l.status}</span></td>
+            <td>${l.status === "pending"
+              ? `<button class="btn btn--primary btn--sm" data-action="approve" data-id="${l.id}">✅ Approve</button>
+                 <button class="btn btn--danger btn--sm" data-action="reject" data-id="${l.id}">❌ Reject</button>`
+              : l.reviewer_name ? `<small class="text-muted">by ${escHtml(l.reviewer_name)}</small>` : "—"
+            }</td>
+          </tr>`).join("")
+        : '<tr><td colspan="5" class="empty-cell">No listings match filter.</td></tr>';
+
+      tbody.innerHTML = rows;
+
+      // Re-bind approve/reject buttons
+      tbody.querySelectorAll("[data-action]").forEach((newBtn) => {
+        newBtn.addEventListener("click", async () => {
+          const action = newBtn.dataset.action;
+          const id = newBtn.dataset.id;
+          if ((action === "approve" || action === "reject") && id) {
+            newBtn.disabled = true;
+            const status = action === "approve" ? "approved" : "rejected";
+            const r = await apiFetch(`/api/listings/${id}`, { method: "PATCH", body: { status } });
+            newBtn.disabled = false;
+            if (r.success) {
+              showToast(r.message, action === "approve" ? "success" : "warning");
+              const lr = await apiFetch("/api/listings");
+              if (lr.success) appState.listings = lr.data;
+              render(Admin.viewApprovals());
+            } else showToast(r.message, "error");
+          }
+        });
+      });
     });
   },
 };

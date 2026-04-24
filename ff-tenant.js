@@ -97,8 +97,11 @@ const Tenant = {
           <input class="form-input" name="city" placeholder="City…" />
           <select class="form-select" name="type">
             <option value="">All Types</option>
-            <option>1BHK</option><option>2BHK</option><option>3BHK</option>
-            <option>Studio</option><option>4BHK+</option>
+            <option value="1BHK">1BHK</option>
+            <option value="2BHK">2BHK</option>
+            <option value="3BHK">3BHK</option>
+            <option value="Studio">Studio</option>
+            <option value="4BHK+">4BHK+</option>
           </select>
           <select class="form-select" name="furnished">
             <option value="">Furnished?</option>
@@ -241,7 +244,16 @@ const Tenant = {
         e.preventDefault();
         const fd = new FormData(filterForm);
         const params = new URLSearchParams();
-        for (const [k, v] of fd.entries()) if (v) params.set(k, v);
+        for (const [k, v] of fd.entries()) {
+          if (!v) continue;
+          // Strip commas from numeric fields
+          if (k === "min_rent" || k === "max_rent") {
+            const cleaned = v.replace(/,/g, "").trim();
+            if (cleaned) params.set(k, cleaned);
+          } else {
+            params.set(k, v);
+          }
+        }
         const r = await apiFetch(`/api/flats?${params}`);
         if (r.success) { appState.flats = r.data; render(Tenant.viewSearch(r.data)); }
         else showToast(r.message, "error");

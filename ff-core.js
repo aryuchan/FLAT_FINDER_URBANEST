@@ -131,7 +131,7 @@ function renderNavBar() {
 
   nav.innerHTML = `
     <div class="nav__inner container">
-      <a class="nav__brand" href="#" data-route="/">🏠 FlatFinder</a>
+      <a class="nav__brand" href="#" data-route="/${u.role}/dashboard">🏠 FlatFinder</a>
       <div class="nav__links">${links}</div>
       <div class="nav__user">
         <span class="nav__name">${escHtml(u.name)}</span>
@@ -189,12 +189,14 @@ window.Carousel = {
       const track = car.querySelector(".carousel__track");
       const prevBtn = car.querySelector(".carousel__btn--prev");
       const nextBtn = car.querySelector(".carousel__btn--next");
-      const images = Array.from(track?.querySelectorAll(".carousel__img") || []);
+      if (!track) return;
+      const images = Array.from(track.querySelectorAll(".carousel__img"));
       
-      if (!track || images.length <= 1) {
+      if (images.length <= 1) {
         if (prevBtn) prevBtn.style.display = "none";
         if (nextBtn) nextBtn.style.display = "none";
       }
+      if (images.length === 0) return;
 
       let currentIndex = 0;
       const update = () => {
@@ -268,6 +270,11 @@ window.Lightbox = {
       if (e.key === "ArrowRight") overlay.querySelector(".lightbox-btn--next").click();
     };
     document.addEventListener("keydown", keydownHandler);
+
+    // Close on backdrop click
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay || e.target.classList.contains("lightbox-content")) closeLightbox();
+    });
 
     document.body.appendChild(overlay);
   },

@@ -164,7 +164,10 @@ const Owner = {
                 <label class="form-label">Bathrooms</label>
                 <select class="form-select" name="bathrooms">
                   <option value="">Select…</option>
-                  <option>1</option><option>2</option><option>3</option><option>4+</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4+">4+</option>
                 </select>
               </div>
               <div class="form-group">
@@ -180,8 +183,14 @@ const Owner = {
                 <label class="form-label">Facing Direction</label>
                 <select class="form-select" name="facing">
                   <option value="">Select…</option>
-                  <option>North</option><option>South</option><option>East</option><option>West</option>
-                  <option>North-East</option><option>North-West</option><option>South-East</option><option>South-West</option>
+                  <option value="North">North</option>
+                  <option value="South">South</option>
+                  <option value="East">East</option>
+                  <option value="West">West</option>
+                  <option value="North-East">North-East</option>
+                  <option value="North-West">North-West</option>
+                  <option value="South-East">South-East</option>
+                  <option value="South-West">South-West</option>
                 </select>
               </div>
             </div>
@@ -285,10 +294,10 @@ const Owner = {
                 <label class="form-label">Best Time to Call</label>
                 <select class="form-select" name="best_time_to_call">
                   <option value="">Anytime</option>
-                  <option>Morning (8 AM – 12 PM)</option>
-                  <option>Afternoon (12 PM – 4 PM)</option>
-                  <option>Evening (4 PM – 8 PM)</option>
-                  <option>Night (8 PM – 10 PM)</option>
+                  <option value="Morning (8 AM – 12 PM)">Morning (8 AM – 12 PM)</option>
+                  <option value="Afternoon (12 PM – 4 PM)">Afternoon (12 PM – 4 PM)</option>
+                  <option value="Evening (4 PM – 8 PM)">Evening (4 PM – 8 PM)</option>
+                  <option value="Night (8 PM – 10 PM)">Night (8 PM – 10 PM)</option>
                 </select>
               </div>
               <div class="form-group">
@@ -534,6 +543,15 @@ const Owner = {
       dropArea.classList.remove("drag-over");
       Owner._handleFiles(Array.from(e.dataTransfer.files), previewGrid);
     });
+
+    // Remove button delegation — attached ONCE here, not inside _handleFiles
+    previewGrid.addEventListener("click", (e) => {
+      const btn = e.target.closest(".img-preview-item__remove");
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.idx, 10);
+      Owner._imgPreviews.splice(idx, 1);
+      Owner._renderPreviews(previewGrid);
+    });
   },
 
   _handleFiles(files, previewGrid) {
@@ -541,7 +559,6 @@ const Owner = {
     const maxFiles = 8;
     const maxSize = 2 * 1024 * 1024;
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    let added = 0;
 
     for (const file of files) {
       if (Owner._imgPreviews.length >= maxFiles) {
@@ -583,45 +600,28 @@ const Owner = {
 
           // Convert to highly optimized webp format
           const src = canvas.toDataURL("image/webp", 0.7);
-
           Owner._imgPreviews.push(src);
-          const idx = Owner._imgPreviews.length - 1;
-
-          const wrapper = document.createElement("div");
-          wrapper.className = "img-preview-item";
-          wrapper.dataset.idx = idx;
-          wrapper.innerHTML = `
-            <img src="${src}" alt="Preview ${idx + 1}" />
-            <button type="button" class="img-preview-item__remove" data-idx="${idx}" aria-label="Remove image">×</button>
-            ${idx === 0 ? '<span class="img-preview-item__main-badge">Cover</span>' : ""}
-          `;
-          previewGrid.appendChild(wrapper);
+          Owner._renderPreviews(previewGrid);
         };
         img.src = ev.target.result;
       };
       reader.readAsDataURL(file);
-      added++;
     }
+  },
 
-    // Remove button delegation
-    previewGrid.addEventListener("click", (e) => {
-      const btn = e.target.closest(".img-preview-item__remove");
-      if (!btn) return;
-      const idx = parseInt(btn.dataset.idx, 10);
-      Owner._imgPreviews.splice(idx, 1);
-      // Re-render all previews
-      previewGrid.innerHTML = "";
-      Owner._imgPreviews.forEach((src, i) => {
-        const w = document.createElement("div");
-        w.className = "img-preview-item";
-        w.dataset.idx = i;
-        w.innerHTML = `
-          <img src="${src}" alt="Preview ${i + 1}" />
-          <button type="button" class="img-preview-item__remove" data-idx="${i}" aria-label="Remove image">×</button>
-          ${i === 0 ? '<span class="img-preview-item__main-badge">Cover</span>' : ""}
-        `;
-        previewGrid.appendChild(w);
-      });
+  _renderPreviews(previewGrid) {
+    if (!previewGrid) return;
+    previewGrid.innerHTML = "";
+    Owner._imgPreviews.forEach((src, i) => {
+      const w = document.createElement("div");
+      w.className = "img-preview-item";
+      w.dataset.idx = i;
+      w.innerHTML = `
+        <img src="${src}" alt="Preview ${i + 1}" />
+        <button type="button" class="img-preview-item__remove" data-idx="${i}" aria-label="Remove image">×</button>
+        ${i === 0 ? '<span class="img-preview-item__main-badge">Cover</span>' : ""}
+      `;
+      previewGrid.appendChild(w);
     });
   },
 
