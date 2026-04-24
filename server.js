@@ -309,14 +309,14 @@ app.patch("/api/me", auth(), asyncHandler(async (req, res) => {
   const params = [];
 
   if (name) { updates.push("name = ?"); params.push(name); }
-  if (phone) { updates.push("phone = ?"); params.push(phone); }
-  if (whatsapp) { updates.push("whatsapp = ?"); params.push(whatsapp); }
-  if (telegram) { updates.push("telegram = ?"); params.push(telegram); }
-  if (bio) { updates.push("bio = ?"); params.push(bio); }
-  if (location) { updates.push("location = ?"); params.push(location); }
-  if (languages) { updates.push("languages = ?"); params.push(languages); }
+  if (phone !== undefined) { updates.push("phone = ?"); params.push(phone || ""); }
+  if (whatsapp !== undefined) { updates.push("whatsapp = ?"); params.push(whatsapp || ""); }
+  if (telegram !== undefined) { updates.push("telegram = ?"); params.push(telegram || ""); }
+  if (bio !== undefined) { updates.push("bio = ?"); params.push(bio || ""); }
+  if (location !== undefined) { updates.push("location = ?"); params.push(location || ""); }
+  if (languages !== undefined) { updates.push("languages = ?"); params.push(languages || ""); }
   
-  if (password && password.length >= 8) {
+  if (password && password.length >= 6) {
     const hashed = await bcrypt.hash(password, 12);
     updates.push("password = ?");
     params.push(hashed);

@@ -244,9 +244,16 @@ window.Lightbox = {
       overlay.querySelector(".lightbox-img").src = imageSrcs[currentIndex];
     };
 
+    // Keyboard support — declared first so closeLightbox can reference it
+    let keydownHandler;
     const closeLightbox = () => {
       overlay.remove();
       document.removeEventListener("keydown", keydownHandler);
+    };
+    keydownHandler = (e) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") overlay.querySelector(".lightbox-btn--prev").click();
+      if (e.key === "ArrowRight") overlay.querySelector(".lightbox-btn--next").click();
     };
 
     overlay.querySelector(".lightbox-close").addEventListener("click", closeLightbox);
@@ -263,12 +270,6 @@ window.Lightbox = {
       updateImg();
     });
 
-    // Keyboard support
-    const keydownHandler = (e) => {
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowLeft") overlay.querySelector(".lightbox-btn--prev").click();
-      if (e.key === "ArrowRight") overlay.querySelector(".lightbox-btn--next").click();
-    };
     document.addEventListener("keydown", keydownHandler);
 
     // Close on backdrop click

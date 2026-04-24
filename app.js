@@ -197,7 +197,7 @@ window.addEventListener("load", async () => {
 
   // Ping server
   try {
-    await fetch(`${API}/api/ping`, { signal: AbortSignal.timeout(3000) });
+    await fetch(`${API}/api/health`, { signal: AbortSignal.timeout(3000) });
   } catch (_) {
     document.getElementById("app-nav").innerHTML = "";
     document.getElementById("app-root").innerHTML = `
