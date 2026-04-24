@@ -553,25 +553,51 @@ const Owner = {
         continue;
       }
       if (file.size > maxSize) {
-        showToast(`${file.name} exceeds 2 MB.`, "error");
+        showToast(`${file.name} exceeds 2 MB limit.`, "error");
         continue;
       }
 
       const reader = new FileReader();
       reader.onload = (ev) => {
-        const src = ev.target.result;
-        Owner._imgPreviews.push(src);
-        const idx = Owner._imgPreviews.length - 1;
+        const img = new Image();
+        img.onload = () => {
+          // Compress image via Canvas
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
 
-        const wrapper = document.createElement("div");
-        wrapper.className = "img-preview-item";
-        wrapper.dataset.idx = idx;
-        wrapper.innerHTML = `
-          <img src="${src}" alt="Preview ${idx + 1}" />
-          <button type="button" class="img-preview-item__remove" data-idx="${idx}" aria-label="Remove image">×</button>
-          ${idx === 0 ? '<span class="img-preview-item__main-badge">Cover</span>' : ""}
-        `;
-        previewGrid.appendChild(wrapper);
+          if (width > height && width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          } else if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to highly optimized webp format
+          const src = canvas.toDataURL("image/webp", 0.7);
+
+          Owner._imgPreviews.push(src);
+          const idx = Owner._imgPreviews.length - 1;
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "img-preview-item";
+          wrapper.dataset.idx = idx;
+          wrapper.innerHTML = `
+            <img src="${src}" alt="Preview ${idx + 1}" />
+            <button type="button" class="img-preview-item__remove" data-idx="${idx}" aria-label="Remove image">×</button>
+            ${idx === 0 ? '<span class="img-preview-item__main-badge">Cover</span>' : ""}
+          `;
+          previewGrid.appendChild(wrapper);
+        };
+        img.src = ev.target.result;
       };
       reader.readAsDataURL(file);
       added++;

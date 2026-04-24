@@ -180,3 +180,95 @@ function closeModal() {
     ?.querySelector(".modal-overlay")
     ?.remove();
 }
+
+// ── CAROUSEL & LIGHTBOX ──────────────────────────────────────────
+window.Carousel = {
+  init(container) {
+    const carousels = container.querySelectorAll(".carousel");
+    carousels.forEach((car) => {
+      const track = car.querySelector(".carousel__track");
+      const prevBtn = car.querySelector(".carousel__btn--prev");
+      const nextBtn = car.querySelector(".carousel__btn--next");
+      const images = Array.from(track?.querySelectorAll(".carousel__img") || []);
+      
+      if (!track || images.length <= 1) {
+        if (prevBtn) prevBtn.style.display = "none";
+        if (nextBtn) nextBtn.style.display = "none";
+      }
+
+      let currentIndex = 0;
+      const update = () => {
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
+      };
+
+      prevBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        currentIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
+        update();
+      });
+
+      nextBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        currentIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
+        update();
+      });
+
+      // Lightbox binding
+      images.forEach((img, idx) => {
+        img.addEventListener("click", () => {
+          Lightbox.open(images.map((i) => i.src), idx);
+        });
+      });
+    });
+  },
+};
+
+window.Lightbox = {
+  open(imageSrcs, startIndex = 0) {
+    let currentIndex = startIndex;
+    const overlay = document.createElement("div");
+    overlay.className = "lightbox-overlay";
+    
+    overlay.innerHTML = `
+      <button class="lightbox-close" aria-label="Close Lightbox">&times;</button>
+      <button class="lightbox-btn lightbox-btn--prev" aria-label="Previous image">&#10094;</button>
+      <div class="lightbox-content">
+        <img class="lightbox-img" src="${escHtml(imageSrcs[currentIndex])}" alt="Fullscreen View" />
+      </div>
+      <button class="lightbox-btn lightbox-btn--next" aria-label="Next image">&#10095;</button>
+    `;
+
+    const updateImg = () => {
+      overlay.querySelector(".lightbox-img").src = imageSrcs[currentIndex];
+    };
+
+    const closeLightbox = () => {
+      overlay.remove();
+      document.removeEventListener("keydown", keydownHandler);
+    };
+
+    overlay.querySelector(".lightbox-close").addEventListener("click", closeLightbox);
+    
+    overlay.querySelector(".lightbox-btn--prev").addEventListener("click", (e) => {
+      e.stopPropagation();
+      currentIndex = currentIndex > 0 ? currentIndex - 1 : imageSrcs.length - 1;
+      updateImg();
+    });
+    
+    overlay.querySelector(".lightbox-btn--next").addEventListener("click", (e) => {
+      e.stopPropagation();
+      currentIndex = currentIndex < imageSrcs.length - 1 ? currentIndex + 1 : 0;
+      updateImg();
+    });
+
+    // Keyboard support
+    const keydownHandler = (e) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") overlay.querySelector(".lightbox-btn--prev").click();
+      if (e.key === "ArrowRight") overlay.querySelector(".lightbox-btn--next").click();
+    };
+    document.addEventListener("keydown", keydownHandler);
+
+    document.body.appendChild(overlay);
+  },
+};

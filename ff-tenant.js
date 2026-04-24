@@ -141,17 +141,21 @@ const Tenant = {
         ${flat.owner_bio ? `<p class="owner-contact-card__bio">${escHtml(flat.owner_bio)}</p>` : ""}
       </div>`;
 
-    // Image gallery
+    // Image Carousel
     const gallery = images.length
-      ? `<div class="flat-gallery">
-          ${images
-            .map(
-              (src, i) =>
-                `<img class="flat-gallery__img${i === 0 ? " flat-gallery__img--main" : ""}"
-                      src="${escHtml(src)}" alt="Flat image ${i + 1}" loading="lazy"
-                      onerror="this.style.display='none'" />`,
-            )
-            .join("")}
+      ? `<div class="carousel" aria-roledescription="carousel" aria-label="Flat images">
+          <div class="carousel__track-container">
+            <div class="carousel__track">
+              ${images
+                .map(
+                  (src, i) =>
+                    `<img class="carousel__img" src="${escHtml(src)}" alt="Flat image ${i + 1}" loading="lazy" />`
+                )
+                .join("")}
+            </div>
+          </div>
+          <button class="carousel__btn carousel__btn--prev" aria-label="Previous image">❮</button>
+          <button class="carousel__btn carousel__btn--next" aria-label="Next image">❯</button>
          </div>`
       : "";
 
@@ -229,6 +233,8 @@ const Tenant = {
   },
 
   bindEvents(root) {
+    if (window.Carousel) window.Carousel.init(root);
+
     const filterForm = root.querySelector("#flat-search-filter-form");
     if (filterForm) {
       filterForm.addEventListener("submit", async (e) => {
