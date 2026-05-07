@@ -21,7 +21,7 @@ const Auth = {
             <div class="form-group">
               <label class="form-label" for="auth-name">Full Name</label>
               <input class="form-input" id="auth-name" name="name" type="text"
-                placeholder="Aarav Mehta" autocomplete="name" required minlength="2" />
+                placeholder="Enter Your Full Name" autocomplete="name" required minlength="2" />
             </div>`
                 : ""
             }
